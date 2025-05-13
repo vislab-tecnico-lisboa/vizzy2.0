@@ -1,0 +1,77 @@
+<!--
+  * Main changes from ROS1 to ROS2:
+  *  - 'arg' tags in substitutions are replaced with 'var' tags (not in declarations).
+  *  - nested includes now need be declared inside a group. 
+  *  - 'type' attribute in node declaration is now 'exec'.
+  *  - in a node declaration, 'ns' attribute is now 'namespace'.
+  *  - in include content, 'ns' attribute is no longer supported. Use push_ros_namespace tag instead.
+  *  - there is no support for nested 'env' tags. 'set_env' is used instead.
+-->
+
+<launch>
+
+  <!-- First declare the parameters to be passed 
+  along to the include tags as command line arguments
+  for other launch files. -->
+
+  <!-- Robot name -->
+  <arg name="robot" default="vizzy"/>
+  <!-- Robot pose relative to the map -->
+  <arg name="pose" default="-x 0.0 -y -0.0 -z 0.0 -R 0.0 -P 0.0 -Y 0.0"/>
+  <!-- Robot semantic description file -->
+  <arg name="urdf_file" default="vizzy.urdf.xacro"/>
+
+  <!-- Load Yarp plugins for real robot execution -->
+  <arg name="use_yarp" default="false"/>
+
+  <!-- Gazebo parameters -->
+  <arg name="gui" default="true"/>
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <!-- Load full inertial and collision model or a simplified model -->
+  <arg name="use_full_gazebo_model" default="false"/>
+  <!-- Load a fully detailed hand model with properly modeled links and joints -->
+  <arg name="use_full_hand_model" default="false"/>
+
+  <!-- Map -->
+  <arg name="world" default="empty_world.sdf"/>
+  <arg name="world_pkg" default="$(find-pkg-share vizzy_gazebo)"/>
+  <arg name="map_frame" default="map"/>
+
+  <!-- Disable robot parts -->
+  <arg name="disable_laser" default="false"/>
+  <arg name="disable_3d_sensor" default="false"/>
+
+  <!-- Environment variables -->
+  <!-- ! The GAZEBO_MODEL_PATH variable needs to be set in the bashrc as such:
+       ! ROS2_WS=~/VisLab-Vizzy-Ros2
+       ! export GAZEBO_MODEL_PATH=$ROS2_WS/src/vizzy/vizzy_gazebo:\$GAZEBO_MODEL_PATH
+   -->
+  <set_env name="GAZEBO_MODEL_PATH" value="$(find-pkg-prefix vizzy_gazebo):$(env GAZEBO_MODEL_PATH)"/>
+  <set_env name="LC_NUMERIC" value="C"/>
+
+  <!-- Now the defined arguments will be used in calls to 
+  begin the simulation. 
+  * In ROS2, substitutions for arguments have the tag 'var'
+  * instead of 'arg' -->
+
+  <!-- Launch world -->
+  <include file="$(find-pkg-share vizzy_gazebo)/launch/vizzy_sim_world_launch.xml">
+    <arg name="gui" value="$(var gui)"/>
+    <arg name="use_sim_time" value="$(var use_sim_time)"/>
+    <arg name="world" value="$(var world)"/>
+    <arg name="world_pkg" value="$(var world_pkg)"/>
+  </include>
+
+  <!-- Spawn the robot in simulation using the new python launcher -->
+  <include file="$(find-pkg-share vizzy_gazebo)/launch/vizzy_spawn.launch.py">
+    <arg name="robot" value="$(var robot)"/>
+    <arg name="pose" value="$(var pose)"/>
+    <arg name="urdf_file" value="$(var urdf_file)"/>
+    <arg name="use_yarp" value="$(var use_yarp)"/>
+    <arg name="use_full_gazebo_model" value="$(var use_full_gazebo_model)"/>
+    <arg name="use_full_hand_model" value="$(var use_full_hand_model)"/>
+    <arg name="disable_laser" value="$(var disable_laser)"/>
+    <arg name="disable_3d_sensor" value="$(var disable_3d_sensor)"/>
+  </include>
+</launch>

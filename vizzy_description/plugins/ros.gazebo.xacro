@@ -1,0 +1,76 @@
+<!--
+  * Main changes from ROS1 to ROS2:
+  *  - Updated libraries and plugins to use Ignition Gazebo.
+  *  - Changed plugin elements to use Ignition Gazebo plugin format.
+-->
+
+<root xmlns:xacro="http://ros.org/wiki/xacro">
+  <!-- Joint States Publisher -->
+  <xacro:macro name="joint_state_publisher">
+    <gazebo>
+      <plugin
+          filename="libignition-gazebo-joint-state-publisher-system.so"
+          name="ignition::gazebo::systems::JointStatePublisher">
+          <topic>model/vizzy/joint_states</topic>
+          <update_rate>100</update_rate>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+
+  <!-- Base controller (differential drive) plugin -->
+  <xacro:macro name="ros_differential_drive_gazebo">
+    <gazebo>
+      <plugin
+          filename="libignition-gazebo-diff-drive-system.so"
+          name="ignition::gazebo::systems::DiffDrive">
+          <left_joint>l_wheel_joint</left_joint>
+          <right_joint>r_wheel_joint</right_joint>
+          <wheel_separation>0.490</wheel_separation>
+          <wheel_radius>0.19814</wheel_radius> <!-- 0.39628 / 2-->
+          <odom_publish_frequency>100</odom_publish_frequency>
+          <topic>model/vizzy/cmd_vel</topic>
+          <publish_odom>true</publish_odom>
+          <publish_odom_tf>true</publish_odom_tf>
+          <publish_wheel_tf>true</publish_wheel_tf>
+          <odom_topic>model/vizzy/odometry</odom_topic>
+          <frame_id>odometry</frame_id>
+          <child_frame_id>base_footprint</child_frame_id>
+          <tf_topic>model/vizzy/tf</tf_topic>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+
+  <!-- camera plugin -->
+  <xacro:macro name="camera_plugin" params="name prefix">
+    <gazebo reference="${prefix}_camera_link">
+      <sensor type="camera" name="${prefix}_camera">
+        <update_rate>30.0</update_rate>
+        <camera name="head">
+          <camera_info_topic>model/vizzy/camera/${prefix}/camera_info</camera_info_topic>
+          <horizontal_fov>1.4912</horizontal_fov>
+          <image>
+            <width>3088</width>
+            <height>2076</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.02</near>
+            <far>300</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <!-- Noise is sampled independently per pixel on each frame.
+                That pixel's noise value is added to each of its color
+                channels, which at that point lie in the range [0,1]. -->
+            <mean>0.0</mean>
+            <stddev>0.000</stddev>
+          </noise>
+        </camera>
+        <always_on>1</always_on>
+        <topic>model/vizzy/camera/${prefix}/image_raw</topic>
+        <gz_frame_id>camera</gz_frame_id>
+        <visualize>true</visualize>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+</root>

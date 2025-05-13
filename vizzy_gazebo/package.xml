@@ -1,0 +1,38 @@
+<package format="2">
+  <name>vizzy_gazebo</name>
+  <version>1.0.0</version>
+  <description>
+
+    This package holds all the needed launches and elements for
+    Vizzy's simulation on GAZEBO.
+
+    Acknowledgements:
+    - Miguel Aragão for the implementation of all the
+      gazebo stack with Vizzy in ROS 1.
+
+  </description>
+
+  <maintainer email="joao.penha.lopes@tecnico.ulisboa.pt">João Penha Lopes</maintainer>
+  <maintainer email="joao.zenario@tecnico.ulisboa.pt">João Zenário</maintainer>
+
+  <author>Miguel Aragão</author>
+  <author>João Penha Lopes</author>
+  <author>João Zenário</author>
+
+  <license>BSD</license>
+
+  <url type="website">https://github.com/vislab-tecnico-lisboa/vizzy/vizzy_gazebo</url>
+  <url type="bugtracker">https://github.com/vislab-tecnico-lisboa/vizzy/issues</url>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  
+  <depend>ros_gz_sim</depend>
+  <depend>vizzy_description</depend>
+  <depend>vizzy_navigation</depend>
+  
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <build_type>ament_cmake</build_type>
+  	<gazebo_ros plugin_path="${prefix}/lib" gazebo_media_path="${prefix}" />
+  </export>
+</package>

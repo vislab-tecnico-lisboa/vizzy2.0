@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- Load full inertial and collision model or a simplified model -->
+  <xacro:arg name="use_full_gazebo_model" default="false"/>
+
+  <!-- Things that are needed only for Gazebo (not the physical robot).  These include
+       sensor and controller plugin specifications -->
+  <xacro:include filename="$(find vizzy_description)/urdf/base/base.gazebo.xacro"/>
+  
+  <xacro:include filename="$(find vizzy_description)/urdf/base/base.transmission.xacro"/>
+
+  <!-- Robot base macro -->
+  <xacro:macro name="base" params="name">
+
+    <!-- Root link, on the ground just below the robot origin -->
+    <link name="base_footprint">
+    </link>
+
+    <joint name="base_footprint_joint" type="fixed">
+      <origin
+        xyz="0.1934543 0.0 0.04"
+        rpy="0.0 0.0 ${M_PI}"/>
+      <parent link="base_footprint"/>
+      <child link="base_link"/>
+    </joint>
+
+    <!-- Robot origin, center of the two wheels (axis of rotation) -->
+    <link name="base_link">
+      <xacro:vizzy_base_link_inertial/>
+      <visual>
+        <origin
+          xyz="0.188 0.001 0.197"
+          rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://vizzy_description/meshes/base/segway.dae"/>
+        </geometry>
+        <material name="light_gray_3"/>
+      </visual>
+      <xacro:vizzy_base_link_collision/>
+    </link>
+
+    <xacro:gazebo_vizzy_base_link_surface/>
+
+
+
+    <!-- Back (rear) caster wheel -->
+
+    <xacro:gazebo_vizzy_caster_wheel name="b" 
+      parent="base_link" 
+      origin="0.43986 0 0.010" />
+
+
+    <!-- Front caster wheel -->
+
+    <xacro:gazebo_vizzy_caster_wheel name="f" 
+      parent="base_link" 
+      origin="-0.060139 0 0.010" />
+
+
+    <!-- Right wheel -->
+    <link name="r_wheel_link">
+      <xacro:vizzy_wheel_link_inertial rpy="0 0 0"/>
+      <visual>
+        <origin
+          xyz="0 0 0"
+          rpy="0 0 0"/>
+        <geometry>
+          <mesh
+            filename="package://vizzy_description/meshes/base/wheel.dae"/>
+        </geometry>
+        <material name="gray_1"/>
+      </visual>
+      <xacro:vizzy_wheel_link_collision rpy="0 0 0"/>
+    </link>
+
+    <joint name="r_wheel_joint"
+      type="continuous">
+      <origin
+        xyz="0.18986 0.245 0.15814"
+        rpy="${M_PI/2} ${M_PI/2} 0"/>
+      <parent
+        link="base_link"/>
+      <child
+        link="r_wheel_link"/>
+      <axis
+        xyz="0 0 1"/>
+    </joint>
+
+    <xacro:gazebo_vizzy_wheel_link_surface
+      prefix="r"/>
+
+    <link name="l_wheel_link">
+      <xacro:vizzy_wheel_link_inertial rpy="${M_PI} 0 0"/>
+      <visual>
+        <origin
+          xyz="0 0 0"
+          rpy="${M_PI} 0 0"/>
+        <geometry>
+          <mesh
+            filename="package://vizzy_description/meshes/base/wheel.dae"/>
+        </geometry>
+        <material name="gray_1"/>
+      </visual>
+      <xacro:vizzy_wheel_link_collision rpy="${M_PI} 0 0"/>
+    </link>
+
+    <joint name="l_wheel_joint"
+      type="continuous">
+      <origin
+        xyz="0.18986 -0.245 0.15814"
+        rpy="${M_PI/2} ${M_PI/2} 0"/>
+      <parent
+        link="base_link"/>
+      <child
+        link="l_wheel_link"/>
+      <axis
+        xyz="0 0 1"/>
+    </joint>
+
+    <xacro:gazebo_vizzy_wheel_link_surface
+      prefix="l"/>
+
+    <!-- Gazebo extensions -->
+    <xacro:base_transmissions/>
+
+ </xacro:macro>
+</robot>

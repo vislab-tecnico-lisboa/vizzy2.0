@@ -1,0 +1,64 @@
+<!--
+  * Main changes from ROS1 to ROS2:
+  *  - 'arg' tags in substitutions are replaced with 'var' tags (not in declarations). 
+  *  - 'type' attribute in node declaration is now 'exec'.
+  *  - 'value' attribute is not allowed in argument definitions. Use let tag for this instead of 'arg'.
+  *  - There is no global parameter concept in ROS 2. For that reason, it can only be used nested in a node tag.
+  *  and as such, needs to be declared within each node.
+  *  - 'optenv' tags have been replaced by the 'env' tag.
+
+  * Main changes from Gazibo Classic to Ignition Gazebo:
+  *  -  The package 'gazebo_ros' is now 'ros_gz_sim'.
+  *  - 'gzserver' and 'gzclient' are now replaced with the global 'ign' executable.
+  *  -  The package 'ros_gz_sim' is now used to launch the simulation.
+  *  -  The package 'ros_gz_bridge' is now used to bridge the topics between ROS2 and Ignition Gazebo.
+-->
+
+<launch>
+
+  <!-- First declare the parameters to be passed 
+  along to the include tags as command line arguments
+  for other launch files. -->
+
+  <!-- Gazebo parameters -->
+  <arg name="gui" default="true"/>
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="debug" default="false"/>
+  <arg name="verbose" default="true"/>
+  <arg name="world" default="empty_world.sdf"/>
+  <arg name="extra_gazebo_args" default=""/>
+  <arg name="world_pkg" default="$(find-pkg-prefix vizzy_gazebo)"/>
+
+  <!-- set command arguments -->
+  <let if="$(var paused)" name="command_arg1" value=""/> <!-- Unpause the simulation as soon as it loads -->
+  <let unless="$(var paused)" name="command_arg1" value="-r"/> <!-- Nothing for the simulation to load in a paused state -->
+  <let if="$(var verbose)" name="command_arg2" value="-v4"/> <!-- Activate maximum verbose logging -->
+  <let unless="$(var verbose)" name="command_arg2" value=""/> <!-- Nothing for normal logging -->
+  <let if="$(var gui)" name="command_arg3" value=""/> <!-- Server only flag -->
+  <let unless="$(var gui)" name="command_arg3" value="-s"/> <!-- Nothing to show gui -->
+
+  <!-- Set the full path for the 'ign' executable -->
+  <let unless="$(var debug)" name="script_type" value="/usr/bin/ign"/>
+  <let if="$(var debug)" name="script_type" value="debug"/>
+
+  <!-- set environment variables -->
+  <set_env name="OPTIRUN_LAUNCH_PREFIX" value=""/>
+
+  <!-- Create nodes with previously declared arguments 
+  * In ROS2, substitutions for arguments have the tag 'var'
+  * instead of 'arg' -->
+
+  <!-- Start gazebo -->
+  <!-- The node tag was changed to include because we now use
+  the gz_sim.launch.py launch file from the ros_gz_sim package
+  which takes the given arguments and passes them to ign gazebo -->
+
+  <!-- Build the string with all the arguments separated by spaces -->
+  <let name="command_args" value="$(var command_arg1) $(var command_arg2) $(var command_arg3) $(var extra_gazebo_args) $(find-pkg-prefix vizzy_gazebo)/share/vizzy_gazebo/worlds/$(var world)"/>
+  <!-- The command_args variable is passed to the gz_sim.launch.py file
+  as an argument. The gz_sim.launch.py file will then pass it to the ign executable -->
+  <include file="$(find-pkg-share ros_gz_sim)/launch/gz_sim.launch.py">
+    <arg name="gz_args" value="$(var command_args)"/>
+  </include>
+</launch>

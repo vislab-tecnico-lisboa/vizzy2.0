@@ -1,0 +1,38 @@
+<package format="2">
+  <name>vizzy_description</name>
+  <version>1.0.0</version>
+  <description>
+
+    This package contains Vizzy's description (mechanical, kinematic, visual, etc.) for ROS2.
+    The files in this package are parsed and used by a variety of other components.
+    Most users will not interact directly with this package.
+
+    Acknowledgements:
+    - Miguel Aragão, Rui Figueiredo and Plinio Moreno for the development of all the
+      files regarding this package for ROS 1.
+
+  </description>
+
+  <maintainer email="joao.penha.lopes@tecnico.ulisboa.pt">João Penha Lopes</maintainer>
+  <maintainer email="joao.zenario@tecnico.ulisboa.pt">João Zenário</maintainer>
+
+  <author>Miguel Aragão</author>
+  <author>Rui Figueiredo</author>
+  <author>Plinio Moreno</author>
+  <author>João Penha Lopes</author>
+  <author>João Zenário</author>
+
+  <license>BSD</license>
+
+  <url type="website">https://github.com/vislab-tecnico-lisboa/vizzy/vizzy_description</url>
+  <url type="bugtracker">https://github.com/vislab-tecnico-lisboa/vizzy/issues</url>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_export_depend>xacro</build_export_depend>
+  <exec_depend>xacro</exec_depend>  
+
+  <export>
+  <build_type>ament_cmake</build_type>
+  </export>
+</package>

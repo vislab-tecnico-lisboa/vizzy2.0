@@ -1,0 +1,63 @@
+<!--
+  * Main changes from ROS1 to ROS2:
+  *  - 'arg' tags in substitutions are replaced with 'var' tags (not in declarations) 
+  *  - 'type' attribute in node declaration is now 'exec' 
+-->
+
+<launch>
+
+  <!-- First declare the parameters to be passed 
+  along to the include tags as command line arguments
+  for other launch files. -->
+
+  <arg name="camera" default="" />
+  <arg name="manager" default="cameras_camera" />
+
+  <!-- Create nodes with previously declared arguments 
+  * In ROS2, substitutions for arguments have the tag 'var'
+  * instead of 'arg' -->
+
+  <!-- Bayer color decoding -->
+  <node pkg="nodelet" exec="nodelet" name="$(var camera)_image_proc_debayer" args="load image_proc/debayer $(var manager)" respawn="true">
+    <remap from="image_color" to="$(var camera)/image_color" />
+    <remap from="image_mono" to="$(var camera)/image_mono" />
+    <remap from="image_raw" to="$(var camera)/image_raw" />
+  </node>
+
+  <!-- mono rectification -->
+  <node pkg="nodelet" exec="nodelet" name="$(var camera)_image_proc_rect" args="load image_proc/rectify $(var manager)" respawn="true">
+    <remap from="image_mono" to="$(var camera)/image_mono" />
+    <remap from="image_rect" to="$(var camera)/image_rect" />
+  </node>
+
+  <!-- color rectification -->
+  <node pkg="nodelet" exec="nodelet" name="$(var camera)_image_proc_rect_color" args="load image_proc/rectify $(var manager)" respawn="true">
+    <remap from="image_mono" to="$(var camera)/image_color" />
+    <remap from="image_rect" to="$(var camera)/image_rect_color" />
+  </node>
+
+  <!-- image resize -->
+  <node pkg="nodelet" exec="nodelet" name="$(var camera)_image_proc_resize" args="load image_proc/resize $(var manager)">
+    <!-- remap input topics -->
+      <remap from="image" to="$(var camera)/image_rect_color/" />
+      <remap from="camera_info" to="$(var camera)/camera_info"/>
+      <!-- remap output topics -->
+      <remap from="$(var camera)_image_proc_resize/image" to="$(var camera)/image_rect_color_sd/"/>
+      <remap from="$(var camera)_image_proc_resize/camera_info" to="$(var camera)/image_rect_color_sd/camera_info"/>
+      <param name="use_scale" value="false"/>
+      <param name="width" exec="int" value="640" />
+      <param name="height" exec="int" value="480"/>
+  </node>
+
+  <!-- saccadic suppression -->
+  <node pkg="nodelet" exec="nodelet" name="$(var camera)_saccadic_suppression" args="load vizzy_sensors/saccadic_suppression $(var manager)">
+      <!-- remap input topics -->
+      <remap from="image" to="$(var camera)/image_rect_color_sd/" />
+      <remap from="camera_info" to="$(var camera)/image_rect_color_sd/camera_info"/>
+      <remap from="cmd_vel" to="/vizzy/cmd_vel"/>
+      <!-- remap output topics -->
+      <remap from="$(var camera)_saccadic_suppression/image" to="$(var camera)/suppressed_image_rect_color_sd/"/>
+      <remap from="$(var camera)_saccadic_suppression/camera_info" to="$(var camera)/suppressed_image_rect_color_sd/camera_info"/>
+  </node>
+
+</launch>

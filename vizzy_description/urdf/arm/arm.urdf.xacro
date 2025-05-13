@@ -1,0 +1,405 @@
+<?xml version="1.0"?>
+
+<!--
+  * Main changes from Gazibo Classic to Ignition Gazebo:
+  *  -  Since the new Gazebo can be used with multiple rendering engines, 
+  * it does not support Ogre specific material files like Gazebo Classic does. 
+  * That means arbitrary materials defined within a <script> tag aren’t supported.
+  * Thus, Gazebo/Orange no longer works and was replaced with the RGBA colour code.
+-->
+
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- Load full inertial and collision model or a simplified model -->
+  <xacro:arg name="use_full_gazebo_model" default="false"/>
+  <!-- Load a fully detailed hand model with properly modeled links and joints -->
+  <xacro:arg name="use_full_hand_model" default="false"/>
+
+  <!-- Things that are needed only for Gazebo (not the physical robot).  These include
+   sensor and controller plugin specifications -->
+  <xacro:include filename="$(find vizzy_description)/urdf/arm/arm.gazebo.xacro"/>
+  <xacro:include filename="$(find vizzy_description)/urdf/arm/arm.transmission.xacro" />
+
+  <!-- Hands -->
+  <xacro:include filename="$(find vizzy_description)/urdf/hand/right_hand.urdf.xacro"/>
+  
+  <xacro:macro name="arm"
+    params="name parent">
+
+    <!-- Derived parameters -->
+
+    <!-- Left arm -->
+    <xacro:if value="${name == 'left_arm'}">
+      <xacro:property name="side" value="left"/>
+      <xacro:property name="prefix" value="l"/>
+      <xacro:property name="reflect" value="-1"/>
+      <xacro:property name="shoulder_scapula_l_rpy" value="0 0 0"/>
+      <xacro:property name="shoulder_scapula_j_rpy" value="${M_PI/2} 0 -0.0175"/>
+      <xacro:property name="shoulder_flection_l_rpy" value="0 0 -4.1963"/>
+      <xacro:property name="shoulder_abduction_l_rpy" value="0 0 -4.3633"/>
+      <xacro:property name="shoulder_rotation_l_rpy" value="0 0 ${M_PI/2}"/>
+      <xacro:property name="elbow_flection_l_rpy" value="0 ${M_PI} ${M_PI+0.0873}"/>
+      <xacro:property name="forearm_pronation_l_rpy" value="0 ${M_PI} ${-M_PI/2}"/>
+      <xacro:property name="wrist_abduction_l_rpy" value="0 0 0"/>
+      <xacro:property name="wrist_flection_l_rpy" value="0 0 ${M_PI/2}"/>
+      <xacro:property name="palm_j_rpy" value="${-M_PI/2} ${M_PI} 0"/>
+    </xacro:if>
+    <!-- Right arm -->
+    <xacro:if value="${name == 'right_arm'}">
+      <xacro:property name="side" value="right"/>
+      <xacro:property name="prefix" value="r"/>
+      <xacro:property name="reflect" value="1"/>
+      <xacro:property name="shoulder_scapula_l_rpy" value="0 ${-M_PI} ${M_PI}"/>
+      <xacro:property name="shoulder_scapula_j_rpy" value="${M_PI/2} 0 ${M_PI-0.0175}"/>
+      <xacro:property name="shoulder_flection_l_rpy" value="0 ${M_PI} -1.0547"/>
+      <xacro:property name="shoulder_abduction_l_rpy" value="0 ${M_PI} -1.2217"/>
+      <xacro:property name="shoulder_rotation_l_rpy" value="${M_PI} 0 ${M_PI/2}"/>
+      <xacro:property name="elbow_flection_l_rpy" value="0 0 0.0873"/>
+      <xacro:property name="forearm_pronation_l_rpy" value="0 0 ${M_PI/2}"/>
+      <xacro:property name="wrist_abduction_l_rpy" value="${M_PI} ${M_PI} 0"/>
+      <xacro:property name="wrist_flection_l_rpy" value="0 ${M_PI} ${-M_PI/2}"/>
+      <xacro:property name="palm_j_rpy" value="0 ${M_PI/2} 0"/>
+    </xacro:if>
+    <!-- Detailed hand -->
+    <xacro:if value="$(arg use_full_hand_model)">
+      <xacro:property name="detailed_hand" value="true"/>
+    </xacro:if>
+    <xacro:unless value="$(arg use_full_hand_model)">
+      <xacro:property name="detailed_hand" value="false"/>
+    </xacro:unless>
+
+    <!-- Shoulder scapula -->
+    <link name="${prefix}_shoulder_scapula_link">
+      <xacro:vizzy_shoulder_scapula_link_inertial
+        reflect="${reflect}" rpy="${shoulder_scapula_l_rpy}"/>
+      <visual>
+        <origin
+          xyz="0 0 ${reflect*0.16}"
+          rpy="${shoulder_scapula_l_rpy}"/>
+        <geometry>
+          <mesh
+            filename="package://vizzy_description/meshes/arm/${prefix}_shoulder_scapula.dae" />
+        </geometry>
+        <material name="light_gray_1"/>
+      </visual>
+      <xacro:vizzy_shoulder_scapula_link_collision
+        reflect="${reflect}" rpy="${shoulder_scapula_l_rpy}" prefix="${prefix}"/>
+    </link>
+
+    <joint name="${prefix}_shoulder_scapula_joint"
+      type="revolute">
+      <origin
+        xyz="0 0 ${-reflect*0.0805}"
+        rpy="${shoulder_scapula_j_rpy}"/>
+      <parent
+        link="${parent}"/>
+      <child
+        link="${prefix}_shoulder_scapula_link"/>
+      <axis
+        xyz="0 0 1" />
+      <limit lower="-${M_PI/10}" upper="${M_PI/10}" effort="10" velocity="3"/>
+      <dynamics damping="0.0" friction="0.1"/>
+    </joint>
+
+    <!-- Shoulder flection -->
+    <link name="${prefix}_shoulder_flection_link">
+      <xacro:vizzy_shoulder_flection_link_inertial
+        reflect="${reflect}" rpy="${shoulder_flection_l_rpy}"/>
+      <visual>
+        <origin
+          xyz="0 0 ${reflect*0.0479999999999997}"
+          rpy="${shoulder_flection_l_rpy}"/>
+        <geometry>
+          <mesh
+            filename="package://vizzy_description/meshes/arm/${prefix}_shoulder_flection.dae"/>
+        </geometry>
+        <material name="light_gray_3"/>
+      </visual>
+      <xacro:vizzy_shoulder_flection_link_collision
+        reflect="${reflect}" rpy="${shoulder_flection_l_rpy}" prefix="${prefix}"/>
+    </link>
+
+    <joint name="${prefix}_shoulder_flection_joint"
+      type="revolute">
+      <origin
+        xyz="0 0 ${reflect*0.212}"
+        rpy="${M_PI/2} 0 0"/>
+      <parent
+        link="${prefix}_shoulder_scapula_link"/>
+      <child
+        link="${prefix}_shoulder_flection_link"/>
+      <axis
+        xyz="0 0 1" />
+      <limit lower="-1.30899694" upper="2.35619449" effort="10" velocity="3"/>
+      <dynamics damping="0.0" friction="0.1"/>
+    </joint>
+
+    <!-- Shoulder abduction -->
+    <link name="${prefix}_shoulder_abduction_link">
+      <xacro:vizzy_shoulder_abduction_link_inertial
+        reflect="${reflect}" rpy="${shoulder_abduction_l_rpy}"/>
+      <visual>
+        <origin
+          xyz="${reflect*0.034} ${reflect*0.009} -0.001"
+          rpy="${shoulder_abduction_l_rpy}"/>
+        <geometry>
+          <mesh
+            filename="package://vizzy_description/meshes/arm/${prefix}_shoulder_abduction.dae"/>
+        </geometry>
+        <material name="light_gray_1"/>
+      </visual>
+      <xacro:vizzy_shoulder_abduction_link_collision
+        reflect="${reflect}" rpy="${shoulder_abduction_l_rpy}" prefix="${prefix}"/>
+    </link>
+
+    <joint name="${prefix}_shoulder_abduction_joint"
+      type="revolute">
+      <origin
+        xyz="0 0 ${reflect*0.10256}"
+        rpy="${M_PI/2} 0 ${-M_PI/2}"/>
+      <parent
+        link="${prefix}_shoulder_flection_link"/>
+      <child
+        link="${prefix}_shoulder_abduction_link"/>
+      <axis
+        xyz="0 0 1"/>
+      <limit lower="0" upper="1.30899694" effort="10" velocity="3" />
+      <dynamics damping="0.0" friction="0.1"/>
+    </joint>
+
+    <!-- Shoulder rotation -->
+    <link name="${prefix}_shoulder_rotation_link">
+      <xacro:vizzy_shoulder_rotation_link_inertial
+        reflect="${reflect}" rpy="${shoulder_rotation_l_rpy}"/>
+      <visual>
+        <origin
+          xyz="${-reflect*0.003} ${reflect*0.006} ${reflect*0.127}"
+          rpy="${shoulder_rotation_l_rpy}"/>
+        <geometry>
+          <mesh
+            filename="package://vizzy_description/meshes/arm/${prefix}_shoulder_rotation.dae" />
+        </geometry>
+        <material name="light_gray_3"/>
+      </visual>
+      <xacro:vizzy_shoulder_rotation_link_collision
+        reflect="${reflect}" rpy="${shoulder_rotation_l_rpy}" prefix="${prefix}"/>
+    </link>
+
+    <joint name="${prefix}_shoulder_rotation_joint"
+      type="revolute">
+      <origin
+        xyz="0 0 0"
+        rpy="${M_PI/2} 0 ${11*M_PI/18}"/>
+      <parent
+        link="${prefix}_shoulder_abduction_link"/>
+      <child
+        link="${prefix}_shoulder_rotation_link"/>
+      <axis
+        xyz="0 0 1"/>
+      <limit lower="-1.48352986" upper="1.48352986" effort="10" velocity="3"/>
+      <dynamics damping="0.0" friction="0.1"/>
+    </joint>
+
+    <!-- Elbow flection -->
+    <link name="${prefix}_elbow_flection_link">
+      <xacro:vizzy_elbow_flection_link_inertial
+        reflect="${reflect}" rpy="${elbow_flection_l_rpy}"/>
+      <visual>
+        <origin
+          xyz="${-reflect*0.002} ${reflect*0.035} 0"
+          rpy="${elbow_flection_l_rpy}"/>
+        <geometry>
+          <mesh
+            filename="package://vizzy_description/meshes/arm/${prefix}_elbow_flection.dae"/>
+        </geometry>
+        <material name="light_gray_1"/>
+      </visual>
+      <xacro:vizzy_elbow_flection_link_collision
+        reflect="${reflect}" rpy="${elbow_flection_l_rpy}" prefix="${prefix}"/>
+    </link>
+
+    <joint name="${prefix}_elbow_flection_joint"
+      type="revolute">
+      <origin
+        xyz="0 0 ${reflect*0.16296}"
+        rpy="${M_PI/2} 0 ${M_PI/2}"/>
+      <parent
+        link="${prefix}_shoulder_rotation_link"/>
+      <child
+        link="${prefix}_elbow_flection_link"/>
+      <axis
+        xyz="0 0 1"/>
+      <limit lower="0" upper="1.91986218" effort="10" velocity="3" />
+      <dynamics damping="0.0" friction="0.1"/>
+    </joint>
+
+    <!-- Forearm pronation -->
+    <link name="${prefix}_forearm_pronation_link">
+      <xacro:vizzy_forearm_pronation_link_inertial
+        reflect="${reflect}" rpy="${forearm_pronation_l_rpy}"/>
+      <visual>
+        <origin
+          xyz="0 ${-reflect*0.007} ${-reflect*0.11}"
+          rpy="${forearm_pronation_l_rpy}"/>
+        <geometry>
+          <mesh
+            filename="package://vizzy_description/meshes/arm/${prefix}_forearm_pronation.dae"/>
+        </geometry>
+        <material name="light_gray_3"/>
+      </visual>
+      <xacro:vizzy_forearm_pronation_link_collision
+        reflect="${reflect}" rpy="${forearm_pronation_l_rpy}" prefix="${prefix}"/>
+    </link>
+
+    <joint name="${prefix}_forearm_pronation_joint"
+      type="revolute">
+      <origin
+        xyz="0 0 0"
+        rpy="${M_PI/2} 0 0.0873"/>
+      <parent
+        link="${prefix}_elbow_flection_link"/>
+      <child
+        link="${prefix}_forearm_pronation_link"/>
+      <axis
+        xyz="0 0 1"/>
+      <limit lower="-1.48352986" upper="1.48352986" effort="10" velocity="3"/>
+      <dynamics damping="0.0" friction="0.1"/>
+    </joint>
+
+    <!-- Wrist abduction -->
+    <link name="${prefix}_wrist_abduction_link">
+      <xacro:vizzy_wrist_abduction_link_inertial
+        reflect="${reflect}" rpy="${wrist_abduction_l_rpy}"/>
+      <visual>
+        <origin
+          xyz="${reflect*0.0047} ${reflect*0.028} -0.003"
+          rpy="${wrist_abduction_l_rpy}"/>
+        <geometry>
+          <mesh
+            filename="package://vizzy_description/meshes/arm/${prefix}_wrist_abduction.dae"/>
+        </geometry>
+        <!-- Gazebo-specific material override for Gazebo/Orange representation -->
+        <gazebo>
+          <material>
+            <!-- ambient R G B A -->
+            <ambient>1    0.5088 0.0468 1</ambient>
+            <!-- diffuse R G B A -->
+            <diffuse>1    0.5088 0.0468 1</diffuse>
+            <!-- specular R G B shininess -->
+            <specular>0.5  0.5    0.5    128</specular>
+          </material>
+        </gazebo>
+      </visual>
+      <xacro:vizzy_wrist_abduction_link_collision
+        reflect="${reflect}" rpy="${wrist_abduction_l_rpy}" prefix="${prefix}"/>
+    </link>
+
+    <joint name="${prefix}_wrist_abduction_joint"
+      type="revolute">
+      <origin
+        xyz="0 0 ${-reflect*0.18925}"
+        rpy="${M_PI/2} 0 0"/>
+      <parent
+        link="${prefix}_forearm_pronation_link"/>
+      <child
+        link="${prefix}_wrist_abduction_link"/>
+      <axis
+        xyz="0 0 1"/>
+      <limit lower="-0.610865238" upper="0.610865238" effort="10" velocity="3" />
+      <dynamics damping="0.0" friction="0.1"/>
+    </joint>
+
+    
+    <!--
+    ////////////////////////////////////////////////////////////////////
+    
+      Hands
+    
+    ////////////////////////////////////////////////////////////////////
+    -->
+
+    <!-- Detailed right Hand -->
+    <xacro:if value="${(prefix == 'r') and (detailed_hand == 'true')}">
+
+      <!-- Wrist flection -->
+      <link name="r_wrist_flection_link">
+        <xacro:vizzy_wrist_flection_link_inertial/>
+        <visual>
+          <origin
+            xyz="0.007 0 0"
+            rpy="0 ${-M_PI/2} ${M_PI}" />
+          <geometry>
+            <mesh
+              filename="package://vizzy_description/meshes/arm/r_wrist_flection_link.dae" />
+          </geometry>
+          <material name="light_gray_3"/>
+        </visual>
+         <xacro:vizzy_wrist_flection_link_collision/>
+      </link>
+
+      <joint name="${prefix}_wrist_flection_joint"
+        type="revolute">
+        <origin
+          xyz="0 0 0"
+          rpy="0 0 0"/>
+        <parent
+          link="${prefix}_wrist_abduction_link"/>
+        <child
+          link="${prefix}_wrist_flection_link"/>
+        <axis
+          xyz="0 0 1"/>
+        <limit lower="-0.610865238" upper="0.610865238" effort="10" velocity="3" />
+        <dynamics damping="0.0" friction="1.0"/>
+      </joint>
+
+      <xacro:right_hand parent="r_wrist_flection_link"/>
+
+    </xacro:if>
+     
+    <!-- Simplified rigid model of the hand -->
+    <xacro:unless value="${(prefix == 'r') and (detailed_hand == 'true')}">
+
+      <!-- Wrist flection -->
+      <link name="${prefix}_wrist_flection_link">
+        <xacro:vizzy_wrist_flection_simple_link_inertial
+          reflect="${reflect}" rpy="${wrist_flection_l_rpy}"/>
+        <visual>
+          <origin
+            xyz="${reflect*0.106} ${reflect*0.0077} ${reflect*0.017}"
+            rpy="${wrist_flection_l_rpy}"/>
+          <geometry>
+            <mesh
+              filename="package://vizzy_description/meshes/arm/${prefix}_wrist_flection_simple.dae"/>
+          </geometry>
+          <material name="light_gray_3"/>
+        </visual>
+        <xacro:vizzy_wrist_flection_simple_link_collision
+          reflect="${reflect}" rpy="${wrist_flection_l_rpy}" prefix="${prefix}"/>
+      </link>
+
+      <joint name="${prefix}_wrist_flection_joint"
+        type="revolute">
+        <origin
+          xyz="0 0 0"
+          rpy="${M_PI/2} 0 ${-M_PI/2}"/>
+        <parent
+          link="${prefix}_wrist_abduction_link"/>
+        <child
+          link="${prefix}_wrist_flection_link"/>
+        <axis
+          xyz="0 0 1"/>
+        <limit lower="-0.610865238" upper="0.610865238" effort="10" velocity="3" />
+        <dynamics damping="0.0" friction="0.1"/>
+      </joint>
+
+    </xacro:unless>
+
+    <!-- Gazebo extensions -->
+    <xacro:arm_transmissions prefix="${prefix}"/>
+
+  </xacro:macro>
+
+</robot>
