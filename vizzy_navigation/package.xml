@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>vizzy_navigation</name>
+  <version>1.0.0</version>
+  <description>
+
+    Contains the launch files for running the ROS2 navigation
+    stack on Vizzy.
+
+    Acknowledgements:
+    - Miguel Aragão for the implementation of all the
+      navigation stack and the integration of the
+      navigation stack with Vizzy for ROS 1.
+
+  </description>
+
+  <maintainer email="joao.penha.lopes@tecnico.ulisboa.pt">João Penha Lopes</maintainer>
+  <maintainer email="joao.zenario@tecnico.ulisboa.pt">João Zenário</maintainer>
+
+  <author>Miguel Aragão</author>
+  <author>João Penha Lopes</author>
+  <author>João Zenário</author>
+
+  <license>BSD</license>
+
+  <url type="website">https://github.com/vislab-tecnico-lisboa/vizzy/vizzy_navigation</url>
+  <url type="bugtracker">https://github.com/vislab-tecnico-lisboa/vizzy/issues</url>
+
+  <!-- Build tool dependencies -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+
+  <!-- Build dependencies -->
+  <build_depend>tf2</build_depend> 
+
+  <!-- Execution dependencies -->
+  <exec_depend>tf2</exec_depend> 
+  <exec_depend>rviz2</exec_depend> 
+  <exec_depend>tf2_msgs</exec_depend> 
+  <exec_depend>std_msgs</exec_depend> 
+  <exec_depend>nav2_amcl</exec_depend> 
+  <exec_depend>nav2_core</exec_depend> 
+  <exec_depend>nav2_util</exec_depend> 
+  <exec_depend>nav2_common</exec_depend> 
+  <exec_depend>nav2_planner</exec_depend> 
+  <exec_depend>nav2_smoother</exec_depend> 
+  <exec_depend>nav2_behaviors</exec_depend> 
+  <exec_depend>nav2_controller</exec_depend> 
+  <exec_depend>nav2_costmap_2d</exec_depend> 
+  <exec_depend>nav2_map_server</exec_depend> 
+  <exec_depend>nav2_bt_navigator</exec_depend> 
+  <exec_depend>nav2_navfn_planner</exec_depend> 
+  <exec_depend>nav2_dwb_controller</exec_depend> 
+  <exec_depend>nav2_waypoint_follower</exec_depend> 
+  <exec_depend>nav2_velocity_smoother</exec_depend> 
+  <exec_depend>nav2_lifecycle_manager</exec_depend> 
+
+  <!-- General dependencies -->
+  <depend>rclcpp</depend> 
+  <depend>sensor_msgs</depend> 
+  <depend>geometry_msgs</depend> 
+  <depend>actionlib_msgs</depend> 
+  <depend>visualization_msgs</depend> 
+  <depend>interactive_markers</depend> 
+
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
+  <!-- Export dependencies -->
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

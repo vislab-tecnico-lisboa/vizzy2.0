@@ -1,0 +1,99 @@
+<!--
+  * Main changes from ROS1 to ROS2:
+  *  - 'arg' tags in substitutions are replaced with 'var' tags (not in declarations).
+  *  - nested includes now need be declared inside a group. 
+  *  - 'type' attribute in node declaration is now 'exec'.
+-->
+
+<launch>
+
+  <!-- Parameters -->
+  <arg name="slam" default="false"/>
+  <!-- Robot name -->
+  <arg name="robot" default="vizzy"/>
+  <!-- Robot namespace -->
+  <arg name="ns" default="vizzy"/>
+  <!-- Robot base frame id -->
+  <arg name="base_frame_id" default="base_footprint"/>
+  <!-- Robot odometry frame id -->
+  <arg name="odom_frame_id" default="odom"/>
+  <!-- Robot pose relative to the map -->
+  <arg name="pose" default="-x 0.0 -y 0.0 -z 0.0 -R 0.0 -P 0.0 -Y 3.1415"/>
+  <!-- Robot semantic description file -->
+  <arg name="urdf_file" default="vizzy.urdf.xacro"/>
+
+  <arg name="simulation" default="true"/>
+
+  <!-- Load Yarp plugins for real robot execution -->
+  <arg name="use_yarp" default="false"/>
+
+  <!-- Gazebo parameters -->
+  <arg name="gui" default="true"/>
+  <arg name="paused" default="false"/>
+  <!-- Synchronize ROS and simulation time -->
+  <arg name="use_sim_time" default="true"/>
+  <!-- Load full inertial and collision model or a simplified model -->
+  <arg name="use_full_gazebo_model" default="false"/>
+  <!-- Load a fully detailed hand model with properly modeled links and joints -->
+  <arg name="use_full_hand_model" default="false"/>
+
+  <!-- rviz -->
+  <arg name="rviz" default="true"/>
+
+  <!-- Teleop -->
+  <arg name="teleop" default="false"/>
+
+  <!-- Navigation -->
+  <arg name="navigation" default="true"/>
+  <arg name="map_topic" default="/map"/>
+  <arg name="map_file" default="isr_7th_floor_simulation.yaml"/>
+  <!-- Provide a map with previously acquired obstacles -->
+  <arg name="custom_obstacles" default="true"/>
+  <arg name="obstacles_map_file" default="isr_7th_floor_simulation.yaml"/>
+  <!-- Use lighter fake localization for simulation -->
+  <arg name="fake_localization" default="false"/>
+
+  <!-- Map -->
+  <arg name="world" default="isr_7th_floor_world.sdf"/>
+  <arg name="world_pkg" default="$(find-pkg-share vizzy_gazebo)"/>
+  <arg name="map_frame" default="map"/>
+
+  <!-- Robot capabilities -->
+  <arg name="disable_3d_sensor" default="true"/>
+
+  <!-- Derived parameters -->
+
+  <!-- Disable laser sensors -->
+  <arg     if="$(var navigation)" name="disable_laser" default="false"/>
+  <arg unless="$(var navigation)" name="disable_laser" default="true"/>
+  <!-- Change default fixed frame for rviz -->
+  <arg     if="$(var navigation)" name="rviz_fixed_frame" default="map"/>
+  <arg unless="$(var navigation)" name="rviz_fixed_frame" default="base_footprint"/>
+  
+  <!-- Launch gazebo -->
+  <include file="$(find-pkg-share vizzy_gazebo)/launch/gazebo_launch.xml">
+    <arg name="robot" value="$(var robot)"/>
+    <arg name="pose" value="$(var pose)"/>
+    <arg name="urdf_file" value="$(var urdf_file)"/>
+    <arg name="use_yarp" value="$(var use_yarp)"/>
+    <arg name="gui" value="$(var gui)"/>
+    <arg name="paused" value="$(var paused)"/>
+    <arg name="use_sim_time" value="$(var use_sim_time)"/>
+    <arg name="world" value="$(var world)"/>
+    <arg name="world_pkg" value="$(var world_pkg)"/>
+    <arg name="use_full_gazebo_model" value="$(var use_full_gazebo_model)"/>
+    <arg name="use_full_hand_model" value="$(var use_full_hand_model)"/>
+    <arg name="disable_laser" value="$(var disable_laser)"/>
+    <arg name="disable_3d_sensor" value="$(var disable_3d_sensor)"/>
+  </include>
+
+  <!-- Launch navigation -->
+  <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
+    <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml"/>
+  </include>
+
+  <!-- Start RViz2 using the new python launcher from vizzy_launch -->
+  <include file="$(find-pkg-share vizzy_launch)/launch/rviz_launch.py">
+  </include>
+  
+</launch>

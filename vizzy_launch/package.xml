@@ -1,0 +1,35 @@
+<package format="2">
+  <name>vizzy_launch</name>
+  <version>1.0.0</version>
+  <description>
+
+    This package has the needed launch files for Vizzy's
+    simulation and real robot usage. One can find high-level
+    launches for the most common tasks but feel free to create
+    your own launches.
+
+    Acknowledgements:
+    - Rui Figueiredo for the implementation of all the
+      launchers for ROS 1.
+
+  </description>
+
+  <maintainer email="joao.penha.lopes@tecnico.ulisboa.pt">João Penha Lopes</maintainer>
+  <maintainer email="joao.zenario@tecnico.ulisboa.pt">João Zenário</maintainer>
+
+  <author>Rui Figueiredo</author>
+  <author>João Penha Lopes</author>
+  <author>João Zenário</author>
+
+  <license>BSD</license>
+
+  <url type="website">https://github.com/vislab-tecnico-lisboa/vizzy/vizzy_launch</url>
+  <url type="bugtracker">https://github.com/vislab-tecnico-lisboa/vizzy/issues</url>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

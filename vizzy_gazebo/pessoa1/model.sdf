@@ -1,0 +1,27 @@
+<?xml version='1.0'?>
+<sdf version='1.4'>
+  <model name="pessoa1">
+    <static>false</static>
+    <link name='base'>
+      <pose>0 0 0 0 0 0</pose>
+      <collision name='collision'>
+        <geometry>
+          <mesh>
+            <uri>model://pessoa1/meshes/models/citizen_female.dae</uri>
+            <scale>0.4 0.4 0.4</scale>
+          </mesh>
+        </geometry>
+      </collision>
+
+      <visual name='visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://pessoa1/meshes/models/citizen_female.dae</uri>
+            <scale>0.4 0.4 0.4</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+  </model>
+</sdf>

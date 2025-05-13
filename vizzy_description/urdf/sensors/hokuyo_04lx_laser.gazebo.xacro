@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<!--
+  * Main changes from Gazibo Classic to Ignition Gazebo:
+  *  -  The package 'libgazebo_ros_laser.so' is no longer supported and instead we use the integrated 'gpu_lidar' plugin from Ignition Gazebo.
+  *  -  When using the 'gpu_lidar' plugin, the <ray> element is replaced with <lidar>.
+  *  -  The mminimum range element is set to 0.024 meters instead of 0.02 meters due to conflicts with the sensor mesh (4 milimeters increase).
+  *  -  The rostopic name is now 'model/vizzy/${name}/scan' instead of a parameter.
+  *  -  All the remaining elements are the same as in Gazebo Classic.
+-->
+<root xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:macro name="hokuyo_04lx_laser_gazebo" params="name update_rate min_angle max_angle max_range resolution visualize">
+
+  <!-- hokuyo -->
+  <gazebo reference="${name}_link">
+    <sensor name="${name}" type="gpu_lidar">
+      <always_on>true</always_on>
+      <pose>0 0 0 0 0 0</pose>
+      <update_rate>${update_rate}</update_rate>
+      <topic>model/vizzy/${name}/scan</topic>
+      <gz_frame_id>${name}_link</gz_frame_id>
+      <lidar>
+        <scan>
+          <horizontal>
+            <samples>640</samples>
+            <resolution>1</resolution>
+            <min_angle>${min_angle}</min_angle>
+            <max_angle>${max_angle}</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <!-- Had to increase by 0.004 meters de to gpu_lidar plugin (best guess) -->
+          <min>0.024</min>
+          <max>${max_range}</max>
+          <resolution>${resolution}</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <!-- Noise parameters based on published spec for Hokuyo laser
+               achieving "+-30mm" accuracy at range < 10m.  A mean of 0.0m and
+               stddev of 0.01m will put 99.7% of samples within 0.03m of the true
+               reading. -->
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </lidar>
+    </sensor>
+  </gazebo>
+  </xacro:macro>
+</root>
