@@ -38,13 +38,6 @@
   <let if="$(var gui)" name="command_arg3" value=""/> <!-- Server only flag -->
   <let unless="$(var gui)" name="command_arg3" value="-s"/> <!-- Nothing to show gui -->
 
-  <!-- Set the full path for the 'ign' executable -->
-  <let unless="$(var debug)" name="script_type" value="/usr/bin/ign"/>
-  <let if="$(var debug)" name="script_type" value="debug"/>
-
-  <!-- set environment variables -->
-  <set_env name="OPTIRUN_LAUNCH_PREFIX" value=""/>
-
   <!-- Create nodes with previously declared arguments 
   * In ROS2, substitutions for arguments have the tag 'var'
   * instead of 'arg' -->
@@ -53,6 +46,14 @@
   <!-- The node tag was changed to include because we now use
   the gz_sim.launch.py launch file from the ros_gz_sim package
   which takes the given arguments and passes them to ign gazebo -->
+
+  <arg name="configure_for_nvidia" default="$(env VIZZY_USE_NVIDIA false)"/>
+
+  <group if="$(var configure_for_nvidia)">
+    <set_env name="__NV_PRIME_RENDER_OFFLOAD" value="1"/>
+    <set_env name="__GLX_VENDOR_LIBRARY_NAME" value="nvidia"/>
+    <set_env name="__EGL_VENDOR_LIBRARY_FILENAMES" value="/usr/share/glvnd/egl_vendor.d/10_nvidia.json"/>
+  </group>
 
   <!-- Build the string with all the arguments separated by spaces -->
   <let name="command_args" value="$(var command_arg1) $(var command_arg2) $(var command_arg3) $(var extra_gazebo_args) $(find-pkg-prefix vizzy_gazebo)/share/vizzy_gazebo/worlds/$(var world)"/>
