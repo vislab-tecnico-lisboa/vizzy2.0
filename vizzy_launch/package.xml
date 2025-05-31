@@ -28,6 +28,10 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <exec_depend>vizzy_description</exec_depend>
+  <exec_depend>vizzy_navigation</exec_depend>
+  <exec_depend>vizzy_gazebo</exec_depend>
+
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <build_type>ament_cmake</build_type>

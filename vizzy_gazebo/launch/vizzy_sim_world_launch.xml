@@ -31,33 +31,37 @@
   <arg name="world_pkg" default="$(find-pkg-prefix vizzy_gazebo)"/>
 
   <!-- set command arguments -->
-  <let if="$(var paused)" name="command_arg1" value=""/> <!-- Unpause the simulation as soon as it loads -->
-  <let unless="$(var paused)" name="command_arg1" value="-r"/> <!-- Nothing for the simulation to load in a paused state -->
-  <let if="$(var verbose)" name="command_arg2" value="-v4"/> <!-- Activate maximum verbose logging -->
-  <let unless="$(var verbose)" name="command_arg2" value=""/> <!-- Nothing for normal logging -->
-  <let if="$(var gui)" name="command_arg3" value=""/> <!-- Server only flag -->
-  <let unless="$(var gui)" name="command_arg3" value="-s"/> <!-- Nothing to show gui -->
+  <let if="$(var paused)" name="command_arg1" value=""/> <!-- Unpause the simulation as soon as it loads. -->
+  <let unless="$(var paused)" name="command_arg1" value="-r"/> <!-- Nothing for the simulation to load in a paused state. -->
+  <let if="$(var verbose)" name="command_arg2" value="-v4"/> <!-- Activate maximum verbose logging. -->
+  <let unless="$(var verbose)" name="command_arg2" value=""/> <!-- Nothing for normal logging. -->
+  <let if="$(var gui)" name="command_arg3" value=""/> <!-- Server only flag. -->
+  <let unless="$(var gui)" name="command_arg3" value="-s"/> <!-- Nothing to show gui. -->
 
-  <!-- Set the full path for the 'ign' executable -->
-  <let unless="$(var debug)" name="script_type" value="/usr/bin/ign"/>
-  <let if="$(var debug)" name="script_type" value="debug"/>
-
-  <!-- set environment variables -->
-  <set_env name="OPTIRUN_LAUNCH_PREFIX" value=""/>
-
-  <!-- Create nodes with previously declared arguments 
+  <!-- Create nodes with previously declared arguments. 
   * In ROS2, substitutions for arguments have the tag 'var'
-  * instead of 'arg' -->
+  * instead of 'arg'. -->
 
   <!-- Start gazebo -->
   <!-- The node tag was changed to include because we now use
   the gz_sim.launch.py launch file from the ros_gz_sim package
-  which takes the given arguments and passes them to ign gazebo -->
+  which takes the given arguments and passes them to ign gazebo. -->
 
-  <!-- Build the string with all the arguments separated by spaces -->
+  <arg name="configure_for_nvidia" default="$(env VIZZY_USE_NVIDIA false)"/>
+
+  <set_env name="__NV_PRIME_RENDER_OFFLOAD" value="1" if="$(var configure_for_nvidia)"/>
+  <set_env name="__GLX_VENDOR_LIBRARY_NAME" value="nvidia" if="$(var configure_for_nvidia)"/>
+  <set_env name="__EGL_VENDOR_LIBRARY_FILENAMES" value="/usr/share/glvnd/egl_vendor.d/10_nvidia.json" if="$(var configure_for_nvidia)"/>
+
+  <!-- Log the environment variables set for NVIDIA GPU Support. -->
+  <log message="Environment variables set for NVIDIA GPU support: __NV_PRIME_RENDER_OFFLOAD=$(env __NV_PRIME_RENDER_OFFLOAD)"/>
+  <log message="Environment variables set for NVIDIA GPU support: __GLX_VENDOR_LIBRARY_NAME=$(env __GLX_VENDOR_LIBRARY_NAME)"/>
+  <log message="Environment variables set for NVIDIA GPU support: __EGL_VENDOR_LIBRARY_FILENAMES=$(env __EGL_VENDOR_LIBRARY_FILENAMES)"/>
+
+  <!-- Build the string with all the arguments separated by spaces. -->
   <let name="command_args" value="$(var command_arg1) $(var command_arg2) $(var command_arg3) $(var extra_gazebo_args) $(find-pkg-prefix vizzy_gazebo)/share/vizzy_gazebo/worlds/$(var world)"/>
   <!-- The command_args variable is passed to the gz_sim.launch.py file
-  as an argument. The gz_sim.launch.py file will then pass it to the ign executable -->
+  as an argument. The gz_sim.launch.py file will then pass it to the ign executable. -->
   <include file="$(find-pkg-share ros_gz_sim)/launch/gz_sim.launch.py">
     <arg name="gz_args" value="$(var command_args)"/>
   </include>
