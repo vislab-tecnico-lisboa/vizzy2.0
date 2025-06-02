@@ -16,7 +16,7 @@
   <!-- Robot base frame id -->
   <arg name="base_frame_id" default="base_footprint"/>
   <!-- Robot odometry frame id -->
-  <arg name="odom_frame_id" default="odom"/>
+  <arg name="odom_frame_id" default="odometry"/>
   <!-- Robot pose relative to the map -->
   <arg name="pose" default="-x 0.0 -y 0.0 -z 0.0 -R 0.0 -P 0.0 -Y 3.1415"/>
   <!-- Robot semantic description file -->
