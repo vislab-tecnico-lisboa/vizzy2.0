@@ -55,6 +55,49 @@ The installer script will:
 
 After running the installer and sourcing your `~/.bashrc` (or opening a new terminal), your environment should be ready.
 
+## Development and Recompiling
+
+The `vizzy_install_2.0` script automatically compiles all packages in the selected colcon workspace during the initial setup. If you intend to modify the source code of these packages, you will need to recompile them for your changes to be applied.
+
+The source code is typically located in `~/vizzy2_ws/src/` (adjust the path if you specified a different colcon workspace during installation).
+
+**Steps to Recompile:**
+
+1.  **Navigate to your Colcon Workspace Root:**
+    Open a terminal and change to the root directory of your colcon workspace (e.g., `~/vizzy2_ws`).
+    ```bash
+    cd ~/vizzy2_ws 
+    ```
+
+2.  **Build the Workspace (or specific packages):**
+    To rebuild all packages (a robust option that works in any use-case):
+    ```bash
+    colcon build --cmake-clean-cache
+    ```
+    * **`--cmake-clean-cache`**: Clears CMake's cache before building, forcing it to reconfigure. This is useful if you've modified `CMakeLists.txt` files, added/removed files, or want to ensure all changes are picked up.
+
+    For potentially faster development cycles with certain types of changes (e.g., Python files, non-compiled resources), you can use `--symlink-install`:
+    ```bash
+    colcon build --symlink-install --cmake-clean-cache
+    ```
+    * **`--symlink-install`**: Creates symbolic links for some files instead of copying them into the `install` space. This allows some edits (e.g., to Python files) to take effect without a full rebuild. Be sure you understand its operation, as it can introduce complexities in some debugging scenarios if not handled carefully.
+
+    To rebuild only specific packages you've modified (which is generally faster):
+    ```bash
+    colcon build --packages-select <package_name_1> <package_name_2> --cmake-clean-cache
+    ```
+    Or with symlink install:
+    ```bash
+    colcon build --symlink-install --packages-select <package_name_1> <package_name_2> --cmake-clean-cache
+    ```
+
+3.  **Source the Workspace Again (for the current terminal):**
+    After a successful build, to make the newly compiled changes available in your *current* terminal session, re-source the workspace's setup file:
+    ```bash
+    source install/setup.bash
+    ```
+    *(New terminals will automatically pick up these changes.)*
+
 ## Running the Simulation
 
 Once your environment is set up using the `vizzy_install_2.0` scripts:
