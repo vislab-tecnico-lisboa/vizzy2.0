@@ -18,7 +18,7 @@
   <arg name="obstacles_map_file" default="mapa_piso7_NOVO_AWESOME_obst.yaml" />
   <arg name="ns" default="" />
 
-  <include file="$(find-pkg-share vizzy_launch)/launch/real_robot_launch.xml">
+  <include file="$(find-pkg-share vizzy_robot)/launch/real_robot_launch.xml">
     <arg name="map_frame" value="$(var map_frame)" />
     <arg name="ns" value="$(var ns)" />
   </include> 
