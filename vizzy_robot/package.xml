@@ -1,27 +1,39 @@
-<?xml version="1.0"?>
-<package>
+<package format="2">
   <name>vizzy_robot</name>
-  <version>1.0.0</version>
+  <version>2.0.0</version>
   <description>
+
     This package holds all the needed launches and elements for
     Vizzy's real robot.
+
+    Acknowledgements:
+    - Miguel Aragão, Rui Figueiredo and Plinio Moreno for the implementation of all the
+      launchers for ROS 1.
+
   </description>
 
-  <maintainer email="miguelaragao91@gmail.com">Miguel Aragão</maintainer>
+  <maintainer email="joao.penha.lopes@tecnico.ulisboa.pt">João Penha Lopes</maintainer>
+  <maintainer email="joao.zenario@tecnico.ulisboa.pt">João Zenário</maintainer>
+
   <author>Miguel Aragão</author>
   <author>Rui Figueiredo</author>
   <author>Plinio Moreno</author>
+  <author>João Penha Lopes</author>
+  <author>João Zenário</author>
+
   <license>BSD</license>
 
-  <url type="website">https://github.com/vislab-tecnico-lisboa/vizzy/vizzy_robot</url>
+  <url type="website">https://github.com/vislab-tecnico-lisboa/vizzy/vizzy_launch</url>
   <url type="bugtracker">https://github.com/vislab-tecnico-lisboa/vizzy/issues</url>
-  <buildtool_depend>catkin</buildtool_depend>
-  <run_depend>eband-local-planner</run_depend>
-  <run_depend>segway-rmp</run_depend>
-  <run_depend>hokuyo-node</run_depend>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>vizzy_description</exec_depend>
+  <exec_depend>vizzy_navigation</exec_depend>
+  <exec_depend>segway-rmp-ros2</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
-  	<gazebo_ros plugin_path="${prefix}/lib" gazebo_media_path="${prefix}" />
+    <build_type>ament_cmake</build_type>
   </export>
 </package>

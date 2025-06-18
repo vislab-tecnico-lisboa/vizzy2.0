@@ -17,6 +17,7 @@ find_package(ament_cmake REQUIRED
   vizzy_description REQUIRED
   vizzy_navigation REQUIRED
   vizzy_gazebo REQUIRED
+  vizzy_robot REQUIRED
 )
 
 # Install the directories to be accessible via the package.
