@@ -23,8 +23,6 @@ find_package(ament_cmake REQUIRED
     roscpp
     roslint
     sensor_msgs
-    gazebo_ros
-    gazebo_msgs
     image_transport
     camera_info_manager
     dynamic_reconfigure
