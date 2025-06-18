@@ -20,7 +20,7 @@
       </include>
   
   <group>
-      <let name="front_laser_frame" value="$(var tf_prefix)nav_hokuyo_laser_link"/>
+      <let name="front_laser_frame" value="$nav_hokuyo_laser_link"/>
       <node name="nav_hokuyo_node" pkg="urg_node" exec="urg_node" output="screen">
           <param name="serial_port" value="/dev/ttyACM1" />
           <param name="frame_id" value="$(var front_laser_frame)" />
@@ -31,7 +31,7 @@
   </group>
 
   <group>
-      <let name="rear_laser_frame" value="$(var tf_prefix)nav_hokuyo_rear_laser_link"/>
+      <let name="rear_laser_frame" value="$nav_hokuyo_rear_laser_link"/>
       <node name="nav_hokuyo_rear_node" pkg="urg_node" exec="urg_node" output="screen">
           <param name="serial_port" value="/dev/ttyACM0" />
           <param name="frame_id" value="$(var rear_laser_frame)" />
