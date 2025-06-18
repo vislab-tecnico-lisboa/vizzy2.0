@@ -2,7 +2,6 @@
  * LICENSE: https://github.com/utexas-bwi/segbot/blob/devel/LICENSE
  */
 
-#include "vizzy_sensors/footprint_filter.h"
 #include "vizzy_sensors/nan_to_inf_filter.h"
 #include "vizzy_sensors/scan_angle_filter.h"
 #include "sensor_msgs/LaserScan.h"
