@@ -40,13 +40,6 @@
             args="--ros-args -p yaml_filename:=$(find-pkg-share vizzy_navigation)/maps/$(var map_file)"
       />
 
-      <group if="$(var custom_obstacles)" ns="obst">
-        <node name="obstacle_map_server" pkg="map_server" exec="map_server" 
-              args="--ros-args -p yaml_filename:=$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)" >
-          <remap from="map" to="map_obstacles"/>    
-        </node>
-      </group>
-
       <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
         <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml"/>
         <arg name="use_sim_time" value="false"/> </include>
