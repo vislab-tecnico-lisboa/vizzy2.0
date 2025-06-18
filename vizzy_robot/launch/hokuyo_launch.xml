@@ -9,7 +9,7 @@
   <arg name="scan_topic" default="scan" description="The name of the output scan topic"/>
   <arg name="laser_frame_id" default="laser_link" description="The TF frame ID for the laser scanner"/>
 
-  <node name="$(var node_name)" pkg="urg_node" exec="urg_node" output="screen">
+  <node name="$(var node_name)" pkg="urg_node" exec="urg_node_driver" output="screen">
       <param name="serial_port" value="$(var port)" />
       <param name="frame_id" value="$(var laser_frame_id)" />
       <param name="angle_min" value="-1.309" /> <param name="angle_max" value="1.309" /> <remap from="scan" to="$(var scan_topic)" />

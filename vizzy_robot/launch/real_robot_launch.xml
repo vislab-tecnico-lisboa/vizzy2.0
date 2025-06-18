@@ -21,7 +21,7 @@
   
   <group>
       <let name="front_laser_frame" value="$nav_hokuyo_laser_link"/>
-      <node name="nav_hokuyo_node" pkg="urg_node" exec="urg_node" output="screen">
+      <node name="nav_hokuyo_node" pkg="urg_node" exec="urg_node_driver" output="screen">
           <param name="serial_port" value="/dev/ttyACM1" />
           <param name="frame_id" value="$(var front_laser_frame)" />
           <param name="angle_min" value="-1.309" />
@@ -32,7 +32,7 @@
 
   <group>
       <let name="rear_laser_frame" value="$nav_hokuyo_rear_laser_link"/>
-      <node name="nav_hokuyo_rear_node" pkg="urg_node" exec="urg_node" output="screen">
+      <node name="nav_hokuyo_rear_node" pkg="urg_node" exec="urg_node_driver" output="screen">
           <param name="serial_port" value="/dev/ttyACM0" />
           <param name="frame_id" value="$(var rear_laser_frame)" />
           <param name="angle_min" value="-1.309" />
