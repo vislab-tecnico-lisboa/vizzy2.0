@@ -7,7 +7,7 @@
 
 #include <filters/filter_base.hpp>
 #include "sensor_msgs/msg/laser_scan.hpp"
-#include "rclcpp/rclcpp.hpp" 
+#include "rclcpp/rclcpp.hpp" // For logging macros
 
 namespace vizzy_sensors
 {
@@ -16,45 +16,49 @@ namespace vizzy_sensors
     public:
       bool configure() override
       {
-        // We Access parameter methods via the 'parameters_interface_'
-        // The node that loads this filter plugin is responsible for declaring parameters.
-        
-        // Get the value of min_angle, with a default of -0.4 if not set.
-        this->get_parameter("min_angle", min_angle_);
-        
-        // Get the value of max_angle, with a default of 0.4 if not set.
-        this->get_parameter("max_angle", max_angle_);
-        
-        // Access the logger via the 'logging_interface_'
-        RCLCPP_INFO(this->get_logger(), "ScanAngleFilter configured with min_angle: %f, max_angle: %f", min_angle_, max_angle_);
+        // Declare parameters with default values using the node interface provided by FilterBase.
+        // This makes them configurable from a YAML file.
+        min_angle_ = this->declare_parameter("min_angle", -0.4);
+        max_angle_ = this->declare_parameter("max_angle", 0.4);
+
+        // Use the logger provided by FilterBase to print an info message.
+        RCLCPP_INFO(
+          this->get_logger(),
+          "ScanAngleFilter configured with min_angle: %f, max_angle: %f",
+          min_angle_,
+          max_angle_);
 
         return true;
       }
 
       virtual ~ScanAngleFilter(){}
 
-      bool update(const sensor_msgs::msg::LaserScan& input_scan, sensor_msgs::msg::LaserScan& filtered_scan) override
+      // The update method is called for each message.
+      bool update(
+        const sensor_msgs::msg::LaserScan & input_scan,
+        sensor_msgs::msg::LaserScan & filtered_scan) override
       {
         // Copy the entire input message first to preserve all headers and metadata.
         filtered_scan = input_scan;
 
-        // Iterate through the ranges and apply the filter logic.
+        // Iterate through the ranges and apply the filter logic using the member variables.
         for(unsigned int i = 0; i < input_scan.ranges.size(); ++i)
         {
-          const double angle = input_scan.angle_min + (double)i * input_scan.angle_increment;
+          const double angle = input_scan.angle_min + (static_cast<double>(i) * input_scan.angle_increment);
 
           if (angle < min_angle_ || angle > max_angle_)
           {
-            filtered_scan.ranges[i] = std::numeric_limits<float>::infinity(); // Set out-of-range values to infinity
+            // Set out-of-range values to infinity.
+            filtered_scan.ranges[i] = std::numeric_limits<float>::infinity();
           }
         }
         return true;
       }
 
     private:
-      // Declare member variables to hold the parameters
-      double min_angle_ = -0.4; // Initialize with defaults
-      double max_angle_ = 0.4;  // Initialize with defaults
+      // Declare member variables to hold the parameter values.
+      double min_angle_;
+      double max_angle_;
   };
 }
 #endif
