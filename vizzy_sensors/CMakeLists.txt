@@ -36,16 +36,6 @@ ament_target_dependencies(vizzy_sensors_filters
 )
 target_include_directories(vizzy_sensors_filters PUBLIC include)
 
-add_library(suppression src/nodelets/saccadic_suppression_nodelet.cpp)
-ament_target_dependencies(suppression
-  rclcpp
-  Boost
-  OpenCV
-  sensor_msgs
-  image_transport
-)
-target_include_directories(suppression PUBLIC include)
-
 install(
   TARGETS
     vizzy_sensors_filters
