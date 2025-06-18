@@ -10,7 +10,6 @@
   <arg name="navigation" default="true"/>
   <arg name="slam" default="false"/>
   <arg name="gui" default="true"/> <arg name="map_frame" default="map" />
-  <arg name="tf_prefix" default="" />
   <arg name="base_frame_id" default="base_footprint" />
   <arg name="odom_frame_id" default="odometry" />
   <arg name="map_topic" default="/map" />
@@ -19,9 +18,8 @@
   <arg name="obstacles_map_file" default="mapa_piso7_NOVO_AWESOME_obst.yaml" />
   <arg name="ns" default="" />
 
-  <include file="$(find-pkg-share vizzy_launch)/launch/real_robot_hardware.launch.xml">
+  <include file="$(find-pkg-share vizzy_launch)/launch/real_robot_launch.xml">
     <arg name="map_frame" value="$(var map_frame)" />
-    <arg name="tf_prefix" value="$(var tf_prefix)" />
     <arg name="ns" value="$(var ns)" />
   </include> 
 
