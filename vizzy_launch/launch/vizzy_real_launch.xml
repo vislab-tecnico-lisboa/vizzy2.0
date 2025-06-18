@@ -31,13 +31,12 @@
   <arg name="map_topic" default="/map" />
   <!-- <arg name="map_file" default="atrio_civil.yaml" /> -->
   <arg name="map_file" default="mapa_piso7_NOVO_AWESOME.yaml" />
-  <arg name="use_moveit" default="false" />
 
   <arg name="custom_obstacles" default="true" />
   <!-- <arg name="obstacles_map_file" default="atrio_civil_obs.yaml" /> -->
   <arg name="obstacles_map_file" default="mapa_piso7_NOVO_AWESOME_obst.yaml" />
 
-  <arg name="ns" default="vizzy" />
+  <arg name="ns" default="" />
 
   <!-- bringup robot -->
   <include file="$(find vizzy_robot)/launch/real_robot.launch">
