@@ -1,13 +1,14 @@
 <!--
   * Main changes from ROS1 to ROS2:
   *  - 'arg' tags in substitutions are replaced with 'var' tags (not in declarations).
+  *  - 'find' is replaced with 'find-pkg-share' in substitutions.
 -->
 
 <launch>
 
   <arg name="vizzy_machine_name" default="vizzy-desktop.local"/>
   <arg name="vizzy_machine_address" default="vizzy-desktop.local"/>
-  <arg name="env-loader" default="$(find vizzy_launch)/env-hooks/env_loader.sh"/>
+  <arg name="env-loader" default="$(find-pkg-share vizzy_launch)/env-hooks/env_loader.sh"/>
   <arg name="define_machine" default="true"/>
 
     <machine name="$(arg vizzy_machine_name)" 
@@ -39,7 +40,7 @@
   <arg name="ns" default="" />
 
   <!-- bringup robot -->
-  <include file="$(find vizzy_robot)/launch/real_robot.launch">
+  <include file="$(find-pkg-share vizzy_robot)/launch/real_robot.launch">
     <arg name="map_frame" value="$(var map_frame)" />
     <arg name="tf_prefix" value="$(var tf_prefix)" />
     <arg name="vizzy_machine_name" value="$(var vizzy_machine_name)"/>
@@ -57,10 +58,10 @@
     <!-- launch the laser filter to get rid of readings from the robot itself -->
    <node machine="$(var vizzy_machine_name)" name="hokuyo_laser_filters" 
          pkg="laser_filters" type="scan_to_scan_filter_chain">
-     <rosparam command="load" file="$(find vizzy_sensors)/config/hokuyo_filters.yaml" />
+     <rosparam command="load" file="$(find-pkg-share vizzy_sensors)/config/hokuyo_filters.yaml" />
    </node>
    <node machine="$(var vizzy_machine_name)" name="hokuyo_laser_filters_rear" pkg="laser_filters" type="scan_to_scan_filter_chain">
-      <rosparam command="load" file="$(find vizzy_sensors)/config/hokuyo_filters.yaml" />
+      <rosparam command="load" file="$(find-pkg-share vizzy_sensors)/config/hokuyo_filters.yaml" />
       <remap from="scan" to="scan_rear"/>
       <remap from="scan_filtered" to="scan_filtered_rear"/>
     </node>
@@ -69,21 +70,21 @@
       <!-- launch pre obtained map to the environment -->
       <node machine="$(var vizzy_machine_name)" 
             name="map_server" pkg="map_server" 
-            type="map_server" args="$(find vizzy_navigation)/maps/$(var map_file)" 
+            type="map_server" args="$(find-pkg-share vizzy_navigation)/maps/$(var map_file)" 
       />
 
       <group if="$(var custom_obstacles)" ns="obst">
         <node name="obstacle_map_server" 
               pkg="map_server" 
               type="map_server" 
-              args="$(find vizzy_navigation)/maps/$(var obstacles_map_file)" >
+              args="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)" >
           <remap from="map" to="map_obstacles"/>    
         </node>
       </group>
 
       <!-- Launch navigation -->
-      <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
-        <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml"/>
+      <include file="$(find-pkg-share-pkg-share vizzy_navigation)/launch/navigation_launch.py">
+        <arg name="params_file" value="$(find-pkg-share-pkg-share vizzy_navigation)/config/nav2_configuration.yaml"/>
         <arg name="use_sim_time" value="false"/>
         <arg name="map_yaml" value="$(var obstacles_map_file)"/>
       </include>

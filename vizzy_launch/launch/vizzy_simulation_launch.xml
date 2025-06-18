@@ -3,6 +3,7 @@
   *  - 'arg' tags in substitutions are replaced with 'var' tags (not in declarations).
   *  - nested includes now need be declared inside a group. 
   *  - 'type' attribute in node declaration is now 'exec'.
+  *  - 'find' is replaced with 'find-pkg-share' in substitutions.
 -->
 
 <launch>

@@ -6,6 +6,7 @@
   *  - in a node declaration, 'ns' attribute is now 'namespace'.
   *  - in include content, 'ns' attribute is no longer supported. Use push_ros_namespace tag instead.
   *  - there is no support for nested 'env' tags. 'set_env' is used instead.
+  *  - 'find' is replaced with 'find-pkg-share' in substitutions.
 -->
 
 <launch>
