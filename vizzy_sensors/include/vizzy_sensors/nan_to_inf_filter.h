@@ -7,6 +7,8 @@
 
 #include <filters/filter_base.hpp>
 #include "sensor_msgs/msg/laser_scan.hpp"
+#include <limits> 
+#include <cmath>  
 
 namespace vizzy_sensors
 {
@@ -14,45 +16,25 @@ namespace vizzy_sensors
   {
     public:
 
-      bool configure() {
+      bool configure() override {
         return true;
       }
 
       virtual ~NanToInfFilter(){}
 
-      bool update(const sensor_msgs::msg::LaserScan& input_scan, sensor_msgs::msg::LaserScan& filtered_scan){
+      bool update(const sensor_msgs::msg::LaserScan& input_scan, sensor_msgs::msg::LaserScan& filtered_scan) override {
 
-        filtered_scan.ranges.resize(input_scan.ranges.size());
+        filtered_scan = input_scan;
 
-        for(unsigned int count = 0; count < input_scan.ranges.size(); ++count){
-          filtered_scan.ranges[count] = 
-              (std::isnan(input_scan.ranges[count]) || 
-                input_scan.ranges[count] < input_scan.range_min) ?
-              std::numeric_limits<float>::infinity() : input_scan.ranges[count];
-
-          // TODO: remove once navigation handles inf_is_valid again
-          if (filtered_scan.ranges[count] == std::numeric_limits<float>::infinity() ||
-              filtered_scan.ranges[count] >= input_scan.range_max) {
-            //filtered_scan.ranges[count] = input_scan.range_max - 0.0001;
+        for(unsigned int i = 0; i < input_scan.ranges.size(); ++i){
+          if (std::isnan(input_scan.ranges[i]) || input_scan.ranges[i] < input_scan.range_min)
+          {
+            filtered_scan.ranges[i] = std::numeric_limits<float>::infinity();
           }
         }
 
-        //make sure to set all the needed fields on the filtered scan
-        filtered_scan.header.frame_id = input_scan.header.frame_id;
-        filtered_scan.header.stamp = input_scan.header.stamp;
-        filtered_scan.angle_min = input_scan.angle_min;
-        filtered_scan.angle_max = input_scan.angle_max;
-        filtered_scan.angle_increment = input_scan.angle_increment;
-        filtered_scan.time_increment = input_scan.time_increment;
-        filtered_scan.scan_time = input_scan.scan_time;
-        filtered_scan.range_min = input_scan.range_min;
-        filtered_scan.range_max = input_scan.range_max;
-        filtered_scan.intensities = input_scan.intensities;
-
         return true;
-
       }
   };
 }
 #endif
-
