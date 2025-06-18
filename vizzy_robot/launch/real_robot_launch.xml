@@ -8,6 +8,11 @@
   
   <include file="$(find-pkg-share vizzy_robot)/launch/auxiliary_vizzy_launch.py">
         <arg name="use_full_gazebo_model" value="false" />
+        <arg name="use_full_hand_model" value="false" />
+        <arg name="urdf_file" value="vizzy.urdf.xacro" />
+        <arg name="use_yarp" value="false" />
+        <arg name="disable_laser" value="false" />
+        <arg name="disable_3d_sensor" value="false" />
   </include>
 
   <include file="$(find-pkg-share vizzy_robot)/launch/segway_base_launch.xml">
