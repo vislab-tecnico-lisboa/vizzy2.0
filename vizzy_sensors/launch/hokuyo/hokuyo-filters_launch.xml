@@ -1,0 +1,21 @@
+<!--
+  * Main changes from ROS1 to ROS2:
+  *  - 'arg' tags in substitutions are replaced with 'var' tags (not in declarations).
+  *  - 'type' attribute in node declaration is now 'exec'.
+  *  - 'find' is replaced with 'find-pkg-share' in substitutions.
+-->
+
+<launch>
+  <arg name="node_name" default="hokuyo_laser_filters" description="Name for the laser_filters node"/>
+  <arg name="params_file" default="$(find-pkg-share vizzy_sensors)/config/hokuyo_filters.yaml" description="Full path to the ROS 2 parameters file"/>
+
+  <node pkg="laser_filters"
+        exec="scan_to_scan_filter_chain"
+        name="$(var node_name)"
+        output="screen">
+
+    <param from="$(var params_file)"/>
+
+  </node>
+
+</launch>

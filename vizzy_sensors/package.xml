@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>vizzy_sensors</name>
+  <version>2.0.0</version>
+  <description>
+    Provides ROS 2 launch files, configurations, and filters for Vizzy's sensors,
+    primarily the Hokuyo LIDARs.
+  </description>
+
+  <maintainer email="joao.penha.lopes@tecnico.ulisboa.pt">João Penha Lopes</maintainer>
+  <maintainer email="joao.zenario@tecnico.ulisboa.pt">João Zenário</maintainer>
+
+  <author>Miguel Aragão</author>
+  <author>Piyush Khandelwal</author>
+  <author>João Avelino</author>
+  <author>João Penha Lopes</author>
+  <author>João Zenário</author>
+  
+  <license>BSD</license>
+
+  <url type="website">https://github.com/vislab-tecnico-lisboa/vizzy2.0</url>
+  <url type="bugtracker">https://github.com/vislab-tecnico-lisboa/vizzy2.0/issues</url>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>pluginlib</depend>
+  
+  <depend>laser_filters</depend>
+  <depend>pcl_conversions</depend>
+  <depend>pcl_ros</depend>
+
+  <depend>image_transport</depend>
+  <depend>camera_info_manager</depend>
+  <depend>depthimage_to_laserscan</depend>
+
+  <exec_depend>urg_node</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <filters plugin="${prefix}/vizzy_sensors_plugins.xml"/>
+  </export>
+</package>
