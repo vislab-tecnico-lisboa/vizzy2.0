@@ -18,18 +18,6 @@
   <include file="$(find-pkg-share vizzy_robot)/launch/segway_base_launch.xml">
         <arg name="odom_topic" value="odometry" />
       </include>
-
-  <include file="$(find-pkg-share vizzy_serial_interfaces)/launch/segway_battery_state_launch.xml">
-      <arg name="cha_thr" value="67.75" />
-  </include>
-  <include file="$(find-pkg-share vizzy_serial_interfaces)/launch/battery_state_launch.xml">
-      <arg name="cha_thr" value="27.25" />
-  </include>
-  <include file="$(find-pkg-share vizzy_serial_interfaces)/launch/battery_charging_state_launch.xml"/>
-  <include file="$(find-pkg-share vizzy_serial_interfaces)/launch/batteries_state_launch.xml"/>
-
-  <include file="$(find-pkg-share rosbridge_server)/launch/rosbridge_websocket_launch.xml">
-      </include>
   
   <group>
       <let name="front_laser_frame" value="$(var tf_prefix)nav_hokuyo_laser_link"/>
