@@ -17,8 +17,6 @@ find_package(ament_cmake REQUIRED
   vizzy_description REQUIRED
   vizzy_navigation REQUIRED
   segway_rmp_ros2 REQUIRED
-  joint_state_publisher REQUIRED
-  robot_state_publisher REQUIRED
 )
 
 # Install the directories to be accessible via the package.

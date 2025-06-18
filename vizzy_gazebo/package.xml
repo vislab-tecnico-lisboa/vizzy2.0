@@ -29,9 +29,7 @@
   <depend>ros_gz_sim</depend>
   <depend>vizzy_description</depend>
   <depend>vizzy_navigation</depend>
-  <depend>robot_state_publisher</depend>
-  <depend>joint_state_publisher</depend>
-  
+
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <build_type>ament_cmake</build_type>
