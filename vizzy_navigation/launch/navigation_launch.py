@@ -276,7 +276,7 @@ def generate_launch_description():
                 package='nav2_amcl',
                 plugin='nav2_amcl::AmclNode',
                 name='amcl',
-                parameters=[params_file, {'use_sim_time':  True}],
+                parameters=[params_file, {'use_sim_time':  use_sim_time}],
                 remappings=remappings + [('scan', scan_topic), ('map',  map_topic)]),
             ComposableNode(
                 package='nav2_lifecycle_manager',

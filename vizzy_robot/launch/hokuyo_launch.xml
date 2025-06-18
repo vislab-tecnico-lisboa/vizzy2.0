@@ -1,0 +1,25 @@
+<!--
+  * Main changes from ROS1 to ROS2:
+  *  - 'arg' tags in substitutions are replaced with 'var' tags (not in declarations).
+-->
+
+<launch>
+  <arg name="vizzy_machine_name" default="$(var vizzy_machine_name)" />
+  <arg name="tf_prefix" default="" /> 
+  <arg name="name" default="laser" />
+  <arg name="port" default="/dev/ttyACM0" />
+  <arg name="scan_name" default="base_scan" />
+  <param name="tf_prefix" value="$(var tf_prefix)" />
+
+  <!-- run the hokuyo driver with the laser link as the frame id -->
+  <node machine="$(var vizzy_machine_name)" name="$(var name)_node" pkg="urg_node" type="urg_node">
+    <param name="serial_port" value="$(var port)" />
+    <param name="frame_id" value="$(var name)_laser_link" />
+    <remap from="scan" to="$(var scan_name)" />
+    <!-- <param name="frame_id" value="$(var tf_prefix)/$(var name)_laser_link" /> -->
+    <param name="angle_min" value="-1.309" /> <!-- -5pi/12-->
+    <param name="angle_max" value="1.309" /> <!-- 5pi/12 -->
+  </node>
+
+ 
+</launch>

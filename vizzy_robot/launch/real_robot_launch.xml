@@ -1,0 +1,86 @@
+<!--
+  * Main changes from ROS1 to ROS2:
+  *  - 'arg' tags in substitutions are replaced with 'var' tags (not in declarations).
+-->
+
+<launch>
+  <arg name="vizzy_machine_name" default="vizzy-desktop"/>
+  <arg name="vizzy_machine_address" default="10.16.144.242"/>
+  <arg name="define_machine" default="true"/>
+
+  <machine name="$(var vizzy_machine_name)" 
+          address="$(var vizzy_machine_address)" 
+          env-loader="$(var env-loader)" user="vizzy"
+          if="$(var define_machine)"
+  />
+
+  <arg name="map_frame" default="map" />
+  <arg name="map_service" default="/static_map" />
+  <arg name="map_topic" default="/map" />
+
+  <arg name="ns" default="vizzy" />
+  <arg name="tf_prefix" default="$(var ns)" />
+  <arg name="device_id" default="#1" />
+  <param name="tf_prefix" value="$(var tf_prefix)" />
+  <arg name="base_frame_id" default="$(var tf_prefix)/base_footprint" />
+  <arg name="odom_frame_id" default="$(var tf_prefix)/odometry" />
+
+
+  <!-- launch the auxiliary configuration (shared between h/w and simulation) -->
+  <include file="$(find vizzy_robot)/launch/auxiliary_vizzy_launch.xml">
+    <arg name="tf_prefix" value="$(var tf_prefix)" />
+    <arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
+  </include>
+
+  <!-- launch the segway base -->
+  <include file="$(find vizzy_robot)/launch/segway_base.launch">
+      <arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
+  </include>
+
+  <!-- launch the segway battery state -->
+  <include file="$(find vizzy_serial_interfaces)/launch/segway_battery_state.launch">
+      <arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
+      <!-- Override default value to charge up until 76% -->
+      <arg name="cha_thr" value="67.75" />
+  </include>
+
+  <!-- launch the kokam battery state -->
+  <include file="$(find vizzy_serial_interfaces)/launch/battery_state.launch">
+      <arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
+      <!-- Override default value to charge up until 71% -->
+      <arg name="cha_thr" value="27.25" />
+  </include>
+
+  <!-- launch the charging state service -->
+  <include file="$(find vizzy_serial_interfaces)/launch/battery_charging_state.launch">
+      <arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
+  </include>
+
+  <!-- launch the batteries state service for docking -->
+  <include file="$(find vizzy_serial_interfaces)/launch/batteries_state.launch">
+      <arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
+  </include>
+
+  <!-- Launch the web server -->
+  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
+  </include>
+  
+  	<!-- launch the hokuyo sensor -->
+	<include file="$(find vizzy_robot)/launch/hokuyo.launch">
+	    <arg name="name" value="nav_hokuyo" />
+	    <arg name="port" value="/dev/ttyACM1" />
+	    <arg name="tf_prefix" value="$(var tf_prefix)" />
+	    <arg name="scan_name" value="scan" />
+  		<arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
+	    <!-- <arg name="publish_tf" value="false" /> already published by urdf -->
+	</include>
+
+	<include file="$(find vizzy_robot)/launch/hokuyo.launch">
+	    <arg name="name" value="nav_hokuyo_rear" />
+	    <arg name="port" value="/dev/ttyACM0" />
+	    <arg name="scan_name" value="scan_rear" />
+	    <arg name="tf_prefix" value="$(var tf_prefix)" />
+  		<arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
+	    <!-- <arg name="publish_tf" value="false" /> already published by urdf -->
+	</include>  
+</launch>
