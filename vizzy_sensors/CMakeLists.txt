@@ -12,31 +12,56 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# Load ament_cmake and all dependencies required for this package.
-find_package(ament_cmake REQUIRED
-  COMPONENTS
-    laser_filters
-    message_generation
-    nodelet
-    pcl_ros
-    pluginlib
-    roscpp
-    roslint
-    sensor_msgs
-    image_transport
-    camera_info_manager
-    dynamic_reconfigure
-    geometry_msgs
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(camera_info_manager REQUIRED)
+find_package(laser_filters REQUIRED)
+find_package(pcl_conversions REQUIRED)
+find_package(pcl_ros REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package(Boost REQUIRED)
+
+add_library(vizzy_sensors_filters src/vizzy_sensors_filters.cpp)
+ament_target_dependencies(vizzy_sensors_filters
+  rclcpp
+  pluginlib
+  laser_filters
+  Boost
 )
 
-find_package(OpenCV REQUIRED)
+add_library(suppression src/nodelets/saccadic_suppression_nodelet.cpp)
+ament_target_dependencies(suppression
+  rclcpp
+  Boost
+  OpenCV
+  sensor_msgs
+  image_transport
+)
 
-# Install the directories to be accessible via the package.
 install(
-  DIRECTORY launch 
-  config
-  DESTINATION share/${PROJECT_NAME}
-) 
+  TARGETS
+    vizzy_sensors_filters
+    suppression
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
 
-# Install the package.xml and register the package with ament.
+install(
+  DIRECTORY launch config
+  DESTINATION share/${PROJECT_NAME}
+)
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vizzy_sensors_plugins.xml")
+  install(
+    FILES vizzy_sensors_plugins.xml
+    DESTINATION share/${PROJECT_NAME}
+  )
+endif()
+
 ament_package()
