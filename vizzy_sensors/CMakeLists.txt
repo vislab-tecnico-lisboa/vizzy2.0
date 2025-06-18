@@ -39,7 +39,6 @@ target_include_directories(vizzy_sensors_filters PUBLIC include)
 install(
   TARGETS
     vizzy_sensors_filters
-    suppression
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
