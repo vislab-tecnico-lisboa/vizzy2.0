@@ -10,7 +10,7 @@
 
 namespace vizzy_sensors
 {
-  class NanToInfFilter : public filters::FilterBase<sensor_msgs::LaserScan>
+  class NanToInfFilter : public filters::FilterBase<sensor_msgs::msg::LaserScan>
   {
     public:
 
@@ -20,7 +20,7 @@ namespace vizzy_sensors
 
       virtual ~NanToInfFilter(){}
 
-      bool update(const sensor_msgs::LaserScan& input_scan, sensor_msgs::LaserScan& filtered_scan){
+      bool update(const sensor_msgs::msg::LaserScan& input_scan, sensor_msgs::msg::LaserScan& filtered_scan){
 
         filtered_scan.ranges.resize(input_scan.ranges.size());
 
