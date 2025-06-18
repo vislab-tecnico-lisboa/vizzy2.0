@@ -4,8 +4,8 @@
 
 #include "vizzy_sensors/nan_to_inf_filter.h"
 #include "vizzy_sensors/scan_angle_filter.h"
-#include "sensor_msgs/LaserScan.h"
-#include "filters/filter_base.h"
+#include "sensor_msgs/msg/laser_scan.hpp"
+#include "filters/filter_base.hpp"
 
 #include "pluginlib/class_list_macros.h"
 

@@ -5,8 +5,8 @@
 #ifndef LASER_SCAN_NAN_TO_INF_FILTER_H
 #define LASER_SCAN_NAN_TO_INF_FILTER_H
 
-#include <filters/filter_base.h>
-#include <sensor_msgs/LaserScan.h>
+#include <filters/filter_base.hpp>
+#include "sensor_msgs/msg/laser_scan.hpp"
 
 namespace vizzy_sensors
 {
