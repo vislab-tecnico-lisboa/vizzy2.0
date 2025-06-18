@@ -23,6 +23,7 @@ find_package(camera_info_manager REQUIRED)
 find_package(laser_filters REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(pcl_ros REQUIRED)
+find_package(ros_gz_sim REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED)
 
@@ -33,6 +34,7 @@ ament_target_dependencies(vizzy_sensors_filters
   laser_filters
   Boost
 )
+target_include_directories(vizzy_sensors_filters PUBLIC include)
 
 add_library(suppression src/nodelets/saccadic_suppression_nodelet.cpp)
 ament_target_dependencies(suppression
@@ -42,6 +44,7 @@ ament_target_dependencies(suppression
   sensor_msgs
   image_transport
 )
+target_include_directories(suppression PUBLIC include)
 
 install(
   TARGETS
