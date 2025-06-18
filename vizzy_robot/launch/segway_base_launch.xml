@@ -4,11 +4,16 @@
 -->
 
 <launch>
-  <arg name="vizzy_machine_name" default="$(var vizzy_machine_name)" />
+    <arg name="odom_topic" default="odometry" description="The name of the final odometry topic to be published."/>
 
-  <!-- Launch Segway driver -->
-  <node machine="$(var vizzy_machine_name)" name="segway_rmp_ros2_node" pkg="segway_rmp_ros2" type="segway_rmp_ros2_node" output="screen" required="true">
-    <remap from="~odom" to="odometry" />
-  </node>
+    <node pkg="segway_rmp_ros2"
+          exec="segway_rmp_ros2_node"
+          name="segway_rmp_ros2_node"
+          output="screen"
+          on_exit="shutdown">
+      
+      <remap from="odom" to="$(var odom_topic)" />
+
+    </node>
 
 </launch>

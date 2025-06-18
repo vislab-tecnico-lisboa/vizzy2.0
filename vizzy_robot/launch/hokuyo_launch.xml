@@ -4,22 +4,14 @@
 -->
 
 <launch>
-  <arg name="vizzy_machine_name" default="$(var vizzy_machine_name)" />
-  <arg name="tf_prefix" default="" /> 
-  <arg name="name" default="laser" />
-  <arg name="port" default="/dev/ttyACM0" />
-  <arg name="scan_name" default="base_scan" />
-  <param name="tf_prefix" value="$(var tf_prefix)" />
+  <arg name="node_name" default="hokuyo_node" description="Name for the urg_node instance"/>
+  <arg name="port" default="/dev/ttyACM0" description="The device port for the laser scanner"/>
+  <arg name="scan_topic" default="scan" description="The name of the output scan topic"/>
+  <arg name="laser_frame_id" default="laser_link" description="The TF frame ID for the laser scanner"/>
 
-  <!-- run the hokuyo driver with the laser link as the frame id -->
-  <node machine="$(var vizzy_machine_name)" name="$(var name)_node" pkg="urg_node" type="urg_node">
-    <param name="serial_port" value="$(var port)" />
-    <param name="frame_id" value="$(var name)_laser_link" />
-    <remap from="scan" to="$(var scan_name)" />
-    <!-- <param name="frame_id" value="$(var tf_prefix)/$(var name)_laser_link" /> -->
-    <param name="angle_min" value="-1.309" /> <!-- -5pi/12-->
-    <param name="angle_max" value="1.309" /> <!-- 5pi/12 -->
+  <node name="$(var node_name)" pkg="urg_node" exec="urg_node" output="screen">
+      <param name="serial_port" value="$(var port)" />
+      <param name="frame_id" value="$(var laser_frame_id)" />
+      <param name="angle_min" value="-1.309" /> <param name="angle_max" value="1.309" /> <remap from="scan" to="$(var scan_topic)" />
   </node>
-
- 
 </launch>

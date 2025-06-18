@@ -4,83 +4,47 @@
 -->
 
 <launch>
+  <arg name="ns" default="" description="Namespace for all nodes"/>
   
-  <!-- Robot name -->
-  <arg name="robot" default="vizzy"/>
-  <arg name="vizzy_machine_name" default="vizzy-desktop"/>
-  <arg name="vizzy_machine_address" default="10.16.144.242"/>
-  <arg name="define_machine" default="true"/>
-
-  <machine name="$(var vizzy_machine_name)" 
-          address="$(var vizzy_machine_address)" 
-          env-loader="$(var env-loader)" user="vizzy"
-          if="$(var define_machine)"
-  />
-
-  <arg name="map_frame" default="map" />
-  <arg name="map_service" default="/static_map" />
-  <arg name="map_topic" default="/map" />
-
-  <arg name="ns" default="" />
-  <arg name="tf_prefix" default="$(var ns)" />
-  <arg name="device_id" default="#1" />
-  <param name="tf_prefix" value="$(var tf_prefix)" />
-  <arg name="base_frame_id" default="$(var tf_prefix)/base_footprint" />
-  <arg name="odom_frame_id" default="$(var tf_prefix)/odometry" />
-
-  <!-- Spawn the robot in simulation using the new python launcher -->
-  <include file="$(find-pkg-share vizzy_robot)/launch/auxiliary_vizzy_launch.py">
+  <include file="$(find-pkg-share vizzy_launch)/launch/auxiliary_vizzy_launch.py">
   </include>
 
-  <!-- launch the segway base -->
-  <include file="$(find vizzy_robot)/launch/segway_base.launch">
-      <arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
-  </include>
+  <include file="$(find-pkg-share vizzy_launch)/launch/segway_base_launch.xml">
+        <arg name="odom_topic" value="odometry" />
+      </include>
 
-  <!-- launch the segway battery state -->
-  <include file="$(find vizzy_serial_interfaces)/launch/segway_battery_state.launch">
-      <arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
-      <!-- Override default value to charge up until 76% -->
+  <include file="$(find-pkg-share vizzy_serial_interfaces)/launch/segway_battery_state_launch.xml">
       <arg name="cha_thr" value="67.75" />
   </include>
-
-  <!-- launch the kokam battery state -->
-  <include file="$(find vizzy_serial_interfaces)/launch/battery_state.launch">
-      <arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
-      <!-- Override default value to charge up until 71% -->
+  <include file="$(find-pkg-share vizzy_serial_interfaces)/launch/battery_state_launch.xml">
       <arg name="cha_thr" value="27.25" />
   </include>
+  <include file="$(find-pkg-share vizzy_serial_interfaces)/launch/battery_charging_state_launch.xml"/>
+  <include file="$(find-pkg-share vizzy_serial_interfaces)/launch/batteries_state_launch.xml"/>
 
-  <!-- launch the charging state service -->
-  <include file="$(find vizzy_serial_interfaces)/launch/battery_charging_state.launch">
-      <arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
-  </include>
-
-  <!-- launch the batteries state service for docking -->
-  <include file="$(find vizzy_serial_interfaces)/launch/batteries_state.launch">
-      <arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
-  </include>
-
-  <!-- Launch the web server -->
-  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
-  </include>
+  <include file="$(find-pkg-share rosbridge_server)/launch/rosbridge_websocket_launch.xml">
+      </include>
   
-  	<!-- launch the hokuyo sensor -->
-	<include file="$(find vizzy_robot)/launch/hokuyo.launch">
-	    <arg name="name" value="nav_hokuyo" />
-	    <arg name="port" value="/dev/ttyACM1" />
-	    <arg name="tf_prefix" value="$(var tf_prefix)" />
-	    <arg name="scan_name" value="scan" />
-  		<arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
-	    <!-- <arg name="publish_tf" value="false" /> already published by urdf -->
-	</include>
+  <group>
+      <let name="front_laser_frame" value="$(var tf_prefix)nav_hokuyo_laser_link"/>
+      <node name="nav_hokuyo_node" pkg="urg_node" exec="urg_node" output="screen">
+          <param name="serial_port" value="/dev/ttyACM1" />
+          <param name="frame_id" value="$(var front_laser_frame)" />
+          <param name="angle_min" value="-1.309" />
+          <param name="angle_max" value="1.309" />
+          <remap from="scan" to="scan" />
+      </node>
+  </group>
 
-	<include file="$(find vizzy_robot)/launch/hokuyo.launch">
-	    <arg name="name" value="nav_hokuyo_rear" />
-	    <arg name="port" value="/dev/ttyACM0" />
-	    <arg name="scan_name" value="scan_rear" />
-	    <arg name="tf_prefix" value="$(var tf_prefix)" />
-  		<arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
-	    <!-- <arg name="publish_tf" value="false" /> already published by urdf -->
-	</include>  
+  <group>
+      <let name="rear_laser_frame" value="$(var tf_prefix)nav_hokuyo_rear_laser_link"/>
+      <node name="nav_hokuyo_rear_node" pkg="urg_node" exec="urg_node" output="screen">
+          <param name="serial_port" value="/dev/ttyACM0" />
+          <param name="frame_id" value="$(var rear_laser_frame)" />
+          <param name="angle_min" value="-1.309" />
+          <param name="angle_max" value="1.309" />
+          <remap from="scan" to="scan_rear" />
+      </node>
+  </group>
+
 </launch>
