@@ -16,7 +16,6 @@
   </include>
 
   <include file="$(find-pkg-share vizzy_robot)/launch/segway_base_launch.xml">
-        <arg name="odom_topic" value="odometry" />
       </include>
   
   <group>

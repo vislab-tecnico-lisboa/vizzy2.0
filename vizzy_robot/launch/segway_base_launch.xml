@@ -11,9 +11,6 @@
           name="segway_rmp_node_ros2"
           output="screen"
           on_exit="shutdown">
-      
-      <remap from="odom" to="$(var odom_topic)" />
-
     </node>
 
 </launch>
