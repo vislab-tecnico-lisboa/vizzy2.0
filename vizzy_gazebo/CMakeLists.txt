@@ -17,6 +17,8 @@ find_package(ros_gz_sim REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(vizzy_description REQUIRED)
 find_package(vizzy_navigation REQUIRED)
+find_package(joint_state_publisher REQUIRED)
+find_package(robot_state_publisher REQUIRED)
 
 # Install the directories to be accessible via the package.
 install(
