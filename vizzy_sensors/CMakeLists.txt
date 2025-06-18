@@ -13,7 +13,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # Load ament_cmake and all dependencies required for this package.
-find_package(catkin REQUIRED
+find_package(ament_cmake REQUIRED
   COMPONENTS
     laser_filters
     message_generation
