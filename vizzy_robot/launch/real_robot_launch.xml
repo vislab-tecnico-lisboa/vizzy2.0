@@ -7,6 +7,7 @@
   <arg name="ns" default="" description="Namespace for all nodes"/>
   
   <include file="$(find-pkg-share vizzy_robot)/launch/auxiliary_vizzy_launch.py">
+        <arg name="use_full_gazebo_model" value="false" />
   </include>
 
   <include file="$(find-pkg-share vizzy_robot)/launch/segway_base_launch.xml">
