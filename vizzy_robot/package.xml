@@ -30,7 +30,7 @@
 
   <exec_depend>vizzy_description</exec_depend>
   <exec_depend>vizzy_navigation</exec_depend>
-  <exec_depend>segway-rmp-ros2</exec_depend>
+  <exec_depend>segway_rmp_ros2</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
