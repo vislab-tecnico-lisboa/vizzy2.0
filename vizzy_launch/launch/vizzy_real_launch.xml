@@ -34,10 +34,6 @@
     </node>
 
     <group unless="$(var slam)">
-      <node name="map_server" pkg="map_server" exec="map_server"
-            args="--ros-args -p yaml_filename:=$(find-pkg-share vizzy_navigation)/maps/$(var map_file)"
-      />
-
       <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
         <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml"/>
         <arg name="use_sim_time" value="false"/> </include>
