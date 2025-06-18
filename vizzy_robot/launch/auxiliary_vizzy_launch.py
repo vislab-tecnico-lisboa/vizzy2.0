@@ -65,9 +65,6 @@ def generate_launch_description():
     pose_P = DeclareLaunchArgument('pose_P', default_value='0.0', description='Pitch')
     pose_Y = DeclareLaunchArgument('pose_Y', default_value='3.14', description='Yaw')
 
-    use_sim_time = DeclareLaunchArgument(
-        'use_sim_time', default_value='false', description='Use simulation time'
-    )
     urdf_file = DeclareLaunchArgument(
         'urdf_file', default_value='vizzy.urdf.xacro', description='URDF xacro file'
     )
