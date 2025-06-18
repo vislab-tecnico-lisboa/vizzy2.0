@@ -29,7 +29,6 @@ find_package(ament_cmake REQUIRED
     geometry_msgs
 )
 
-find_package(gazebo REQUIRED)
 find_package(OpenCV REQUIRED)
 
 # Install the directories to be accessible via the package.
