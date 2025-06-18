@@ -7,8 +7,8 @@
     <arg name="odom_topic" default="odometry" description="The name of the final odometry topic to be published."/>
 
     <node pkg="segway_rmp_ros2"
-          exec="segway_rmp_ros2_node"
-          name="segway_rmp_ros2_node"
+          exec="segway_rmp_node_ros2"
+          name="segway_rmp_node_ros2"
           output="screen"
           on_exit="shutdown">
       
