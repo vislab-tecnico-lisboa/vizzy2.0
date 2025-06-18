@@ -4,6 +4,9 @@
 -->
 
 <launch>
+  
+  <!-- Robot name -->
+  <arg name="robot" default="vizzy"/>
   <arg name="vizzy_machine_name" default="vizzy-desktop"/>
   <arg name="vizzy_machine_address" default="10.16.144.242"/>
   <arg name="define_machine" default="true"/>
@@ -18,18 +21,15 @@
   <arg name="map_service" default="/static_map" />
   <arg name="map_topic" default="/map" />
 
-  <arg name="ns" default="vizzy" />
+  <arg name="ns" default="" />
   <arg name="tf_prefix" default="$(var ns)" />
   <arg name="device_id" default="#1" />
   <param name="tf_prefix" value="$(var tf_prefix)" />
   <arg name="base_frame_id" default="$(var tf_prefix)/base_footprint" />
   <arg name="odom_frame_id" default="$(var tf_prefix)/odometry" />
 
-
-  <!-- launch the auxiliary configuration (shared between h/w and simulation) -->
-  <include file="$(find vizzy_robot)/launch/auxiliary_vizzy_launch.xml">
-    <arg name="tf_prefix" value="$(var tf_prefix)" />
-    <arg name="vizzy_machine_name" value="$(var vizzy_machine_name)" />
+  <!-- Spawn the robot in simulation using the new python launcher -->
+  <include file="$(find-pkg-share vizzy_robot)/launch/auxiliary_vizzy_launch.py">
   </include>
 
   <!-- launch the segway base -->
