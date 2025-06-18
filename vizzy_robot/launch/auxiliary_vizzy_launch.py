@@ -112,7 +112,7 @@ def generate_launch_description():
         package='joint_state_publisher',
         executable='joint_state_publisher',
         name='joint_state_publisher',
-        parameters=[{'use_sim_time': use_sim_time}],
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
         output='screen'
     )
 
@@ -122,7 +122,7 @@ def generate_launch_description():
         executable='robot_state_publisher',
         parameters=[
             {
-                'use_sim_time': use_sim_time,
+                'use_sim_time': LaunchConfiguration('use_sim_time'),
                 'enable_tf_static': True,
                 'robot_description': ParameterValue(
                     robot_description_command, value_type=str
