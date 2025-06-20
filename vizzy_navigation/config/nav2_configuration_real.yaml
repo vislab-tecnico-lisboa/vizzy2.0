@@ -27,7 +27,7 @@ amcl:
     z_max: 0.05
     z_rand: 0.05
     z_short: 0.1
-    scan_topic: nav_hokuyo_laser/front/scan_filtered
+    scan_topics: ["/scan_filtered", "/scan_filtered_rear"]
     map_topic: /map
     set_initial_pose: true
     initial_pose:
@@ -194,7 +194,7 @@ local_costmap:
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
-        observation_sources: scan_filtered scan_filtered_rear
+        observation_sources: scan_front scan_rear
         
         scan_front:
           topic: /nav_hokuyo_laser/front/scan_filtered
