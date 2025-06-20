@@ -10,5 +10,6 @@
           output="screen"
           on_exit="shutdown">
           <param name="odom_frame_id" value="odometry" />
+          <param name="frame_id" value="base_footprint" />
     </node>
 </launch>
