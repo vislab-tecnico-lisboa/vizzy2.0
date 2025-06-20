@@ -10,7 +10,7 @@ amcl:
     lambda_short: 0.1
     laser_likelihood_max_dist: 2.0
     laser_max_range: -1.0
-    laser_min_range: -1.0
+    laser_min_range: 0.04
     laser_model_type: "likelihood_field"
     max_beams: 60
     max_particles: 5000
@@ -205,7 +205,7 @@ local_costmap:
           inf_as_valid: True
           data_type: "LaserScan"
           raytrace_max_range: 6.0
-          raytrace_min_range: 0.0
+          raytrace_min_range: 0.04
           obstacle_max_range: 3.75
           obstacle_min_range: 0.0
           observation_persistence: 0.0
@@ -254,7 +254,7 @@ global_costmap:
           inf_as_valid: True
           data_type: "LaserScan"
           raytrace_max_range: 6.0
-          raytrace_min_range: 0.0
+          raytrace_min_range: 0.04
           obstacle_max_range: 3.75
           obstacle_min_range: 0.0
           observation_persistence: 0.0

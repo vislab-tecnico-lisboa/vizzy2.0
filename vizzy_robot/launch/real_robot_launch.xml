@@ -40,7 +40,4 @@
       </node>
   </group>
 
-  <!-- launch the laser filter to get rid of readings from the robot itself -->
-  <include file="$(find-pkg-share vizzy_sensors)/launch/hokuyo/hokuyo-filters_launch.xml" />
-
 </launch>
