@@ -197,7 +197,7 @@ local_costmap:
         observation_sources: scan_front scan_rear
         
         scan_front:
-          topic: /nav_hokuyo_laser/front/scan_filtered
+          topic: /scan_filtered
           max_obstacle_height: 2.0
           min_obstacle_height: 0.5
           clearing: True
@@ -211,7 +211,7 @@ local_costmap:
           observation_persistence: 0.0
 
         scan_rear:
-          topic: /nav_hokuyo_laser/rear/scan_filtered_rear
+          topic: /scan_filtered_rear
           max_obstacle_height: 2.0
           min_obstacle_height: 0.5
           clearing: True
@@ -247,7 +247,7 @@ global_costmap:
         enabled: True
         observation_sources: scan_front scan_rear
         scan_front:
-          topic: /nav_hokuyo_laser/front/scan_filtered
+          topic: /scan_filtered
           max_obstacle_height: 2.0
           clearing: True
           marking: True
@@ -260,7 +260,7 @@ global_costmap:
           observation_persistence: 0.0
 
         scan_rear:
-          topic: /nav_hokuyo_laser/rear/scan_filtered_rear
+          topic: /scan_filtered_rear
           max_obstacle_height: 2.0
           clearing: True
           marking: True
