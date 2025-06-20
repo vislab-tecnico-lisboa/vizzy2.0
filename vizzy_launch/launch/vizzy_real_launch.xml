@@ -17,7 +17,7 @@
   <arg name="custom_obstacles" default="true" />
   <arg name="obstacles_map_file" default="mapa_piso7_NOVO_AWESOME_obst.yaml" />
   <arg name="ns" default="" />
-  <arg name="use_obstacles" default="false" />
+  <arg name="use_obstacles" default="true" />
   <arg name="scan_topic_front" default="/scan_filtered" />
   <arg name="scan_topic_rear" default="/scan_filtered_rear" />
 
@@ -40,7 +40,7 @@
       <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
         <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration_real.yaml"/>
         <arg name="use_sim_time" value="false"/> 
-        <arg name="map_file" value="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)"/>
+        <arg name="map_yaml" value="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)"/>
         <arg name="scan_topic_front" value="$(var scan_topic_front)"/>
         <arg name="scan_topic_rear" value="$(var scan_topic_rear)"/>
       </include>
@@ -49,7 +49,7 @@
       <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
         <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration_real.yaml"/>
         <arg name="use_sim_time" value="false"/>
-        <arg name="map_file" value="$(find-pkg-share vizzy_navigation)/maps/$(var map_file)"/>
+        <arg name="map_yaml" value="$(find-pkg-share vizzy_navigation)/maps/$(var map_file)"/>
         <arg name="scan_topic_front" value="$(var scan_topic_front)"/>
         <arg name="scan_topic_rear" value="$(var scan_topic_rear)"/>
       </include>
