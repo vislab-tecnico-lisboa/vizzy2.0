@@ -8,15 +8,15 @@
 <launch>
   <arg name="robot" default="vizzy"/>
   <arg name="navigation" default="true"/>
-  <arg name="slam" default="false"/>
   <arg name="gui" default="true"/> <arg name="map_frame" default="map" />
   <arg name="base_frame_id" default="base_footprint" />
   <arg name="odom_frame_id" default="odometry" />
   <arg name="map_topic" default="/map" />
-  <arg name="map_file" default="mapa_piso7_NOVO_AWESOME.yaml" />
+  <arg name="map_file" default="isr_7th_floor_simulation.yaml" />
   <arg name="custom_obstacles" default="true" />
   <arg name="obstacles_map_file" default="mapa_piso7_NOVO_AWESOME_obst.yaml" />
   <arg name="ns" default="" />
+  <arg name="use_obstacles" default="false" />
 
   <include file="$(find-pkg-share vizzy_robot)/launch/real_robot_launch.xml">
     <arg name="map_frame" value="$(var map_frame)" />
@@ -33,10 +33,17 @@
       <remap from="scan_filtered" to="scan_filtered_rear"/>
     </node>
 
-    <group unless="$(var slam)">
+    <group if="$(var use_obstacles)">
       <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
-        <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml"/>
+        <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration_real.yaml"/>
         <arg name="use_sim_time" value="false"/> </include>
+        <arg name="map_file" value="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)"/>
+    </group>
+    <group unless="$(var use_obstacles)">
+      <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
+        <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration_real.yaml"/>
+        <arg name="use_sim_time" value="false"/> </include>
+        <arg name="map_file" value="$(find-pkg-share vizzy_navigation)/maps/$(var map_file)"/>
     </group>
   </group>
 </launch>
