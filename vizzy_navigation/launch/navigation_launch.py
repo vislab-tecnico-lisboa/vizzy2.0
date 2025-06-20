@@ -80,8 +80,13 @@ def generate_launch_description():
         default_value='map',
         description='Name of the map topic.'
     )
-    scan_topic_arg = DeclareLaunchArgument(
-        'scan_topic',
+    scan_topic_front_arg = DeclareLaunchArgument(
+        'scan_topic_front',
+        default_value='nav_hokuyo_laser/front/scan',
+        description='Name of the laser scan topic.'
+    )
+    scan_topic_rear_arg = DeclareLaunchArgument(
+        'scan_topic_rear',
         default_value='nav_hokuyo_laser/front/scan',
         description='Name of the laser scan topic.'
     )
@@ -101,7 +106,8 @@ def generate_launch_description():
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
     map_topic   = LaunchConfiguration('map_topic')
-    scan_topic  = LaunchConfiguration('scan_topic')
+    scan_topic_front  = LaunchConfiguration('scan_topic_front')
+    scan_topic_rear   = LaunchConfiguration('scan_topic_rear')
     map_yaml    = LaunchConfiguration('map_yaml')
 
     # Substitutions for the parameters file.
@@ -201,8 +207,13 @@ def generate_launch_description():
                 executable='amcl',
                 name='amcl',
                 output='screen',
-                parameters=[configured_params],
-                remappings=remappings + [('scan', scan_topic), ('map',  map_topic)]),
+                parameters=[
+                    configured_params,  
+                    {   # Override parameters for AMCL.
+                        'scan_topics': [scan_topic_front, scan_topic_rear]
+                    }
+                ],
+                remappings=remappings),
             Node(
                 package='nav2_map_server',
                 executable='map_server',
@@ -276,8 +287,12 @@ def generate_launch_description():
                 package='nav2_amcl',
                 plugin='nav2_amcl::AmclNode',
                 name='amcl',
-                parameters=[params_file, {'use_sim_time':  use_sim_time}],
-                remappings=remappings + [('scan', scan_topic), ('map',  map_topic)]),
+                parameters=[params_file, 
+                            {'use_sim_time':  use_sim_time},
+                    {  
+                        'scan_topics': [scan_topic_front, scan_topic_rear]
+                    }],
+                remappings=remappings + [('map',  map_topic)]),
             ComposableNode(
                 package='nav2_lifecycle_manager',
                 plugin='nav2_lifecycle_manager::LifecycleManager',
@@ -297,7 +312,8 @@ def generate_launch_description():
         use_respawn_arg,
         log_level_arg,
         map_topic_arg,
-        scan_topic_arg,
+        scan_topic_front_arg,
+        scan_topic_rear_arg,
         map_yaml_arg,
         load_nodes,
         load_composable_nodes

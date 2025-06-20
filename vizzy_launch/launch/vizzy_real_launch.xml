@@ -18,6 +18,8 @@
   <arg name="obstacles_map_file" default="mapa_piso7_NOVO_AWESOME_obst.yaml" />
   <arg name="ns" default="" />
   <arg name="use_obstacles" default="false" />
+  <arg name="scan_topic_front" default="/scan_filtered" />
+  <arg name="scan_topic_rear" default="/scan_filtered_rear" />
 
   <include file="$(find-pkg-share vizzy_robot)/launch/real_robot_launch.xml">
     <arg name="map_frame" value="$(var map_frame)" />
@@ -39,6 +41,8 @@
         <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration_real.yaml"/>
         <arg name="use_sim_time" value="false"/> 
         <arg name="map_file" value="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)"/>
+        <arg name="scan_topic_front" value="$(var scan_topic_front)"/>
+        <arg name="scan_topic_rear" value="$(var scan_topic_rear)"/>
       </include>
     </group>
     <group unless="$(var use_obstacles)">
@@ -46,6 +50,8 @@
         <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration_real.yaml"/>
         <arg name="use_sim_time" value="false"/>
         <arg name="map_file" value="$(find-pkg-share vizzy_navigation)/maps/$(var map_file)"/>
+        <arg name="scan_topic_front" value="$(var scan_topic_front)"/>
+        <arg name="scan_topic_rear" value="$(var scan_topic_rear)"/>
       </include>
     </group>
   </group>
