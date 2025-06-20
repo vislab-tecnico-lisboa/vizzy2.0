@@ -208,7 +208,7 @@ def generate_launch_description():
                 name='amcl',
                 output='screen',
                 parameters=[configured_params],
-                remappings=remappings + [('scan_topics' , [scan_topic_front, scan_topic_rear])]),
+                remappings=remappings + [('scan_topic' , scan_topic_front)]),
             Node(
                 package='nav2_map_server',
                 executable='map_server',
