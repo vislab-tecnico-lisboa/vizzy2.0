@@ -18,8 +18,8 @@
   <arg name="obstacles_map_file" default="mapa_piso7_NOVO_AWESOME_obst.yaml" />
   <arg name="ns" default="" />
   <arg name="use_obstacles" default="true" />
-  <arg name="scan_topic_front" default="/scan_filtered" />
-  <arg name="scan_topic_rear" default="/scan_filtered_rear" />
+  <arg name="scan_topic_front" default="/scan" />
+  <arg name="scan_topic_rear" default="/scan_rear" />
 
   <include file="$(find-pkg-share vizzy_robot)/launch/real_robot_launch.xml">
     <arg name="map_frame" value="$(var map_frame)" />
@@ -27,15 +27,6 @@
   </include> 
 
   <group if="$(var navigation)">
-    <node name="hokuyo_laser_filters" pkg="laser_filters" exec="scan_to_scan_filter_chain">
-      <param from="$(find-pkg-share vizzy_sensors)/config/hokuyo_filters.yaml"/>
-    </node>
-    <node name="hokuyo_laser_filters_rear" pkg="laser_filters" exec="scan_to_scan_filter_chain">
-      <param from="$(find-pkg-share vizzy_sensors)/config/hokuyo_filters.yaml" />
-      <remap from="scan" to="scan_rear"/>
-      <remap from="scan_filtered" to="scan_filtered_rear"/>
-    </node>
-
     <group if="$(var use_obstacles)">
       <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
         <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration_real.yaml"/>
