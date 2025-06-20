@@ -104,6 +104,12 @@ namespace vizzy_sensors
                 }
 
                 if (in_footprint) {
+                    // Add this debug log message.
+                    RCLCPP_DEBUG(
+                        this->logging_interface_->get_logger(),
+                        "FootprintFilter: Point at index %u with range %.2f is inside the footprint. Filtering it.",
+                        i, range);
+                    
                     filtered_scan.ranges[i] = std::numeric_limits<float>::quiet_NaN();
                 }
             }
