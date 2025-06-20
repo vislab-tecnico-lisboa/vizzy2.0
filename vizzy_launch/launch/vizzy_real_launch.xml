@@ -36,14 +36,16 @@
     <group if="$(var use_obstacles)">
       <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
         <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration_real.yaml"/>
-        <arg name="use_sim_time" value="false"/> </include>
+        <arg name="use_sim_time" value="false"/> 
         <arg name="map_file" value="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)"/>
+      </include>
     </group>
     <group unless="$(var use_obstacles)">
       <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
         <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration_real.yaml"/>
-        <arg name="use_sim_time" value="false"/> </include>
+        <arg name="use_sim_time" value="false"/>
         <arg name="map_file" value="$(find-pkg-share vizzy_navigation)/maps/$(var map_file)"/>
+      </include>
     </group>
   </group>
 </launch>
