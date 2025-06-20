@@ -207,13 +207,8 @@ def generate_launch_description():
                 executable='amcl',
                 name='amcl',
                 output='screen',
-                parameters=[
-                    configured_params,  
-                    {   # Override parameters for AMCL.
-                        'scan_topics': [scan_topic_front, scan_topic_rear]
-                    }
-                ],
-                remappings=remappings),
+                parameters=[configured_params],
+                remappings=remappings + [('scan_topics' , [scan_topic_front, scan_topic_rear])]),
             Node(
                 package='nav2_map_server',
                 executable='map_server',
