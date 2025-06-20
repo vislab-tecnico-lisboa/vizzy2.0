@@ -5,8 +5,8 @@
 
 <launch>
   <arg name="ns" default="" description="Namespace for all nodes"/>
-  <let name="front_laser_frame" default="$nav_hokuyo_laser_link" description="Frame id for front laser link."/>
-  <let name="rear_laser_frame" default="$nav_hokuyo_rear_laser_link" description="Frame id for rear laser link."/>
+  <arg name="front_laser_frame" default="$nav_hokuyo_laser_link" description="Frame id for front laser link."/>
+  <arg name="rear_laser_frame" default="$nav_hokuyo_rear_laser_link" description="Frame id for rear laser link."/>
   
   <include file="$(find-pkg-share vizzy_robot)/launch/auxiliary_vizzy_launch.py">
         <arg name="use_full_gazebo_model" value="false" />
