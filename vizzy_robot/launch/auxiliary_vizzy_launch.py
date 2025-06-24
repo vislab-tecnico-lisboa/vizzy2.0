@@ -68,31 +68,11 @@ def generate_launch_description():
     urdf_file = DeclareLaunchArgument(
         'urdf_file', default_value='vizzy.urdf.xacro', description='URDF xacro file'
     )
-    use_yarp = DeclareLaunchArgument(
-        'use_yarp', default_value='false', description='Use YARP'
-    )
-    use_full_gazebo_model = DeclareLaunchArgument(
-        'use_full_gazebo_model', default_value='false', description='Use full Gazebo model'
-    )
-    use_full_hand_model = DeclareLaunchArgument(
-        'use_full_hand_model', default_value='false', description='Use full hand model'
-    )
-    disable_laser = DeclareLaunchArgument(
-        'disable_laser', default_value='true', description='Disable laser sensor'
-    )
-    disable_3d_sensor = DeclareLaunchArgument(
-        'disable_3d_sensor', default_value='true', description='Disable 3D sensor'
-    )
 
     # Generate the robot_description by processing the URDF file with xacro.
     robot_description_command = Command([
         FindExecutable(name='xacro'), ' ',
         PathJoinSubstitution([FindPackageShare('vizzy_description'), 'robots', LaunchConfiguration('urdf_file')]), ' ',
-        'use_yarp:=', LaunchConfiguration('use_yarp'), ' ',
-        'use_full_gazebo_model:=', LaunchConfiguration('use_full_gazebo_model'), ' ',
-        'use_full_hand_model:=', LaunchConfiguration('use_full_hand_model'), ' ',
-        'disable_laser:=', LaunchConfiguration('disable_laser'), ' ',
-        'disable_3d_sensor:=', LaunchConfiguration('disable_3d_sensor')
     ])
 
     # Use the ament index to get the package share directory and build the file path string.
@@ -139,13 +119,8 @@ def generate_launch_description():
         pose_P,
         pose_Y,
         robot,
-        use_yarp,
         urdf_file,
-        disable_laser,
-        disable_3d_sensor,
         write_file_action,
-        use_full_hand_model,
-        use_full_gazebo_model,
         joint_state_publisher_node,
         robot_state_publisher_node,
     ])

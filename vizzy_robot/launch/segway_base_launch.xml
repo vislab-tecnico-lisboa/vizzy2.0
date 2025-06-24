@@ -4,12 +4,15 @@
 -->
 
 <launch>
+    <arg name="odom_frame_id" default="odometry" description="Frame id for the odometry"/>
+    <arg name="base_frame_id" default="base_footprint" description="Frame id for the base footprint"/>
+
     <node pkg="segway_rmp_ros2"
           exec="segway_rmp_node_ros2"
           name="segway_rmp_node_ros2"
           output="screen"
           on_exit="shutdown">
-          <param name="odom_frame_id" value="odometry" />
-          <param name="frame_id" value="base_footprint" />
+          <param name="odom_frame_id" value="$(var odom_frame_id)" />
+          <param name="frame_id" value="$(var base_frame_id)" />
     </node>
 </launch>

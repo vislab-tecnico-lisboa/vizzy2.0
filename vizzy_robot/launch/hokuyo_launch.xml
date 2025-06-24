@@ -4,14 +4,36 @@
 -->
 
 <launch>
-  <arg name="node_name" default="hokuyo_node" description="Name for the urg_node instance"/>
-  <arg name="port" default="/dev/ttyACM0" description="The device port for the laser scanner"/>
-  <arg name="scan_topic" default="scan" description="The name of the output scan topic"/>
-  <arg name="laser_frame_id" default="laser_link" description="The TF frame ID for the laser scanner"/>
+  <arg name="node_name_front" default="nav_hokuyo_node" description="Name for the urg_node instance"/>
+  <arg name="node_name_rear" default="nav_hokuyo_rear_node" description="Name for the rear urg_node instance"/>
+  <arg name="scan_topic_front" default="scan" description="The name of the output scan topic"/>
+  <arg name="scan_topic_rear" default="scan_rear" description="The name of the rear output scan topic"/>
+  <arg name="serial_port_front" default="/dev/ttyACM1" description="Serial port for the front laser scanner"/>
+  <arg name="serial_port_rear" default="/dev/ttyACM0" description="Serial port for the rear laser scanner"/>
+  <arg name="front_laser_frame" default="nav_hokuyo_laser_link" description="Frame id for front laser link."/>
+  <arg name="rear_laser_frame" default="nav_hokuyo_rear_laser_link" description="Frame id for rear laser link."/>
 
-  <node name="$(var node_name)" pkg="urg_node" exec="urg_node_driver" output="screen">
-      <param name="serial_port" value="$(var port)" />
-      <param name="frame_id" value="$(var laser_frame_id)" />
-      <param name="angle_min" value="-1.309" /> <param name="angle_max" value="1.309" /> <remap from="scan" to="$(var scan_topic)" />
-  </node>
+  <!-- Both lasers have the same angle_min and angle_max specifications. -->
+  <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
+  <arg name="angle_max" default="1.309" description="Maximum angle for the laser scanner"/>
+  
+  <group>
+      <node name="$(var node_name_front)" pkg="urg_node" exec="urg_node_driver" output="screen">
+          <param name="serial_port" value="$(var serial_port)" />
+          <param name="laser_frame_id" value="$(var front_laser_frame)" />
+          <param name="angle_min" value="$(var angle_min)" />
+          <param name="angle_max" value="$(var angle_max)" />
+          <remap from="scan" to="${scan_topic}" />
+      </node>
+  </group>
+
+  <group>
+      <node name="$(var node_name_rear)" pkg="urg_node" exec="urg_node_driver" output="screen">
+          <param name="serial_port" value="$(var serial_port_rear)" />
+          <param name="laser_frame_id" value="$(var rear_laser_frame)" />
+          <param name="angle_min" value="$(var angle_min)" />
+          <param name="angle_max" value="$(var angle_max)" />
+          <remap from="scan" to="${scan_topic_rear}" />
+      </node>
+  </group>
 </launch>

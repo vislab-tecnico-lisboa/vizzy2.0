@@ -4,40 +4,46 @@
 -->
 
 <launch>
-  <arg name="ns" default="" description="Namespace for all nodes"/>
+  <arg name="node_name_front" default="nav_hokuyo_node" description="Name for the urg_node instance"/>
+  <arg name="node_name_rear" default="nav_hokuyo_rear_node" description="Name for the rear urg_node instance"/>
+  <arg name="scan_topic_front" default="scan" description="The name of the output scan topic"/>
+  <arg name="scan_topic_rear" default="scan_rear" description="The name of the rear output scan topic"/>
+  <arg name="serial_port_front" default="/dev/ttyACM1" description="Serial port for the front laser scanner"/>
+  <arg name="serial_port_rear" default="/dev/ttyACM0" description="Serial port for the rear laser scanner"/>
   <arg name="front_laser_frame" default="nav_hokuyo_laser_link" description="Frame id for front laser link."/>
   <arg name="rear_laser_frame" default="nav_hokuyo_rear_laser_link" description="Frame id for rear laser link."/>
+  <arg name="urdf_file" default="vizzy.urdf.xacro" description="URDF file for the robot"/>
+  <arg name="odom_frame_id" default="odometry" description="Frame id for the odometry"/>
+  <arg name="base_frame_id" default="base_footprint" description="Frame id for the base footprint"/>
   
-  <include file="$(find-pkg-share vizzy_robot)/launch/auxiliary_vizzy_launch.py">
-        <arg name="use_full_gazebo_model" value="false" />
-        <arg name="use_full_hand_model" value="false" />
-        <arg name="urdf_file" value="vizzy.urdf.xacro" />
-        <arg name="use_yarp" value="false" />
-        <arg name="disable_laser" value="false" />
-        <arg name="disable_3d_sensor" value="false" />
-  </include>
-
-  <include file="$(find-pkg-share vizzy_robot)/launch/segway_base_launch.xml">
-      </include>
+  <!-- Both lasers have the same angle_min and angle_max specifications. -->
+  <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
+  <arg name="angle_max" default="1.309" description="Maximum angle for the laser scanner"/>
   
-  <group>
-      <node name="nav_hokuyo_node" pkg="urg_node" exec="urg_node_driver" output="screen">
-          <param name="serial_port" value="/dev/ttyACM1" />
-          <param name="laser_frame_id" value="$(var front_laser_frame)" />
-          <param name="angle_min" value="-1.309" />
-          <param name="angle_max" value="1.309" />
-          <remap from="scan" to="scan" />
-      </node>
-  </group>
 
-  <group>
-      <node name="nav_hokuyo_rear_node" pkg="urg_node" exec="urg_node_driver" output="screen">
-          <param name="serial_port" value="/dev/ttyACM0" />
-          <param name="laser_frame_id" value="$(var rear_laser_frame)" />
-          <param name="angle_min" value="-1.309" />
-          <param name="angle_max" value="1.309" />
-          <remap from="scan" to="scan_rear" />
-      </node>
-  </group>
+    <!-- Compile the final Robot Model URDF and launch the Robot and Joint State Publishers. -->
+    <include file="$(find-pkg-share vizzy_robot)/launch/auxiliary_vizzy_launch.py">
+        <arg name="urdf_file" value="$(var urdf_file)" />
+    </include>
+
+    <!-- Launch the Segway base -->
+    <include file="$(find-pkg-share vizzy_robot)/launch/segway_base_launch.xml">
+        <arg name="odom_frame_id" value="$(var odom_frame_id)" />
+        <arg name="base_frame_id" value="$(var base_frame_id)" />
+    </include>
+  
+    <!-- Launch the Hokuyo laser scanners -->
+    <include file="$(find-pkg-share vizzy_robot)/launch/hokuyo_launch.xml">
+        <arg name="node_name_front" value="$(var node_name_front)" />
+        <arg name="node_name_rear" value="$(var node_name_rear)" />
+        <arg name="scan_topic_front" value="$(var scan_topic_front)" />
+        <arg name="scan_topic_rear" value="$(var scan_topic_rear)" />
+        <arg name="serial_port_front" value="$(var serial_port_front)" />
+        <arg name="serial_port_rear" value="$(var serial_port_rear)" />
+        <arg name="front_laser_frame" value="$(var front_laser_frame)" />
+        <arg name="rear_laser_frame" value="$(var rear_laser_frame)" />
+        <arg name="angle_min" value="$(var angle_min)" />
+        <arg name="angle_max" value="$(var angle_max)" />
+    </include>
 
 </launch>

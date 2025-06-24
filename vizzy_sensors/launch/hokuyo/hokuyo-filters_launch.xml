@@ -6,16 +6,32 @@
 -->
 
 <launch>
-  <arg name="node_name" default="hokuyo_laser_filters" description="Name for the laser_filters node"/>
-  <arg name="params_file" default="$(find-pkg-share vizzy_sensors)/config/hokuyo_filters.yaml" description="Full path to the ROS 2 parameters file"/>
+  <arg name="laser_filter_params_file" default="$(find-pkg-share vizzy_sensors)/config/hokuyo_filters.yaml" description="Path to the laser filters parameters file"/>
+  <arg name="scan_topic_front" default="scan" description="The name of the output scan topic"/> 
+  <arg name="scan_topic_rear" default="scan_rear" description="The name of the rear output scan topic"/>
+  <arg name="scan_topic_filtered_front" default="scan_filtered_front" description="The name of the filtered front scan topic"/>
+  <arg name="scan_topic_filtered_rear" default="scan_filtered_rear" description="The name of the filtered rear scan topic"/>
+  
+  <group>
+    <node pkg="laser_filters"
+          exec="scan_to_scan_filter_chain"
+          name="hokuyo_laser_filters"
+          output="screen">
+      <param from="$(var laser_filter_params_file)"/>
 
-  <node pkg="laser_filters"
-        exec="scan_to_scan_filter_chain"
-        name="$(var node_name)"
-        output="screen">
+      <remap from="scan" to="$(var scan_topic_front)"/>
+      <remap from="scan_filtered" to="$(var scan_topic_filtered_front)"/>
+    </node>
 
-    <param from="$(var params_file)"/>
-
-  </node>
+    <node pkg="laser_filters"
+          exec="scan_to_scan_filter_chain"
+          name="hokuyo_laser_filters_rear"
+          output="screen">
+      <param from="$(var laser_filter_params_file)"/>
+      
+      <remap from="scan" to="$(var scan_topic_rear)"/>
+      <remap from="scan_filtered" to="$(var scan_topic_filtered_rear)"/>
+    </node>
+  </group>
 
 </launch>

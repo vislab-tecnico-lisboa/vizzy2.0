@@ -6,44 +6,93 @@
 -->
 
 <launch>
-  <arg name="robot" default="vizzy"/>
-  <arg name="navigation" default="true"/>
-  <arg name="gui" default="true"/> 
-  <arg name="map_frame" default="map" />
-  <arg name="base_frame_id" default="base_footprint" />
-  <arg name="odom_frame_id" default="odometry" />
-  <arg name="map_topic" default="/map" />
   <arg name="map_file" default="isr_7th_floor_simulation.yaml" />
-  <arg name="custom_obstacles" default="true" />
   <arg name="obstacles_map_file" default="mapa_piso7_NOVO_AWESOME_obst.yaml" />
-  <arg name="ns" default="" />
   <arg name="use_obstacles" default="true" />
-  <arg name="scan_topic_front" default="/scan" />
-  <arg name="scan_topic_rear" default="/scan_rear" />
+  <arg name="use_laser_filters" default="true" description="Whether to use laser filters for the front and rear lasers"/>
+  <arg name="node_name_front" default="nav_hokuyo_node" description="Name for the urg_node instance"/>
+  <arg name="node_name_rear" default="nav_hokuyo_rear_node" description="Name for the rear urg_node instance"/>
+  <arg name="scan_topic_front" default="scan" description="The name of the output scan topic"/>
+  <arg name="scan_topic_rear" default="scan_rear" description="The name of the rear output scan topic"/>
+  <arg name="scan_topic_filtered_front" default="scan_filtered_front" description="The name of the filtered front scan topic"/>
+  <arg name="scan_topic_filtered_rear" default="scan_filtered_rear" description="The name of the filtered rear scan topic"/>
+  <arg name="serial_port_front" default="/dev/ttyACM1" description="Serial port for the front laser scanner"/>
+  <arg name="serial_port_rear" default="/dev/ttyACM0" description="Serial port for the rear laser scanner"/>
+  <arg name="front_laser_frame" default="nav_hokuyo_laser_link" description="Frame id for front laser link."/>
+  <arg name="rear_laser_frame" default="nav_hokuyo_rear_laser_link" description="Frame id for rear laser link."/>
+  <arg name="urdf_file" default="vizzy.urdf.xacro" description="URDF file for the robot"/>
+  <arg name="odom_frame_id" default="odometry" description="Frame id for the odometry"/>
+  <arg name="base_frame_id" default="base_footprint" description="Frame id for the base footprint"/>
+  <arg name="params_file" default="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml" description="Path to the Nav2 parameters file"/>
+  <arg name="autostart" default="true" description="Whether to autostart the navigation stack"/>
+  <arg name="use_composition" default="false" description="Use composition for the navigation stack"/>
+  <arg name="container_name" default="nav2_container" description="Name of the container for the navigation stack"/>
+  <arg name="use_respawn" default="false" description="Whether to respawn the navigation nodes if they crash"/>
+  <arg name="log_level" default="debug" description="Log level for the navigation stack"/>
+  <arg name="map_topic" default="map" description="Topic for the map data"/>
+  <arg name="map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var map_file)" description="Path to the map YAML file"/>
+  <arg name="obstacles_map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)" description="Path to the obstacles map YAML file"/>
+  <arg name="laser_filter_params_file" default="$(find-pkg-share vizzy_sensors)/config/hokuyo_filters.yaml" description="Path to the laser filters parameters file"/>
+
+  <!-- Both lasers have the same angle_min and angle_max specifications. -->
+  <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
+  <arg name="angle_max" default="1.309" description="Maximum angle for the laser scanner"/>
+
+  <!-- Launch the laser filters -->
+  <group if="$(var use_laser_filters)">
+    <include file="$(find-pkg-share vizzy_sensors)/launch/hokuyo/hokuyo-filters_launch.xml">
+      <arg name="laser_filter_params_file" value="$(var laser_filter_params_file)" />
+      <arg name="scan_topic_front" value="$(var scan_topic_front)" />
+      <arg name="scan_topic_rear" value="$(var scan_topic_rear)" />
+      <arg name="scan_topic_filtered_front" value="$(var scan_topic_filtered_front)" />
+      <arg name="scan_topic_filtered_rear" value="$(var scan_topic_filtered_rear)" />
+    </include>
+  </group>
 
   <include file="$(find-pkg-share vizzy_robot)/launch/real_robot_launch.xml">
-    <arg name="map_frame" value="$(var map_frame)" />
-    <arg name="ns" value="$(var ns)" />
+    <arg name="urdf_file" value="$(var urdf_file)" />
+    <arg name="odom_frame_id" value="$(var odom_frame_id)" />
+    <arg name="base_frame_id" value="$(var base_frame_id)" />
+    <arg name="node_name_front" value="$(var node_name_front)" />
+    <arg name="node_name_rear" value="$(var node_name_rear)" />
+    <arg name="scan_topic_front" value="$(var scan_topic_filtered_front)" />
+    <arg name="scan_topic_rear" value="$(var scan_topic_filtered_rear)" />
+    <arg name="serial_port_front" value="$(var serial_port_front)" />
+    <arg name="serial_port_rear" value="$(var serial_port_rear)" />
+    <arg name="front_laser_frame" value="$(var front_laser_frame)" />
+    <arg name="rear_laser_frame" value="$(var rear_laser_frame)" />
+    <arg name="angle_min" value="$(var angle_min)" />
+    <arg name="angle_max" value="$(var angle_max)" />
   </include> 
 
-  <group if="$(var navigation)">
-    <group if="$(var use_obstacles)">
-      <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
-        <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration_real.yaml"/>
-        <arg name="use_sim_time" value="false"/> 
-        <arg name="map_yaml" value="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)"/>
-        <arg name="scan_topic_front" value="$(var scan_topic_front)"/>
-        <arg name="scan_topic_rear" value="$(var scan_topic_rear)"/>
-      </include>
-    </group>
-    <group unless="$(var use_obstacles)">
-      <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
-        <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration_real.yaml"/>
-        <arg name="use_sim_time" value="false"/>
-        <arg name="map_yaml" value="$(find-pkg-share vizzy_navigation)/maps/$(var map_file)"/>
-        <arg name="scan_topic_front" value="$(var scan_topic_front)"/>
-        <arg name="scan_topic_rear" value="$(var scan_topic_rear)"/>
-      </include>
-    </group>
+  <group if="$(var use_obstacles)">
+    <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
+      <arg name="use_sim_time" value="false"/>
+      <arg name="params_file" value="$(var params_file)"/>
+      <arg name="autostart" value="$(var autostart)"/>
+      <arg name="use_composition" value="$(var use_composition)"/>
+      <arg name="container_name" value="$(var container_name)"/>
+      <arg name="use_respawn" value="$(var use_respawn)"/>
+      <arg name="log_level" value="$(var log_level)"/>
+      <arg name="map_topic" value="$(var map_topic)"/>
+      <arg name="scan_topic_front" value="$(var scan_topic_filtered_front)"/>
+      <arg name="scan_topic_rear" value="$(var scan_topic_filtered_rear)"/>
+      <arg name="map_yaml" value="$(var obstacles_map_yaml)"/>
+    </include>
+  </group>
+  <group unless="$(var use_obstacles)">
+    <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
+      <arg name="use_sim_time" value="false"/>
+      <arg name="params_file" value="$(var params_file)"/>
+      <arg name="autostart" value="$(var autostart)"/>
+      <arg name="use_composition" value="$(var use_composition)"/>
+      <arg name="container_name" value="$(var container_name)"/>
+      <arg name="use_respawn" value="$(var use_respawn)"/>
+      <arg name="log_level" value="$(var log_level)"/>
+      <arg name="map_topic" value="$(var map_topic)"/>
+      <arg name="scan_topic_front" value="$(var scan_topic_front)"/>
+      <arg name="scan_topic_rear" value="$(var scan_topic_rear)"/>
+      <arg name="map_yaml" value="$(var map_yaml)"/>
+    </include>
   </group>
 </launch>
