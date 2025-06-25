@@ -3,5 +3,6 @@
         "bitset": "cpp",
         "chrono": "cpp",
         "algorithm": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "/home/joaopl/vizzy2_ws/src/vizzy2/vizzy_description"
 }

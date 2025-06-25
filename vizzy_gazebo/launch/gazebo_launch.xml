@@ -15,8 +15,6 @@
   along to the include tags as command line arguments
   for other launch files. -->
 
-  <!-- Robot name -->
-  <arg name="robot" default="vizzy"/>
   <!-- Robot pose relative to the map -->
   <arg name="pose" default="-x 0.0 -y -0.0 -z 0.0 -R 0.0 -P 0.0 -Y 0.0"/>
   <!-- Robot semantic description file -->
@@ -66,7 +64,6 @@
 
   <!-- Spawn the robot in simulation using the new python launcher -->
   <include file="$(find-pkg-share vizzy_gazebo)/launch/vizzy_spawn.launch.py">
-    <arg name="robot" value="$(var robot)"/>
     <arg name="pose" value="$(var pose)"/>
     <arg name="urdf_file" value="$(var urdf_file)"/>
     <arg name="use_yarp" value="$(var use_yarp)"/>

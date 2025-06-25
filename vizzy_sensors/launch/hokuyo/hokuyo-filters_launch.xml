@@ -7,8 +7,8 @@
 
 <launch>
   <arg name="laser_filter_params_file" default="$(find-pkg-share vizzy_sensors)/config/hokuyo_filters.yaml" description="Path to the laser filters parameters file"/>
-  <arg name="scan_topic_front" default="scan" description="The name of the output scan topic"/> 
-  <arg name="scan_topic_rear" default="scan_rear" description="The name of the rear output scan topic"/>
+  <arg name="scan_topic_front" default="/nav_hokuyo_laser/front/scan" description="The name of the output scan topic"/> 
+  <arg name="scan_topic_rear" default="/nav_hokuyo_laser/rear/scan" description="The name of the rear output scan topic"/>
   <arg name="scan_topic_filtered_front" default="scan_filtered_front" description="The name of the filtered front scan topic"/>
   <arg name="scan_topic_filtered_rear" default="scan_filtered_rear" description="The name of the filtered rear scan topic"/>
   

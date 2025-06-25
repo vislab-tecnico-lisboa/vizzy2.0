@@ -6,8 +6,8 @@
 <launch>
   <arg name="node_name_front" default="nav_hokuyo_node" description="Name for the urg_node instance"/>
   <arg name="node_name_rear" default="nav_hokuyo_rear_node" description="Name for the rear urg_node instance"/>
-  <arg name="scan_topic_front" default="scan" description="The name of the output scan topic"/>
-  <arg name="scan_topic_rear" default="scan_rear" description="The name of the rear output scan topic"/>
+  <arg name="scan_topic_front" default="/nav_hokuyo_laser/front/scan" description="The name of the output scan topic"/>
+  <arg name="scan_topic_rear" default="/nav_hokuyo_laser/rear/scan" description="The name of the rear output scan topic"/>
   <arg name="serial_port_front" default="/dev/ttyACM1" description="Serial port for the front laser scanner"/>
   <arg name="serial_port_rear" default="/dev/ttyACM0" description="Serial port for the rear laser scanner"/>
   <arg name="front_laser_frame" default="nav_hokuyo_laser_link" description="Frame id for front laser link."/>

@@ -16,8 +16,6 @@
   <xacro:arg name="use_full_hand_model" default="false"/>
   <!-- Disable laser sensors -->
   <xacro:arg name="disable_laser" default="true"/>
-  <!-- Disable depth camera -->
-  <xacro:arg name="disable_3d_sensor" default="true"/>
 
   <!-- Includes -->
 
@@ -28,8 +26,6 @@
 
   <!-- Hokuyo URG-04LX laser scanner -->
   <xacro:include filename="$(find vizzy_description)/urdf/sensors/hokuyo_04lx_laser.urdf.xacro"/>
-  <!-- RealSense D435 -->
-  <xacro:include filename="$(find vizzy_description)/urdf/sensors/_d435.urdf.xacro"/>
 
   <!-- Robot body -->
 
@@ -87,26 +83,11 @@
     </xacro:hokuyo_04lx_laser>
   </xacro:unless>
 
-  <!-- Instantiate depth camera -->
-  <xacro:unless value="$(arg disable_3d_sensor)">
-    <xacro:sensor_d435 name="realsense" parent="waist_link">
-      <origin xyz="-0.09516 0.143 0.0" rpy="${-M_PI/2} ${M_PI} 0"/> <!-- In the drawing z=0.158!!!-->
-    </xacro:sensor_d435>
-  </xacro:unless>
-
   <!-- Instantiate plugins common to ROS and Yarp -->
   <xacro:joint_state_publisher/>
   <xacro:ros_differential_drive_gazebo/>
   <xacro:camera_plugin name="l_camera" prefix="l"/>
   <xacro:camera_plugin name="r_camera" prefix="r"/>
-
-  <!-- Instantiate Yarp plugins -->
-  <xacro:if value="$(arg use_yarp)">
-    <xacro:torso_gazebo_control/>
-    <xacro:head_gazebo_control/>
-    <xacro:left_arm_gazebo_control/>
-    <xacro:right_arm_gazebo_control/>
-  </xacro:if>
 
   <!-- Instantiate ROS plugins -->
   <xacro:unless value="$(arg use_yarp)">
