@@ -86,7 +86,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
         'amcl.ros__parameters.initial_pose.x': -pose_args[1] if len(pose_args) > 1 else '0.0',
         'amcl.ros__parameters.initial_pose.y': -pose_args[3] if len(pose_args) > 3 else '0.0',
         'amcl.ros__parameters.initial_pose.z': -pose_args[5] if len(pose_args) > 5 else '0.0',
-        'amcl.ros__parameters.initial_pose.yaw': -pose_args[7] if len(pose_args) > 7 else '0.0',
+        'amcl.ros__parameters.initial_pose.yaw': pose_args[7] if len(pose_args) > 7 else '0.0',
 
         # BT Navigator substitutions.
         'bt_navigator.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
@@ -388,6 +388,7 @@ def generate_launch_description():
         map_frame_id_arg,
         odom_frame_id_arg,
         odom_topic_arg,
+        initial_pose_arg,
         
         # Actions
         log_sim_time_action,

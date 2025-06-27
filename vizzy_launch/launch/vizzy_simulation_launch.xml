@@ -14,7 +14,7 @@
   <arg name="odom_frame_id" default="odometry"/> <!-- Verified -->
   <arg name="odom_topic" default="/odom"/> <!-- Verified -->
   <arg name="map_frame_id" default="map"/> <!-- Verified -->
-  <arg name="pose" default="-x 0.0 -y 0.0 -z 0.0 -Y 3.1415"/> <!-- Verified -->
+  <arg name="pose" default="-x 0.0 -y 0.0 -z 0.0 -Y 0.0"/> <!-- Verified -->
   <arg name="urdf_file" default="vizzy.urdf.xacro"/> <!-- Verified -->
   <arg name="paused" default="false"/> <!-- Verified -->
   <arg name="map_topic" default="/map"/> <!-- Verified -->
@@ -26,10 +26,8 @@
   <arg name="obstacles_map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)" description="Path to the obstacles map YAML file"/> <!-- Verified -->
   <arg name="use_obstacles" default="false"/> <!-- Verified -->
   <arg name="log_level" default="info"/> <!-- Verified -->
-  <arg name="scan_topic_front" default="/nav_hokuyo_laser/front/scan" description="The name of the output scan topic"/>
-  <arg name="scan_topic_rear" default="/nav_hokuyo_laser/rear/scan" description="The name of the rear output scan topic"/>
-  <arg name="scan_topic_filtered_front" default="scan_filtered_front" description="The name of the filtered front scan topic"/>
-  <arg name="scan_topic_filtered_rear" default="scan_filtered_rear" description="The name of the filtered rear scan topic"/>
+  <arg name="scan_topic_front" default="/nav_hokuyo_laser/front/scan" description="The name of the output scan topic"/> <!-- Verified -->
+  <arg name="scan_topic_rear" default="/nav_hokuyo_laser/rear/scan" description="The name of the rear output scan topic"/> <!-- Verified -->
   <arg name="params_file" default="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml" description="Path to the Nav2 parameters file"/> <!-- Verified -->
 
   <!-- Launch gazebo -->
@@ -43,6 +41,8 @@
     <arg name="base_frame_id" value="$(var base_frame_id)"/>
     <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
     <arg name="odom_topic" value="$(var odom_topic)"/>
+    <arg name="scan_front_topic" value="$(var scan_topic_front)"/>
+    <arg name="scan_rear_topic" value="$(var scan_topic_rear)"/>
   </include>
 
   <!-- Launch navigation stack -->
@@ -54,8 +54,8 @@
       <arg name="use_respawn" value="false"/>
       <arg name="log_level" value="$(var log_level)"/>
       <arg name="map_topic" value="$(var map_topic)"/>
-      <arg name="scan_topic_front" value="$(var scan_topic_filtered_front)"/>
-      <arg name="scan_topic_rear" value="$(var scan_topic_filtered_rear)"/>
+      <arg name="scan_topic_front" value="$(var scan_topic_front)"/>
+      <arg name="scan_topic_rear" value="$(var scan_topic_rear)"/>
       <arg name="map_yaml" value="$(var obstacles_map_yaml)"/>
       <arg name="base_frame_id" value="$(var base_frame_id)"/>
       <arg name="odom_frame_id" value="$(var odom_frame_id)"/>

@@ -94,6 +94,22 @@ def launch_setup(context, *args, **kwargs):
         emulate_tty=True,
     )
 
+    # Refactor the pose_args to include "-R 0.0 and -P 0.0", because they are not included in the original pose string.
+    # This is necessary because the robot_state_publisher expects these arguments to be present.
+    if len(pose_args) < 8:
+        pose_args += ['-R', '0.0', '-P', '0.0']
+
+    # Sum Pi to the Yaw value.
+    # TODO: Check why does ros_gz_sim has a Pi offset from the original pose.
+    if '-Y' in pose_args:
+        yaw_index = pose_args.index('-Y')
+        if yaw_index + 1 < len(pose_args):
+            try:
+                # Convert the Yaw value to float, add pi, and convert back to string.
+                pose_args[yaw_index + 1] = str(float(pose_args[yaw_index + 1]) + 3.141592653589793)
+            except ValueError:
+                print(f"Invalid Yaw value: {pose_args[yaw_index + 1]}")
+
     # Spawn the robot using ros_gz_sim with the file path and parsed pose arguments.
     spawn_node = Node(
         package='ros_gz_sim',
@@ -126,7 +142,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'pose',
-            default_value='-x 0.0 -y 0.0 -z 0.0 -Y 3.14',
+            default_value='-x 0.0 -y 0.0 -z 0.0 -Y 0.0',
             description='Full spawn pose string for Gazebo (e.g., "-x 1.0 -y 2.0")'
         ),
         DeclareLaunchArgument(
@@ -152,7 +168,14 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'odom_topic', default_value='/odom', description='Odometry topic'
+        ),
+        DeclareLaunchArgument(
+            'scan_front_topic', default_value='/nav_hokuyo_laser/front/scan', description='Front scan topic'
+        ),
+        DeclareLaunchArgument(
+            'scan_rear_topic', default_value='/nav_hokuyo_laser/rear/scan', description= 'Rear scan topic'
         )
+
     ]
 
     # Create the joint_state_publisher node.
@@ -176,8 +199,6 @@ def generate_launch_description():
     #       /model/vizzy/camera/r/camera_info  ->  /camera/camera_info
     #       /model/vizzy/nav_hokuyo_laser/scan  ->  /nav_hokuyo_laser/front/scan
     #       /model/vizzy/nav_hokuyo_rear_laser/scan  ->  /nav_hokuyo_laser/rear/scan
-    #       /model/vizzy/nav_hokuyo_laser/scan/points  ->  /nav_hokuyo_laser/front/points
-    #       /model/vizzy/nav_hokuyo_rear_laser/scan/points  ->  /nav_hokuyo_laser/rear/points
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -193,8 +214,6 @@ def generate_launch_description():
             '/model/vizzy/camera/l/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
             '/model/vizzy/camera/r/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
             '/model/vizzy/nav_hokuyo_rear_laser/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
-            '/model/vizzy/nav_hokuyo_laser/scan/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
-            '/model/vizzy/nav_hokuyo_rear_laser/scan/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
         ],
         remappings=[
             ('/model/vizzy/tf', '/tf'),
@@ -205,10 +224,8 @@ def generate_launch_description():
             ('/model/vizzy/camera/r/image_raw', '/camera/r/image_raw'),
             ('/model/vizzy/camera/l/camera_info', '/camera/l/camera_info'),
             ('/model/vizzy/camera/r/camera_info', '/camera/r/camera_info'),
-            ('/model/vizzy/nav_hokuyo_laser/scan', '/nav_hokuyo_laser/front/scan'),
-            ('/model/vizzy/nav_hokuyo_rear_laser/scan', '/nav_hokuyo_rear/scan'),
-            ('/model/vizzy/nav_hokuyo_laser/scan/points', '/nav_hokuyo_laser/front/points'),
-            ('/model/vizzy/nav_hokuyo_rear_laser/scan/points', '/nav_hokuyo_laser/rear/points'),
+            ('/model/vizzy/nav_hokuyo_laser/scan', LaunchConfiguration('scan_front_topic')),
+            ('/model/vizzy/nav_hokuyo_rear_laser/scan', LaunchConfiguration('scan_rear_topic')),
             ('/clock', '/clock')
         ],
         output='screen',

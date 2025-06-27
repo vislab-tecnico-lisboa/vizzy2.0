@@ -27,6 +27,8 @@
   <arg name="base_frame_id" default="base_footprint"/>
   <arg name="odom_frame_id" default="odometry"/>
   <arg name="odom_topic" default="/odom"/>
+  <arg name="scan_front_topic" default="/nav_hokuyo_laser/front/scan"/>
+  <arg name="scan_rear_topic" default="/nav_hokuyo_laser/rear/scan"/>
 
   <!-- Environment variables -->
   <!-- ! The GAZEBO_MODEL_PATH variable needs to be set in the bashrc as such:
@@ -59,5 +61,7 @@
     <arg name="base_frame_id" value="$(var base_frame_id)"/>
     <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
     <arg name="odom_topic" value="$(var odom_topic)"/>
+    <arg name="scan_front_topic" value="$(var scan_front_topic)"/>
+    <arg name="scan_rear_topic" value="$(var scan_rear_topic)"/>
   </include>
 </launch>
