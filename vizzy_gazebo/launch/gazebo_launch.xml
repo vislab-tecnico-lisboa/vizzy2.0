@@ -15,31 +15,18 @@
   along to the include tags as command line arguments
   for other launch files. -->
 
-  <!-- Robot pose relative to the map -->
-  <arg name="pose" default="-x 0.0 -y -0.0 -z 0.0 -R 0.0 -P 0.0 -Y 0.0"/>
-  <!-- Robot semantic description file -->
+  <arg name="pose" default="-x 0.0 -y -0.0 -z 0.0 -Y 0.0"/>
   <arg name="urdf_file" default="vizzy.urdf.xacro"/>
-
-  <!-- Load Yarp plugins for real robot execution -->
   <arg name="use_yarp" default="false"/>
-
-  <!-- Gazebo parameters -->
   <arg name="gui" default="true"/>
-  <arg name="paused" default="false"/>
   <arg name="use_sim_time" default="true"/>
-  <!-- Load full inertial and collision model or a simplified model -->
-  <arg name="use_full_gazebo_model" default="false"/>
-  <!-- Load a fully detailed hand model with properly modeled links and joints -->
-  <arg name="use_full_hand_model" default="false"/>
-
-  <!-- Map -->
   <arg name="world" default="empty_world.sdf"/>
   <arg name="world_pkg" default="$(find-pkg-share vizzy_gazebo)"/>
-  <arg name="map_frame" default="map"/>
-
-  <!-- Disable robot parts -->
   <arg name="disable_laser" default="false"/>
   <arg name="disable_3d_sensor" default="false"/>
+  <arg name="base_frame_id" default="base_footprint"/>
+  <arg name="odom_frame_id" default="odometry"/>
+  <arg name="odom_topic" default="/odom"/>
 
   <!-- Environment variables -->
   <!-- ! The GAZEBO_MODEL_PATH variable needs to be set in the bashrc as such:
@@ -67,9 +54,10 @@
     <arg name="pose" value="$(var pose)"/>
     <arg name="urdf_file" value="$(var urdf_file)"/>
     <arg name="use_yarp" value="$(var use_yarp)"/>
-    <arg name="use_full_gazebo_model" value="$(var use_full_gazebo_model)"/>
-    <arg name="use_full_hand_model" value="$(var use_full_hand_model)"/>
     <arg name="disable_laser" value="$(var disable_laser)"/>
     <arg name="disable_3d_sensor" value="$(var disable_3d_sensor)"/>
+    <arg name="base_frame_id" value="$(var base_frame_id)"/>
+    <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
+    <arg name="odom_topic" value="$(var odom_topic)"/>
   </include>
 </launch>

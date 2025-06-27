@@ -10,31 +10,27 @@
 
   <!-- Parameters -->
 
-  <arg name="base_frame_id" default="base_footprint"/>
-  <arg name="odom_frame_id" default="odometry"/>
-  <arg name="map_frame_id" default="map"/>
-  <arg name="pose" default="-x 0.0 -y 0.0 -z 0.0 -R 0.0 -P 0.0 -Y 3.1415"/>
-  <arg name="urdf_file" default="vizzy.urdf.xacro"/>
-  <arg name="paused" default="false"/>
-  <arg name="use_full_gazebo_model" default="false"/>
-  <arg name="use_full_hand_model" default="false"/>
-  <arg name="map_topic" default="/map"/>
-  <arg name="map_file" default="isr_7th_floor_simulation.yaml"/>
-  <arg name="obstacles_map_file" default="mapa_piso7_NOVO_AWESOME_obst.yaml"/>
+  <arg name="base_frame_id" default="base_footprint"/> <!-- Verified -->
+  <arg name="odom_frame_id" default="odometry"/> <!-- Verified -->
+  <arg name="odom_topic" default="/odom"/> <!-- Verified -->
+  <arg name="map_frame_id" default="map"/> <!-- Verified -->
+  <arg name="pose" default="-x 0.0 -y 0.0 -z 0.0 -Y 3.1415"/> <!-- Verified -->
+  <arg name="urdf_file" default="vizzy.urdf.xacro"/> <!-- Verified -->
+  <arg name="paused" default="false"/> <!-- Verified -->
+  <arg name="map_topic" default="/map"/> <!-- Verified -->
+  <arg name="map_file" default="isr_7th_floor_simulation.yaml"/> <!-- Verified -->
+  <arg name="obstacles_map_file" default="mapa_piso7_NOVO_AWESOME_obst.yaml"/> <!-- Verified -->
   <arg name="world" default="isr_7th_floor_world.sdf"/>
   <arg name="world_pkg" default="$(find-pkg-share vizzy_gazebo)"/>
-  <arg name="map_frame" default="map"/>
-  <arg name="map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var map_file)" description="Path to the map YAML file"/>
-  <arg name="obstacles_map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)" description="Path to the obstacles map YAML file"/>
-  <arg name="use_obstacles" default="false"/>
-  <arg name="autostart" default="true"/>
-  <arg name="use_respawn" default="false"/>
-  <arg name="log_level" default="info"/>
+  <arg name="map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var map_file)" description="Path to the map YAML file"/> <!-- Verified -->
+  <arg name="obstacles_map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)" description="Path to the obstacles map YAML file"/> <!-- Verified -->
+  <arg name="use_obstacles" default="false"/> <!-- Verified -->
+  <arg name="log_level" default="info"/> <!-- Verified -->
   <arg name="scan_topic_front" default="/nav_hokuyo_laser/front/scan" description="The name of the output scan topic"/>
   <arg name="scan_topic_rear" default="/nav_hokuyo_laser/rear/scan" description="The name of the rear output scan topic"/>
   <arg name="scan_topic_filtered_front" default="scan_filtered_front" description="The name of the filtered front scan topic"/>
   <arg name="scan_topic_filtered_rear" default="scan_filtered_rear" description="The name of the filtered rear scan topic"/>
-  <arg name="params_file" default="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml" description="Path to the Nav2 parameters file"/>
+  <arg name="params_file" default="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml" description="Path to the Nav2 parameters file"/> <!-- Verified -->
 
   <!-- Launch gazebo -->
   <include file="$(find-pkg-share vizzy_gazebo)/launch/gazebo_launch.xml">
@@ -44,8 +40,9 @@
     <arg name="use_sim_time" value="True"/>
     <arg name="world" value="$(var world)"/>
     <arg name="world_pkg" value="$(var world_pkg)"/>
-    <arg name="use_full_gazebo_model" value="$(var use_full_gazebo_model)"/>
-    <arg name="use_full_hand_model" value="$(var use_full_hand_model)"/>
+    <arg name="base_frame_id" value="$(var base_frame_id)"/>
+    <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
+    <arg name="odom_topic" value="$(var odom_topic)"/>
   </include>
 
   <!-- Launch navigation stack -->
@@ -53,8 +50,8 @@
     <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
       <arg name="use_sim_time" value="True"/>
       <arg name="params_file" value="$(var params_file)"/>
-      <arg name="autostart" value="$(var autostart)"/>
-      <arg name="use_respawn" value="$(var use_respawn)"/>
+      <arg name="autostart" value="true"/>
+      <arg name="use_respawn" value="false"/>
       <arg name="log_level" value="$(var log_level)"/>
       <arg name="map_topic" value="$(var map_topic)"/>
       <arg name="scan_topic_front" value="$(var scan_topic_filtered_front)"/>
@@ -69,8 +66,8 @@
     <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
       <arg name="use_sim_time" value="True"/>
       <arg name="params_file" value="$(var params_file)"/>
-      <arg name="autostart" value="$(var autostart)"/>
-      <arg name="use_respawn" value="$(var use_respawn)"/>
+      <arg name="autostart" value="true"/>
+      <arg name="use_respawn" value="false"/>
       <arg name="log_level" value="$(var log_level)"/>
       <arg name="map_topic" value="$(var map_topic)"/>
       <arg name="scan_topic_front" value="$(var scan_topic_front)"/>

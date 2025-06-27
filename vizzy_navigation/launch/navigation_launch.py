@@ -37,6 +37,13 @@ from launch_ros.actions import Node, PushRosNamespace
 from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import RewrittenYaml
 
+# This function is used to parse the pose string from the launch configuration.
+def Parse_Pose_Str(context):
+    pose_str = LaunchConfiguration('pose').perform(context)
+    # The string is e.g., "-x 0.0 -y 0.0 ...", so we just split it by spaces.
+    pose_args = pose_str.split()
+    return pose_args
+
 # --- Opaque Function to save substituted params ---
 def set_nested_item(data_dict, keys, value):
     """Helper function to set a value in a nested dictionary."""
@@ -56,6 +63,13 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
     with open(params_file_path, 'r') as f:
         original_params = yaml.safe_load(f)
 
+    # Call the function to parse the pose string from the launch configuration.
+    pose_args = Parse_Pose_Str(context)
+
+    # Parse the values of pose_args into floats.
+    # This is done to ensure that the values are in the correct format for the YAML file.
+    pose_args = [float(arg) if i % 2 == 1 else arg for i, arg in enumerate(pose_args)]
+
     # Get the dictionary of substitutions defined in the launch file.
     substitutions_dict = {
         # General substitutions.
@@ -69,6 +83,10 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
         'amcl.ros__parameters.odom_frame_id': LaunchConfiguration('odom_frame_id').perform(context),
         'amcl.ros__parameters.scan_topic': LaunchConfiguration('scan_topic_front').perform(context),
         'amcl.ros__parameters.map_topic': LaunchConfiguration('map_topic').perform(context),
+        'amcl.ros__parameters.initial_pose.x': -pose_args[1] if len(pose_args) > 1 else '0.0',
+        'amcl.ros__parameters.initial_pose.y': -pose_args[3] if len(pose_args) > 3 else '0.0',
+        'amcl.ros__parameters.initial_pose.z': -pose_args[5] if len(pose_args) > 5 else '0.0',
+        'amcl.ros__parameters.initial_pose.yaw': -pose_args[7] if len(pose_args) > 7 else '0.0',
 
         # BT Navigator substitutions.
         'bt_navigator.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
@@ -79,15 +97,24 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
         'behavior_server.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
         'behavior_server.ros__parameters.robot_base_frame': LaunchConfiguration('base_frame_id').perform(context),
 
+        # Controller Server substitutions.
+        'controller_server.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),
+
+        # Map Server substitutions.
+        'map_server.ros__parameters.topic_name': LaunchConfiguration('map_topic').perform(context),
+        'map_server.ros__parameters.frame_id': LaunchConfiguration('map_frame_id').perform(context),
+
         # Global and Local Costmaps substitutions.
         'global_costmap.global_costmap.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
         'global_costmap.global_costmap.ros__parameters.robot_base_frame': LaunchConfiguration('base_frame_id').perform(context),
         'global_costmap.global_costmap.ros__parameters.obstacle_layer.scan_front.topic': LaunchConfiguration('scan_topic_front').perform(context),
         'global_costmap.global_costmap.ros__parameters.obstacle_layer.scan_rear.topic': LaunchConfiguration('scan_topic_rear').perform(context),
+        'global_costmap.global_costmap.ros__parameters.static_layer.map_topic': LaunchConfiguration('map_topic').perform(context),
         'local_costmap.local_costmap.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
         'local_costmap.local_costmap.ros__parameters.robot_base_frame': LaunchConfiguration('base_frame_id').perform(context),
         'local_costmap.local_costmap.ros__parameters.obstacle_layer.scan_front.topic': LaunchConfiguration('scan_topic_front').perform(context),
         'local_costmap.local_costmap.ros__parameters.obstacle_layer.scan_rear.topic': LaunchConfiguration('scan_topic_rear').perform(context),
+        'local_costmap.local_costmap.ros__parameters.static_layer.map_topic': LaunchConfiguration('map_topic').perform(context),
 
         # Velocity Smoother substitutions.
         'velocity_smoother.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),
@@ -198,6 +225,11 @@ def generate_launch_description():
         default_value='odom',
         description='Odometry topic for the robot. This is used by the AMCL node to localize the robot in the map. It should match the topic name of the odometry in the ROS2 system.'
     )
+    initial_pose_arg = DeclareLaunchArgument(
+        'initial_pose',
+        default_value='-x 0.0 -y 0.0 -z 0.0 -Y 0.0',
+        description='Initial pose of the robot in the map frame. This is used by the AMCL node to localize the robot in the map. The format is "-x <x> -y <y> -z <z> -R <roll> -P <pitch> -Y <yaw>". The values are in meters for x, y, and z, and in radians for roll, pitch, and yaw.'
+    )
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -232,7 +264,8 @@ def generate_launch_description():
 
     # Remap topics due to the namespace (if it is different than empty string).
     remappings = [('tf', '/tf'),
-                ('tf_static', '/tf_static')]
+                ('tf_static', '/tf_static'),
+                ('map', LaunchConfiguration('map_topic')),]
 
     load_nodes = GroupAction(
         actions=[
