@@ -11,7 +11,7 @@
   <xacro:arg name="use_yarp" default="false"/>
   <xacro:arg name="use_full_gazebo_model" default="false"/>
   <xacro:arg name="use_full_hand_model" default="false"/>
-  <xacro:arg name="disable_laser" default="true"/>
+  <xacro:arg name="disable_laser" default="false"/>
   <xacro:arg name="odom_topic"         default="/odom" />
   <xacro:arg name="odom_frame_id"      default="odometry" />
   <xacro:arg name="base_frame_id"   default="base_footprint" />

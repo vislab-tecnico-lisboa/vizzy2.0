@@ -19,11 +19,11 @@
   
   <group>
       <node name="$(var node_name_front)" pkg="urg_node" exec="urg_node_driver" output="screen">
-          <param name="serial_port" value="$(var serial_port)" />
+          <param name="serial_port" value="$(var serial_port_front)" />
           <param name="laser_frame_id" value="$(var front_laser_frame)" />
           <param name="angle_min" value="$(var angle_min)" />
           <param name="angle_max" value="$(var angle_max)" />
-          <remap from="scan" to="${scan_topic}" />
+          <remap from="scan" to="$(var scan_topic_front)" />
       </node>
   </group>
 
@@ -33,7 +33,7 @@
           <param name="laser_frame_id" value="$(var rear_laser_frame)" />
           <param name="angle_min" value="$(var angle_min)" />
           <param name="angle_max" value="$(var angle_max)" />
-          <remap from="scan" to="${scan_topic_rear}" />
+          <remap from="scan" to="$(var scan_topic_rear)" />
       </node>
   </group>
 </launch>
