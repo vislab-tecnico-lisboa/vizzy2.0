@@ -40,11 +40,8 @@
   <!-- Launch the laser filters -->
   <group if="$(var use_laser_filters)">
     <include file="$(find-pkg-share vizzy_sensors)/launch/hokuyo/hokuyo-filters_launch.xml">
-      <arg name="laser_filter_params_file" value="$(var laser_filter_params_file)" />
       <arg name="scan_topic_front" value="$(var scan_topic_front)" />
-      <arg name="scan_topic_rear" value="$(var scan_topic_rear)" />
       <arg name="scan_topic_filtered_front" value="$(var scan_topic_filtered_front)" />
-      <arg name="scan_topic_filtered_rear" value="$(var scan_topic_filtered_rear)" />
     </include>
 
     <include file="$(find-pkg-share vizzy_robot)/launch/real_robot_launch.xml">

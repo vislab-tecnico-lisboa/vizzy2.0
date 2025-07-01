@@ -57,4 +57,6 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vizzy_sensors_plugins.xml")
   )
 endif()
 
+pluginlib_export_plugin_description_file(filters vizzy_sensors_plugins.xml)
+
 ament_package()
