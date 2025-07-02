@@ -135,11 +135,15 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
                  if 'ros__parameters' in original_params[node_name]:
                      # Special handling for boolean strings.
                      if isinstance(value, str):
-                        actual_value = value.capitalize() in ['True', '1', 'T']
+                        actual_value = value.lower() in ['true', '1', 't']
                      else:
                         actual_value = value
                      original_params[node_name]['ros__parameters'][key_path] = actual_value
         else:
+            # Convert string 'true'/'false' to boolean for all keys ending with 'use_sim_time' or 'autostart'
+            if key_path.endswith('use_sim_time') or key_path.endswith('autostart'):
+                if isinstance(value, str):
+                    value = value.lower() in ['true', '1', 't']
             # Handle dot-notated nested keys.
             keys = key_path.split('.')
             set_nested_item(original_params, keys, value)
