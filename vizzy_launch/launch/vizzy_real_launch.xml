@@ -32,6 +32,9 @@
   <arg name="obstacles_map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)" description="Path to the obstacles map YAML file"/>
   <arg name="laser_filter_params_file" default="$(find-pkg-share vizzy_sensors)/config/hokuyo_filters.yaml" description="Path to the laser filters parameters file"/>
   <arg name="map_frame_id" default="map" description="Frame id for the map"/>
+  <arg name="update_min_d" default="0.01" description="Minimum distance for localization updates"/>
+  <arg name="update_min_a" default="0.01" description="Minimum angle for localization updates"/>
+  <arg name="laser_max_range" default="-1.0" description="Maximum range for the laser scanner"/>
 
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
@@ -74,6 +77,9 @@
         <arg name="base_frame_id" value="$(var base_frame_id)"/>
         <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
         <arg name="map_frame_id" value="$(var map_frame_id)"/>
+        <arg name="update_min_d" value="$(var update_min_d)"/>
+        <arg name="update_min_a" value="$(var update_min_a)"/>
+        <arg name="laser_max_range" value="$(var laser_max_range)"/>
       </include>
     </group>
     <group unless="$(var use_obstacles)">

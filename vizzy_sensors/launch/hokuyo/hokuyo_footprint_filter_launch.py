@@ -29,7 +29,7 @@ def generate_launch_description():
 
         Node(
             package='laser_filters',
-            executable='scan_to_scan_filter_chain_node', 
+            executable='scan_to_scan_filter_chain', 
             name='hokuyo_footprint_filter',
             parameters=[
                 PathJoinSubstitution([

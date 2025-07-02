@@ -87,6 +87,9 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
         'amcl.ros__parameters.initial_pose.y': -pose_args[3] if len(pose_args) > 3 else '0.0',
         'amcl.ros__parameters.initial_pose.z': -pose_args[5] if len(pose_args) > 5 else '0.0',
         'amcl.ros__parameters.initial_pose.yaw': pose_args[7] if len(pose_args) > 7 else '0.0',
+        'amcl.ros__parameters.update_min_d': LaunchConfiguration('update_min_d').perform(context),
+        'amcl.ros__parameters.update_min_a': LaunchConfiguration('update_min_a').perform(context),
+        'amcl.ros__parameters.laser_max_range': LaunchConfiguration('laser_max_range').perform(context),
 
         # BT Navigator substitutions.
         'bt_navigator.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
@@ -110,11 +113,13 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
         'global_costmap.global_costmap.ros__parameters.obstacle_layer.scan_front.topic': LaunchConfiguration('scan_topic_front').perform(context),
         'global_costmap.global_costmap.ros__parameters.obstacle_layer.scan_rear.topic': LaunchConfiguration('scan_topic_rear').perform(context),
         'global_costmap.global_costmap.ros__parameters.static_layer.map_topic': LaunchConfiguration('map_topic').perform(context),
+        'global_costmap.global_costmap.ros__parameters.use_sim_time': LaunchConfiguration('use_sim_time').perform(context),
         'local_costmap.local_costmap.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
         'local_costmap.local_costmap.ros__parameters.robot_base_frame': LaunchConfiguration('base_frame_id').perform(context),
         'local_costmap.local_costmap.ros__parameters.obstacle_layer.scan_front.topic': LaunchConfiguration('scan_topic_front').perform(context),
         'local_costmap.local_costmap.ros__parameters.obstacle_layer.scan_rear.topic': LaunchConfiguration('scan_topic_rear').perform(context),
         'local_costmap.local_costmap.ros__parameters.static_layer.map_topic': LaunchConfiguration('map_topic').perform(context),
+        'local_costmap.local_costmap.ros__parameters.use_sim_time': LaunchConfiguration('use_sim_time').perform(context),
 
         # Velocity Smoother substitutions.
         'velocity_smoother.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),
@@ -229,6 +234,21 @@ def generate_launch_description():
         'initial_pose',
         default_value='-x 0.0 -y 0.0 -z 0.0 -Y 0.0',
         description='Initial pose of the robot in the map frame. This is used by the AMCL node to localize the robot in the map. The format is "-x <x> -y <y> -z <z> -R <roll> -P <pitch> -Y <yaw>". The values are in meters for x, y, and z, and in radians for roll, pitch, and yaw.'
+    )
+    update_min_d_arg = DeclareLaunchArgument(
+        'update_min_d',
+        default_value='0.01',
+        description='Minimum distance for localization updates. This is used by the AMCL node to determine when to update the robot\'s pose based on the laser scan data. The value is in meters.'
+    )
+    update_min_a_arg = DeclareLaunchArgument(
+        'update_min_a',
+        default_value='0.01',
+        description='Minimum angle for localization updates. This is used by the AMCL node to determine when to update the robot\'s pose based on the laser scan data. The value is in radians.'
+    )
+    laser_max_range_arg = DeclareLaunchArgument(
+        'laser_max_range',
+        default_value='-1.0',
+        description='Maximum range for the laser scanner. This is used by the AMCL node to filter out laser scan data that is beyond the specified range. The value is in meters. A value of -1.0 means no limit, and the laser scan data will not be filtered based on range.'
     )
 
     # --- Launch Configurations ---
@@ -389,7 +409,9 @@ def generate_launch_description():
         odom_frame_id_arg,
         odom_topic_arg,
         initial_pose_arg,
-        
+        update_min_d_arg,
+        update_min_a_arg,
+
         # Actions
         log_sim_time_action,
         save_params_action,
