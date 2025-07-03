@@ -90,6 +90,10 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
         'amcl.ros__parameters.update_min_d': float(LaunchConfiguration('update_min_d').perform(context)),
         'amcl.ros__parameters.update_min_a': float(LaunchConfiguration('update_min_a').perform(context)),
         'amcl.ros__parameters.laser_max_range': float(LaunchConfiguration('laser_max_range').perform(context)),
+        'amcl.ros__parameters.beam_skip_distance': float(LaunchConfiguration('beam_skip_distance').perform(context)),
+        'amcl.ros__parameters.beam_skip_error_threshold': float(LaunchConfiguration('beam_skip_error_threshold').perform(context)),
+        'amcl.ros__parameters.beam_skip_threshold': float(LaunchConfiguration('beam_skip_threshold').perform(context)),
+        'amcl.ros__parameters.do_beamskip': LaunchConfiguration('do_beamskip').perform(context),
 
         # BT Navigator substitutions.
         'bt_navigator.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
@@ -254,6 +258,26 @@ def generate_launch_description():
         default_value='-1.0',
         description='Maximum range for the laser scanner. This is used by the AMCL node to filter out laser scan data that is beyond the specified range. The value is in meters. A value of -1.0 means no limit, and the laser scan data will not be filtered based on range.'
     )
+    beam_skip_distance_arg = DeclareLaunchArgument(
+        'beam_skip_distance',
+        default_value='0.5',
+        description='Distance threshold for beam skipping. This is used by the AMCL node to ignore beams that most particles disagree with in Likelihood field model. Maximum distance to consider skipping for (m).'
+    )
+    beam_skip_error_threshold_arg = DeclareLaunchArgument(
+        'beam_skip_error_threshold',
+        default_value='0.9',
+        description='Error threshold for beam skipping. This is used by the AMCL node as the percentage of beams after not matching map to force full update due to bad convergence.'
+    )
+    beam_skip_threshold_arg = DeclareLaunchArgument(
+        'beam_skip_threshold',
+        default_value='0.3',
+        description='Threshold for beam skipping. This is used by the AMCL node as the percentage of beams required to skip.'
+    )  
+    do_beamskip_arg = DeclareLaunchArgument(
+        'do_beamskip',
+        default_value='true',
+        description='Enable or disable beam skipping in the laser scanner.'
+    )
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -415,6 +439,11 @@ def generate_launch_description():
         initial_pose_arg,
         update_min_d_arg,
         update_min_a_arg,
+        laser_max_range_arg,
+        beam_skip_distance_arg,
+        beam_skip_error_threshold_arg,
+        beam_skip_threshold_arg,
+        do_beamskip_arg,
 
         # Actions
         log_sim_time_action,

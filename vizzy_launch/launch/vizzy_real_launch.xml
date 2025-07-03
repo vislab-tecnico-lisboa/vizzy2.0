@@ -9,6 +9,7 @@
   <arg name="map_file" default="isr_7th_floor_simulation.yaml" />
   <arg name="obstacles_map_file" default="mapa_piso7_NOVO_AWESOME_obst.yaml" />
   <arg name="use_obstacles" default="true" />
+  <arg name="use_navigation" default="true" description="Whether to use the navigation stack"/>
   <arg name="use_laser_filters" default="true" description="Whether to use laser filters for the front and rear lasers"/>
   <arg name="node_name_front" default="nav_hokuyo_node" description="Name for the urg_node instance"/>
   <arg name="node_name_rear" default="nav_hokuyo_rear_node" description="Name for the rear urg_node instance"/>
@@ -35,6 +36,10 @@
   <arg name="update_min_d" default="0.01" description="Minimum distance for localization updates"/>
   <arg name="update_min_a" default="0.01" description="Minimum angle for localization updates"/>
   <arg name="laser_max_range" default="-1.0" description="Maximum range for the laser scanner"/>
+  <arg name="beam_skip_distance" default="0.5" description="Distance threshold for beam skipping"/>
+  <arg name="beam_skip_error_threshold" default="0.9" description="Error threshold for beam skipping"/>
+  <arg name="beam_skip_threshold" default="0.3" description="Threshold for beam skipping"/>
+  <arg name="do_beamskip" default="true" description="Enable or disable beam skipping in the laser scanner"/>
 
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
@@ -63,95 +68,124 @@
       <arg name="angle_max" value="$(var angle_max)" />
     </include> 
 
-    <group if="$(var use_obstacles)">
-      <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
-        <arg name="use_sim_time" value="false"/>
-        <arg name="params_file" value="$(var params_file)"/>
-        <arg name="autostart" value="$(var autostart)"/>
-        <arg name="use_respawn" value="$(var use_respawn)"/>
-        <arg name="log_level" value="$(var log_level)"/>
-        <arg name="map_topic" value="$(var map_topic)"/>
-        <arg name="scan_topic_front" value="$(var scan_topic_filtered_front)"/>
-        <arg name="scan_topic_rear" value="$(var scan_topic_filtered_rear)"/>
-        <arg name="map_yaml" value="$(var obstacles_map_yaml)"/>
-        <arg name="base_frame_id" value="$(var base_frame_id)"/>
-        <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
-        <arg name="map_frame_id" value="$(var map_frame_id)"/>
-        <arg name="update_min_d" value="$(var update_min_d)"/>
-        <arg name="update_min_a" value="$(var update_min_a)"/>
-        <arg name="laser_max_range" value="$(var laser_max_range)"/>
-      </include>
-    </group>
-    <group unless="$(var use_obstacles)">
-      <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
-        <arg name="use_sim_time" value="false"/>
-        <arg name="params_file" value="$(var params_file)"/>
-        <arg name="autostart" value="$(var autostart)"/>
-        <arg name="use_respawn" value="$(var use_respawn)"/>
-        <arg name="log_level" value="$(var log_level)"/>
-        <arg name="map_topic" value="$(var map_topic)"/>
-        <arg name="scan_topic_front" value="$(var scan_topic_filtered_front)"/>
-        <arg name="scan_topic_rear" value="$(var scan_topic_filtered_rear)"/>
-        <arg name="map_yaml" value="$(var map_yaml)"/>
-        <arg name="base_frame_id" value="$(var base_frame_id)"/>
-        <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
-        <arg name="map_frame_id" value="$(var map_frame_id)"/>
-      </include>
+
+    <group if="$(var use_navigation)">
+      <group if="$(var use_obstacles)">
+        <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
+          <arg name="use_sim_time" value="false"/>
+          <arg name="params_file" value="$(var params_file)"/>
+          <arg name="autostart" value="$(var autostart)"/>
+          <arg name="use_respawn" value="$(var use_respawn)"/>
+          <arg name="log_level" value="$(var log_level)"/>
+          <arg name="map_topic" value="$(var map_topic)"/>
+          <arg name="scan_topic_front" value="$(var scan_topic_filtered_front)"/>
+          <arg name="scan_topic_rear" value="$(var scan_topic_filtered_rear)"/>
+          <arg name="map_yaml" value="$(var obstacles_map_yaml)"/>
+          <arg name="base_frame_id" value="$(var base_frame_id)"/>
+          <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
+          <arg name="map_frame_id" value="$(var map_frame_id)"/>
+          <arg name="update_min_d" value="$(var update_min_d)"/>
+          <arg name="update_min_a" value="$(var update_min_a)"/>
+          <arg name="laser_max_range" value="$(var laser_max_range)"/>
+          <arg name="beam_skip_distance" value="$(var beam_skip_distance)"/>
+          <arg name="beam_skip_error_threshold" value="$(var beam_skip_error_threshold)"/>
+          <arg name="beam_skip_threshold" value="$(var beam_skip_threshold)"/>
+          <arg name="do_beamskip" value="$(var do_beamskip)"/>
+        </include>
+      </group>
+      <group unless="$(var use_obstacles)">
+        <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
+          <arg name="use_sim_time" value="false"/>
+          <arg name="params_file" value="$(var params_file)"/>
+          <arg name="autostart" value="$(var autostart)"/>
+          <arg name="use_respawn" value="$(var use_respawn)"/>
+          <arg name="log_level" value="$(var log_level)"/>
+          <arg name="map_topic" value="$(var map_topic)"/>
+          <arg name="scan_topic_front" value="$(var scan_topic_filtered_front)"/>
+          <arg name="scan_topic_rear" value="$(var scan_topic_filtered_rear)"/>
+          <arg name="map_yaml" value="$(var map_yaml)"/>
+          <arg name="base_frame_id" value="$(var base_frame_id)"/>
+          <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
+          <arg name="map_frame_id" value="$(var map_frame_id)"/>
+          <arg name="update_min_d" value="$(var update_min_d)"/>
+          <arg name="update_min_a" value="$(var update_min_a)"/>
+          <arg name="laser_max_range" value="$(var laser_max_range)"/>
+          <arg name="beam_skip_distance" value="$(var beam_skip_distance)"/>
+          <arg name="beam_skip_error_threshold" value="$(var beam_skip_error_threshold)"/>
+          <arg name="beam_skip_threshold" value="$(var beam_skip_threshold)"/>
+          <arg name="do_beamskip" value="$(var do_beamskip)"/>
+        </include>
+      </group>
     </group>
   </group>
 
 
 
-
   <!-- If laser filters are disabled, use scans directly. -->
   <group unless="$(var use_laser_filters)">
-    <include file="$(find-pkg-share vizzy_robot)/launch/real_robot_launch.xml">
-      <arg name="urdf_file" value="$(var urdf_file)" />
-      <arg name="odom_frame_id" value="$(var odom_frame_id)" />
-      <arg name="base_frame_id" value="$(var base_frame_id)" />
-      <arg name="node_name_front" value="$(var node_name_front)" />
-      <arg name="node_name_rear" value="$(var node_name_rear)" />
-      <arg name="scan_topic_front" value="$(var scan_topic_front)" />
-      <arg name="scan_topic_rear" value="$(var scan_topic_rear)" />
-      <arg name="serial_port_front" value="$(var serial_port_front)" />
-      <arg name="serial_port_rear" value="$(var serial_port_rear)" />
-      <arg name="front_laser_frame" value="$(var front_laser_frame)" />
-      <arg name="rear_laser_frame" value="$(var rear_laser_frame)" />
-      <arg name="angle_min" value="$(var angle_min)" />
-      <arg name="angle_max" value="$(var angle_max)" />
-    </include> 
+    <group if="$(var use_navigation)">
+      <include file="$(find-pkg-share vizzy_robot)/launch/real_robot_launch.xml">
+        <arg name="urdf_file" value="$(var urdf_file)" />
+        <arg name="odom_frame_id" value="$(var odom_frame_id)" />
+        <arg name="base_frame_id" value="$(var base_frame_id)" />
+        <arg name="node_name_front" value="$(var node_name_front)" />
+        <arg name="node_name_rear" value="$(var node_name_rear)" />
+        <arg name="scan_topic_front" value="$(var scan_topic_front)" />
+        <arg name="scan_topic_rear" value="$(var scan_topic_rear)" />
+        <arg name="serial_port_front" value="$(var serial_port_front)" />
+        <arg name="serial_port_rear" value="$(var serial_port_rear)" />
+        <arg name="front_laser_frame" value="$(var front_laser_frame)" />
+        <arg name="rear_laser_frame" value="$(var rear_laser_frame)" />
+        <arg name="angle_min" value="$(var angle_min)" />
+        <arg name="angle_max" value="$(var angle_max)" />
+      </include> 
 
-    <group if="$(var use_obstacles)">
-      <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
-        <arg name="use_sim_time" value="false"/>
-        <arg name="params_file" value="$(var params_file)"/>
-        <arg name="autostart" value="$(var autostart)"/>
-        <arg name="use_respawn" value="$(var use_respawn)"/>
-        <arg name="log_level" value="$(var log_level)"/>
-        <arg name="map_topic" value="$(var map_topic)"/>
-        <arg name="scan_topic_front" value="$(var scan_topic_front)"/>
-        <arg name="scan_topic_rear" value="$(var scan_topic_rear)"/>
-        <arg name="map_yaml" value="$(var obstacles_map_yaml)"/>
-        <arg name="base_frame_id" value="$(var base_frame_id)"/>
-        <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
-        <arg name="map_frame_id" value="$(var map_frame_id)"/>
-      </include>
-    </group>
-    <group unless="$(var use_obstacles)">
-      <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
-        <arg name="use_sim_time" value="false"/>
-        <arg name="params_file" value="$(var params_file)"/>
-        <arg name="autostart" value="$(var autostart)"/>
-        <arg name="use_respawn" value="$(var use_respawn)"/>
-        <arg name="log_level" value="$(var log_level)"/>
-        <arg name="map_topic" value="$(var map_topic)"/>
-        <arg name="scan_topic_front" value="$(var scan_topic_front)"/>
-        <arg name="scan_topic_rear" value="$(var scan_topic_rear)"/>
-        <arg name="map_yaml" value="$(var map_yaml)"/>
-        <arg name="base_frame_id" value="$(var base_frame_id)"/>
-        <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
-        <arg name="map_frame_id" value="$(var map_frame_id)"/>
-      </include>
+      <group if="$(var use_obstacles)">
+        <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
+          <arg name="use_sim_time" value="false"/>
+          <arg name="params_file" value="$(var params_file)"/>
+          <arg name="autostart" value="$(var autostart)"/>
+          <arg name="use_respawn" value="$(var use_respawn)"/>
+          <arg name="log_level" value="$(var log_level)"/>
+          <arg name="map_topic" value="$(var map_topic)"/>
+          <arg name="scan_topic_front" value="$(var scan_topic_front)"/>
+          <arg name="scan_topic_rear" value="$(var scan_topic_rear)"/>
+          <arg name="map_yaml" value="$(var obstacles_map_yaml)"/>
+          <arg name="base_frame_id" value="$(var base_frame_id)"/>
+          <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
+          <arg name="map_frame_id" value="$(var map_frame_id)"/>
+          <arg name="update_min_d" value="$(var update_min_d)"/>
+          <arg name="update_min_a" value="$(var update_min_a)"/>
+          <arg name="laser_max_range" value="$(var laser_max_range)"/>
+          <arg name="beam_skip_distance" value="$(var beam_skip_distance)"/>
+          <arg name="beam_skip_error_threshold" value="$(var beam_skip_error_threshold)"/>
+          <arg name="beam_skip_threshold" value="$(var beam_skip_threshold)"/>
+          <arg name="do_beamskip" value="$(var do_beamskip)"/>
+        </include>
+      </group>
+      <group unless="$(var use_obstacles)">
+        <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
+          <arg name="use_sim_time" value="false"/>
+          <arg name="params_file" value="$(var params_file)"/>
+          <arg name="autostart" value="$(var autostart)"/>
+          <arg name="use_respawn" value="$(var use_respawn)"/>
+          <arg name="log_level" value="$(var log_level)"/>
+          <arg name="map_topic" value="$(var map_topic)"/>
+          <arg name="scan_topic_front" value="$(var scan_topic_front)"/>
+          <arg name="scan_topic_rear" value="$(var scan_topic_rear)"/>
+          <arg name="map_yaml" value="$(var map_yaml)"/>
+          <arg name="base_frame_id" value="$(var base_frame_id)"/>
+          <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
+          <arg name="map_frame_id" value="$(var map_frame_id)"/>
+          <arg name="update_min_d" value="$(var update_min_d)"/>
+          <arg name="update_min_a" value="$(var update_min_a)"/>
+          <arg name="laser_max_range" value="$(var laser_max_range)"/>
+          <arg name="beam_skip_distance" value="$(var beam_skip_distance)"/>
+          <arg name="beam_skip_error_threshold" value="$(var beam_skip_error_threshold)"/>
+          <arg name="beam_skip_threshold" value="$(var beam_skip_threshold)"/>
+          <arg name="do_beamskip" value="$(var do_beamskip)"/>
+        </include>
+      </group>
     </group>
   </group>
 </launch>
