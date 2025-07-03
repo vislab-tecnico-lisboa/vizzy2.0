@@ -15,6 +15,8 @@
   <arg name="urdf_file" default="vizzy.urdf.xacro" description="URDF file for the robot"/>
   <arg name="odom_frame_id" default="odometry" description="Frame id for the odometry"/>
   <arg name="base_frame_id" default="base_footprint" description="Frame id for the base footprint"/>
+  <arg name="linear_odom_scale" default="1.0" description="Scale factor for linear odometry"/>
+  <arg name="angular_odom_scale" default="1.0" description="Scale factor for angular odometry"/>
   
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
@@ -30,6 +32,8 @@
     <include file="$(find-pkg-share vizzy_robot)/launch/segway_base_launch.xml">
         <arg name="odom_frame_id" value="$(var odom_frame_id)" />
         <arg name="base_frame_id" value="$(var base_frame_id)" />
+        <arg name="linear_odom_scale" value="$(var linear_odom_scale)" />
+        <arg name="angular_odom_scale" value="$(var angular_odom_scale)" />
     </include>
   
     <!-- Launch the Hokuyo laser scanners -->
