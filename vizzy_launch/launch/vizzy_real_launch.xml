@@ -40,8 +40,8 @@
   <arg name="beam_skip_error_threshold" default="0.9" description="Error threshold for beam skipping"/>
   <arg name="beam_skip_threshold" default="0.3" description="Threshold for beam skipping"/>
   <arg name="do_beamskip" default="true" description="Enable or disable beam skipping in the laser scanner"/>
-  <arg name="linear_odom_scale" default="1.0" description="Scale factor for linear odometry"/>
-  <arg name="angular_odom_scale" default="1.0" description="Scale factor for angular odometry"/>
+  <arg name="linear_odom_scale" default="1.6" description="Scale factor for linear odometry"/>
+  <arg name="angular_odom_scale" default="1.6" description="Scale factor for angular odometry"/>
 
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
