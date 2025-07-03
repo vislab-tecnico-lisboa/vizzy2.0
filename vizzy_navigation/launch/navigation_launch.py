@@ -134,7 +134,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
         # The 'use_sim_time' and 'autostart' keys are special cases at the top level.
         # of each node's 'ros__parameters' block, but they are not targeted with.
         # dot notation in the RewrittenYaml class in the same way. We will apply them manually.
-        if key_path == 'use_sim_time' or key_path == 'autostart':
+        if key_path == 'use_sim_time' or key_path == 'autostart' or key_path == 'do_beamskip':
              for node_name in original_params:
                  if 'ros__parameters' in original_params[node_name]:
                      # Special handling for boolean strings.
@@ -144,8 +144,8 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
                         actual_value = value
                      original_params[node_name]['ros__parameters'][key_path] = actual_value
         else:
-            # Convert string 'true'/'false' to boolean for all keys ending with 'use_sim_time' or 'autostart'
-            if key_path.endswith('use_sim_time') or key_path.endswith('autostart'):
+            # Convert string 'true'/'false' to boolean for all keys ending with 'use_sim_time' or 'autostart' or 'do_beamskip'
+            if key_path.endswith('use_sim_time') or key_path.endswith('autostart') or key_path.endswith('do_beamskip'):
                 if isinstance(value, str):
                     value = value.lower() in ['true', '1', 't']
             # Handle dot-notated nested keys.
