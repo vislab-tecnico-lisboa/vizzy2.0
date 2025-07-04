@@ -150,10 +150,10 @@ controller_server:
       min_speed_theta: 0.05
       acc_lim_x: 2.5
       acc_lim_y: 0.0
-      acc_lim_theta: 3.2
+      acc_lim_theta: 2.5
       decel_lim_x: -2.5
       decel_lim_y: 0.0
-      decel_lim_theta: -3.2
+      decel_lim_theta: -2.5
       vx_samples: 20
       vy_samples: 5
       vtheta_samples: 20
@@ -171,7 +171,7 @@ controller_server:
       PathAlign.forward_point_distance: 0.1
       GoalAlign.scale: 24.0
       GoalAlign.forward_point_distance: 0.1
-      PathDist.scale: 50.0
+      PathDist.scale: 40.0
       GoalDist.scale: 24.0
       RotateToGoal.scale: 32.0
       RotateToGoal.slowing_factor: 10.0
