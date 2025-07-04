@@ -27,7 +27,7 @@
   <arg name="params_file" default="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml" description="Path to the Nav2 parameters file"/>
   <arg name="autostart" default="true" description="Whether to autostart the navigation stack"/>
   <arg name="use_respawn" default="false" description="Whether to respawn the navigation nodes if they crash"/>
-  <arg name="log_level" default="debug" description="Log level for the navigation stack"/>
+  <arg name="log_level" default="info" description="Log level for the navigation stack"/>
   <arg name="map_topic" default="/map" description="Topic for the map data"/>
   <arg name="map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var map_file)" description="Path to the map YAML file"/>
   <arg name="obstacles_map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)" description="Path to the obstacles map YAML file"/>
