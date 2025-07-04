@@ -7,7 +7,7 @@
     <arg name="odom_frame_id" default="odometry" description="Frame id for the odometry"/>
     <arg name="base_frame_id" default="base_footprint" description="Frame id for the base footprint"/>
     <arg name="linear_odom_scale" default="1.6" description="Scale factor for linear odometry"/>
-    <arg name="angular_odom_scale" default="1.6" description="Scale factor for angular odometry"/>
+    <arg name="angular_odom_scale" default="1.8" description="Scale factor for angular odometry"/>
 
     <node pkg="segway_rmp_ros2"
           exec="segway_rmp_node_ros2"
