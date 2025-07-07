@@ -184,7 +184,7 @@ local_costmap:
       width: 8
       height: 8
       resolution: 0.05
-      robot_radius: 0.3
+      robot_radius: 0.4
       lethal_cost_threshold: 100
       plugins: ["obstacle_layer", "inflation_layer"]
       inflation_layer:
@@ -237,7 +237,7 @@ global_costmap:
       global_frame: map # Configurable
       robot_base_frame: base_footprint # Configurable
       use_sim_time: True # Configurable
-      robot_radius: 0.3
+      robot_radius: 0.4
       lethal_cost_threshold: 100
       resolution: 0.05
       track_unknown_space: true
