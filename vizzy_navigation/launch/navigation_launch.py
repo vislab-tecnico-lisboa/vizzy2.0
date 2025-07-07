@@ -107,6 +107,12 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
         # Controller Server substitutions.
         'controller_server.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),
         'controller_server.ros__parameters.controller_frequency': float(LaunchConfiguration('controller_frequency').perform(context)),
+        'controller_server.ros__parameters.PathAlign.forward_point_distance': float(LaunchConfiguration('path_align_forward_point_distance').perform(context)),
+        'controller_server.ros__parameters.GoalAlign.forward_point_distance': float(LaunchConfiguration('goal_align_forward_point_distance').perform(context)),
+        'controller_server.ros__parameters.PathAlign.scale': float(LaunchConfiguration('path_align_scale').perform(context)),
+        'controller_server.ros__parameters.GoalAlign.scale': float(LaunchConfiguration('goal_align_scale').perform(context)),
+        'controller_server.ros__parameters.PathDist.scale': float(LaunchConfiguration('path_dist_scale').perform(context)),
+        'controller_server.ros__parameters.GoalDist.scale': float(LaunchConfiguration('goal_dist_scale').perform(context)),
 
         # Map Server substitutions.
         'map_server.ros__parameters.topic_name': LaunchConfiguration('map_topic').perform(context),
@@ -119,12 +125,16 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
         'global_costmap.global_costmap.ros__parameters.obstacle_layer.scan_rear.topic': LaunchConfiguration('scan_topic_rear').perform(context),
         'global_costmap.global_costmap.ros__parameters.static_layer.map_topic': LaunchConfiguration('map_topic').perform(context),
         'global_costmap.global_costmap.ros__parameters.use_sim_time': LaunchConfiguration('use_sim_time').perform(context),
+        'global_costmap.global_costmap.ros__parameters.inflation_layer.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
+        'global_costmap.global_costmap.ros__parameters.inflation_layer.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
         'local_costmap.local_costmap.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
         'local_costmap.local_costmap.ros__parameters.robot_base_frame': LaunchConfiguration('base_frame_id').perform(context),
         'local_costmap.local_costmap.ros__parameters.obstacle_layer.scan_front.topic': LaunchConfiguration('scan_topic_front').perform(context),
         'local_costmap.local_costmap.ros__parameters.obstacle_layer.scan_rear.topic': LaunchConfiguration('scan_topic_rear').perform(context),
         'local_costmap.local_costmap.ros__parameters.static_layer.map_topic': LaunchConfiguration('map_topic').perform(context),
         'local_costmap.local_costmap.ros__parameters.use_sim_time': LaunchConfiguration('use_sim_time').perform(context),
+        'local_costmap.local_costmap.ros__parameters.inflation_layer.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
+        'local_costmap.local_costmap.ros__parameters.inflation_layer.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
 
         # Velocity Smoother substitutions.
         'velocity_smoother.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),
@@ -283,6 +293,46 @@ def generate_launch_description():
         'controller_frequency',
         default_value='20.0',
         description='Frequency of the controller in Hz.',
+    )
+    path_align_forward_point_distance_arg = DeclareLaunchArgument(
+        'path_align_forward_point_distance',
+        default_value='0.325',
+        description='Forward point distance for the PathAlign critic in the controller.',
+    )
+    goal_align_forward_point_distance_arg = DeclareLaunchArgument(
+        'goal_align_forward_point_distance',
+        default_value='0.325',
+        description='Forward point distance for the GoalAlign critic in the controller.',
+    )
+    inflation_radius_arg = DeclareLaunchArgument(
+        'inflation_radius',
+        default_value='0.50',
+        description='Inflation radius for the costmap. This is used by the local and global costmaps.'
+    )
+    path_align_scale_arg = DeclareLaunchArgument(
+        'path_align_scale',
+        default_value='32.0',
+        description='Scale factor for the PathAlign critic in the controller.'
+    )
+    goal_align_scale_arg = DeclareLaunchArgument(
+        'goal_align_scale',
+        default_value='24.0',
+        description='Scale factor for the GoalAlign critic in the controller.'
+    )
+    path_dist_scale_arg = DeclareLaunchArgument(
+        'path_dist_scale',
+        default_value='32.0',
+        description='Scale factor for the PathDist critic in the controller.'
+    )
+    goal_dist_scale_arg = DeclareLaunchArgument(
+        'goal_dist_scale',
+        default_value='24.0',
+        description='Scale factor for the GoalDist critic in the controller.'
+    )
+    cost_scaling_factor_arg = DeclareLaunchArgument(
+        'cost_scaling_factor',
+        default_value='3.0',
+        description='Cost scaling factor for the inflation layer in the costmap.'
     )
 
     # --- Launch Configurations ---
@@ -451,6 +501,14 @@ def generate_launch_description():
         beam_skip_threshold_arg,
         do_beamskip_arg,
         controller_frequency_arg,
+        path_align_forward_point_distance_arg,
+        goal_align_forward_point_distance_arg,
+        inflation_radius_arg,
+        path_align_scale_arg,
+        goal_align_scale_arg,
+        path_dist_scale_arg,
+        goal_dist_scale_arg,
+        cost_scaling_factor_arg,
 
         # Actions
         log_sim_time_action,

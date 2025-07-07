@@ -10,26 +10,34 @@
 
   <!-- Parameters -->
 
-  <arg name="base_frame_id" default="base_footprint"/> <!-- Verified -->
-  <arg name="odom_frame_id" default="odometry"/> <!-- Verified -->
-  <arg name="odom_topic" default="/odom"/> <!-- Verified -->
-  <arg name="map_frame_id" default="map"/> <!-- Verified -->
-  <arg name="pose" default="-x 0.0 -y 0.0 -z 0.0 -Y 0.0"/> <!-- Verified -->
-  <arg name="urdf_file" default="vizzy.urdf.xacro"/> <!-- Verified -->
-  <arg name="paused" default="false"/> <!-- Verified -->
-  <arg name="map_topic" default="/map"/> <!-- Verified -->
-  <arg name="map_file" default="isr_7th_floor_simulation.yaml"/> <!-- Verified -->
-  <arg name="obstacles_map_file" default="mapa_piso7_NOVO_AWESOME_obst.yaml"/> <!-- Verified -->
+  <arg name="base_frame_id" default="base_footprint"/> 
+  <arg name="odom_frame_id" default="odometry"/> 
+  <arg name="odom_topic" default="/odom"/> 
+  <arg name="map_frame_id" default="map"/>
+  <arg name="pose" default="-x 0.0 -y 0.0 -z 0.0 -Y 0.0"/>
+  <arg name="urdf_file" default="vizzy.urdf.xacro"/> 
+  <arg name="paused" default="false"/> 
+  <arg name="map_topic" default="/map"/> 
+  <arg name="map_file" default="isr_7th_floor_simulation.yaml"/> 
+  <arg name="obstacles_map_file" default="mapa_piso7_NOVO_AWESOME_obst.yaml"/> 
   <arg name="world" default="isr_7th_floor_world.sdf"/>
   <arg name="world_pkg" default="$(find-pkg-share vizzy_gazebo)"/>
-  <arg name="map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var map_file)" description="Path to the map YAML file"/> <!-- Verified -->
-  <arg name="obstacles_map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)" description="Path to the obstacles map YAML file"/> <!-- Verified -->
-  <arg name="use_obstacles" default="false"/> <!-- Verified -->
-  <arg name="log_level" default="info"/> <!-- Verified -->
-  <arg name="scan_topic_front" default="/nav_hokuyo_laser/front/scan" description="The name of the output scan topic"/> <!-- Verified -->
-  <arg name="scan_topic_rear" default="/nav_hokuyo_laser/rear/scan" description="The name of the rear output scan topic"/> <!-- Verified -->
-  <arg name="params_file" default="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml" description="Path to the Nav2 parameters file"/> <!-- Verified -->
-  <arg name="controller_frequency" default="20.0" description="Frequency of the controller in Hz"/> <!-- Verified -->
+  <arg name="map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var map_file)" description="Path to the map YAML file"/> 
+  <arg name="obstacles_map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)" description="Path to the obstacles map YAML file"/> 
+  <arg name="use_obstacles" default="false"/> 
+  <arg name="log_level" default="info"/> 
+  <arg name="scan_topic_front" default="/nav_hokuyo_laser/front/scan" description="The name of the output scan topic"/> 
+  <arg name="scan_topic_rear" default="/nav_hokuyo_laser/rear/scan" description="The name of the rear output scan topic"/>
+  <arg name="params_file" default="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml" description="Path to the Nav2 parameters file"/> 
+  <arg name="controller_frequency" default="20.0" description="Frequency of the controller in Hz"/> 
+  <arg name="path_align_forward_point_distance" default="0.325" description="Forward point distance for PathAlign"/>
+  <arg name="goal_align_forward_point_distance" default="0.325" description="Forward point distance for GoalAlign"/>
+  <arg name="inflation_radius" default="0.50" description="Inflation radius for the costmap"/>
+  <arg name="path_align_scale" default="32.0" description="Scale for PathAlign"/>
+  <arg name="goal_align_scale" default="24.0" description="Scale for GoalAlign"/>
+  <arg name="path_dist_scale" default="32.0" description="Scale for PathDist"/>
+  <arg name="goal_dist_scale" default="24.0" description="Scale for GoalDist"/>
+  <arg name="cost_scaling_factor" default="3.0" description="Cost scaling factor for the inflation layer in the costmap"/>
 
   <!-- Launch gazebo -->
   <include file="$(find-pkg-share vizzy_gazebo)/launch/gazebo_launch.xml">
@@ -62,6 +70,14 @@
       <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
       <arg name="map_frame_id" value="$(var map_frame_id)"/>
       <arg name="controller_frequency" value="$(var controller_frequency)"/>
+      <arg name="path_align_forward_point_distance" value="$(var path_align_forward_point_distance)"/>
+      <arg name="goal_align_forward_point_distance" value="$(var goal_align_forward_point_distance)"/>
+      <arg name="inflation_radius" value="$(var inflation_radius)"/>
+      <arg name="path_align_scale" value="$(var path_align_scale)"/>
+      <arg name="goal_align_scale" value="$(var goal_align_scale)"/>
+      <arg name="path_dist_scale" value="$(var path_dist_scale)"/>
+      <arg name="goal_dist_scale" value="$(var goal_dist_scale)"/>
+      <arg name="cost_scaling_factor" value="$(var cost_scaling_factor)"/>
     </include>
   </group>
   <group unless="$(var use_obstacles)">
@@ -79,6 +95,14 @@
       <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
       <arg name="map_frame_id" value="$(var map_frame_id)"/>
       <arg name="controller_frequency" value="$(var controller_frequency)"/>
+      <arg name="path_align_forward_point_distance" value="$(var path_align_forward_point_distance)"/>
+      <arg name="goal_align_forward_point_distance" value="$(var goal_align_forward_point_distance)"/>
+      <arg name="inflation_radius" value="$(var inflation_radius)"/>
+      <arg name="path_align_scale" value="$(var path_align_scale)"/>
+      <arg name="goal_align_scale" value="$(var goal_align_scale)"/>
+      <arg name="path_dist_scale" value="$(var path_dist_scale)"/>
+      <arg name="goal_dist_scale" value="$(var goal_dist_scale)"/>
+      <arg name="cost_scaling_factor" value="$(var cost_scaling_factor)"/>
     </include>
   </group>
 
