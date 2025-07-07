@@ -29,6 +29,7 @@
   <arg name="scan_topic_front" default="/nav_hokuyo_laser/front/scan" description="The name of the output scan topic"/> <!-- Verified -->
   <arg name="scan_topic_rear" default="/nav_hokuyo_laser/rear/scan" description="The name of the rear output scan topic"/> <!-- Verified -->
   <arg name="params_file" default="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml" description="Path to the Nav2 parameters file"/> <!-- Verified -->
+  <arg name="controller_frequency" default="20.0" description="Frequency of the controller in Hz"/> <!-- Verified -->
 
   <!-- Launch gazebo -->
   <include file="$(find-pkg-share vizzy_gazebo)/launch/gazebo_launch.xml">
@@ -60,6 +61,7 @@
       <arg name="base_frame_id" value="$(var base_frame_id)"/>
       <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
       <arg name="map_frame_id" value="$(var map_frame_id)"/>
+      <arg name="controller_frequency" value="$(var controller_frequency)"/>
     </include>
   </group>
   <group unless="$(var use_obstacles)">
@@ -76,6 +78,7 @@
       <arg name="base_frame_id" value="$(var base_frame_id)"/>
       <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
       <arg name="map_frame_id" value="$(var map_frame_id)"/>
+      <arg name="controller_frequency" value="$(var controller_frequency)"/>
     </include>
   </group>
 

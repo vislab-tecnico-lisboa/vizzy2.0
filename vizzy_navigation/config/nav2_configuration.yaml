@@ -34,7 +34,7 @@ amcl:
       x: 0.0 # Configurable
       y: 0.0 # Configurable
       z: 0.0 # Configurable
-      yaw: -0.002146 # Configurable
+      yaw: 0.0 # Configurable
     robot_model_type: "nav2_amcl::DifferentialMotionModel"
     beam_skip_distance: 0.5 # Configurable
     beam_skip_error_threshold: 0.9 # Configurable
@@ -110,7 +110,7 @@ bt_navigator_navigate_to_pose_rclcpp_node:
 controller_server:
   ros__parameters:
     use_sim_time: True # Configurable
-    controller_frequency: 5.0
+    controller_frequency: 20.0 # Configurable
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.001
     min_theta_velocity_threshold: 0.001
@@ -125,17 +125,12 @@ controller_server:
       plugin: "nav2_controller::SimpleProgressChecker"
       required_movement_radius: 0.25
       movement_time_allowance: 10.0
-    # Goal checker parameters
-    #precise_goal_checker:
-    #  plugin: "nav2_controller::SimpleGoalChecker"
-    #  xy_goal_tolerance: 0.25
-    #  yaw_goal_tolerance: 0.25
-    #  stateful: True
     general_goal_checker:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.25
       yaw_goal_tolerance: 0.1
+
     # DWB parameters
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
@@ -147,7 +142,7 @@ controller_server:
       max_vel_theta: 0.4
       min_speed_xy: 0.0
       max_speed_xy: 0.5
-      min_speed_theta: 0.05
+      min_speed_theta: 0.0
       acc_lim_x: 2.5
       acc_lim_y: 0.0
       acc_lim_theta: 2.5
@@ -156,7 +151,7 @@ controller_server:
       decel_lim_theta: -2.5
       vx_samples: 20
       vy_samples: 5
-      vtheta_samples: 20
+      vtheta_samples: 30
       sim_time: 1.7
       linear_granularity: 0.05
       angular_granularity: 0.025
@@ -167,11 +162,11 @@ controller_server:
       stateful: True
       critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
       BaseObstacle.scale: 0.02
-      PathAlign.scale: 35.0
+      PathAlign.scale: 32.0
       PathAlign.forward_point_distance: 0.1
       GoalAlign.scale: 24.0
       GoalAlign.forward_point_distance: 0.1
-      PathDist.scale: 35.0
+      PathDist.scale: 32.0
       GoalDist.scale: 24.0
       RotateToGoal.scale: 32.0
       RotateToGoal.slowing_factor: 10.0

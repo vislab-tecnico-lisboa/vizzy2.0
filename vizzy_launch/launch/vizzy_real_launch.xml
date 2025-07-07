@@ -42,6 +42,7 @@
   <arg name="do_beamskip" default="true" description="Enable or disable beam skipping in the laser scanner"/>
   <arg name="linear_odom_scale" default="1.6" description="Scale factor for linear odometry"/>
   <arg name="angular_odom_scale" default="1.8" description="Scale factor for angular odometry"/>
+  <arg name="controller_frequency" default="20.0" description="Frequency of the controller in Hz"/>
 
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
@@ -95,6 +96,7 @@
           <arg name="beam_skip_error_threshold" value="$(var beam_skip_error_threshold)"/>
           <arg name="beam_skip_threshold" value="$(var beam_skip_threshold)"/>
           <arg name="do_beamskip" value="$(var do_beamskip)"/>
+          <arg name="controller_frequency" value="$(var controller_frequency)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -118,6 +120,7 @@
           <arg name="beam_skip_error_threshold" value="$(var beam_skip_error_threshold)"/>
           <arg name="beam_skip_threshold" value="$(var beam_skip_threshold)"/>
           <arg name="do_beamskip" value="$(var do_beamskip)"/>
+          <arg name="controller_frequency" value="$(var controller_frequency)"/>
         </include>
       </group>
     </group>

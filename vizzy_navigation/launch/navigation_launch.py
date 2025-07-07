@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# The code for this file is heavily modified, although based on the navigation_launch.py file from the
+# The code for this file is *heavily* modified (regarding code and concepts), although based on the navigation_launch.py file from the
 # following repository:
 #
 # https://github.com/utexas-bwi/bwi-ros2/blob/main/src/nav2_bringup/launch/navigation_launch.py
@@ -23,8 +23,8 @@
 # not based on the XML launch files. The original XML launch files were used as a reference to
 # obtain the necessary parameters and nodes to be launched.
 
-# ? This file was refactored to adopt a Generate-Then-Use approach instead of performing in-memory substitutions.
-# ? This allows for the parameters to be saved to a file, which can be used later for debugging or inspection.
+# * This file was refactored to adopt a Generate-Then-Use approach for configuration parameters instead of performing in-memory substitutions.
+# * This allows for the parameters to be saved to a file, which can be used later for debugging or inspection.
 
 import os
 import yaml 
@@ -106,6 +106,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
 
         # Controller Server substitutions.
         'controller_server.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),
+        'controller_server.ros__parameters.controller_frequency': float(LaunchConfiguration('controller_frequency').perform(context)),
 
         # Map Server substitutions.
         'map_server.ros__parameters.topic_name': LaunchConfiguration('map_topic').perform(context),
@@ -278,6 +279,11 @@ def generate_launch_description():
         default_value='true',
         description='Enable or disable beam skipping in the laser scanner.'
     )
+    controller_frequency_arg = DeclareLaunchArgument(
+        'controller_frequency',
+        default_value='20.0',
+        description='Frequency of the controller in Hz.',
+    )
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -444,6 +450,7 @@ def generate_launch_description():
         beam_skip_error_threshold_arg,
         beam_skip_threshold_arg,
         do_beamskip_arg,
+        controller_frequency_arg,
 
         # Actions
         log_sim_time_action,
