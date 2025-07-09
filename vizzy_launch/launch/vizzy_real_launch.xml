@@ -51,6 +51,8 @@
   <arg name="path_dist_scale" default="32.0" description="Scale for PathDist"/>
   <arg name="goal_dist_scale" default="24.0" description="Scale for GoalDist"/>
   <arg name="cost_scaling_factor" default="3.0" description="Cost scaling factor for the inflation layer in the costmap"/>
+  <arg name="base_obstacle_scale" default="0.02" description="Base obstacle scale for the costmap. This is used by the local and global costmaps to scale the cost of obstacles."/>
+  <arg name="controller_plugin_type" default="MPPI" description="Type of controller plugin to use. Options: DWB, RPP, MPPI"/>
 
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
@@ -113,6 +115,8 @@
           <arg name="path_dist_scale" value="$(var path_dist_scale)"/>
           <arg name="goal_dist_scale" value="$(var goal_dist_scale)"/>
           <arg name="cost_scaling_factor" value="$(var cost_scaling_factor)"/>
+          <arg name="base_obstacle_scale" value="$(var base_obstacle_scale)"/>
+          <arg name="controller_plugin_type" value="$(var controller_plugin_type)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -145,6 +149,8 @@
           <arg name="path_dist_scale" value="$(var path_dist_scale)"/>
           <arg name="goal_dist_scale" value="$(var goal_dist_scale)"/>
           <arg name="cost_scaling_factor" value="$(var cost_scaling_factor)"/>
+          <arg name="base_obstacle_scale" value="$(var base_obstacle_scale)"/>
+          <arg name="controller_plugin_type" value="$(var controller_plugin_type)"/>
         </include>
       </group>
     </group>
@@ -201,6 +207,8 @@
           <arg name="path_dist_scale" value="$(var path_dist_scale)"/>
           <arg name="goal_dist_scale" value="$(var goal_dist_scale)"/>
           <arg name="cost_scaling_factor" value="$(var cost_scaling_factor)"/>
+          <arg name="base_obstacle_scale" value="$(var base_obstacle_scale)"/>
+          <arg name="controller_plugin_type" value="$(var controller_plugin_type)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -233,6 +241,8 @@
           <arg name="path_dist_scale" value="$(var path_dist_scale)"/>
           <arg name="goal_dist_scale" value="$(var goal_dist_scale)"/>
           <arg name="cost_scaling_factor" value="$(var cost_scaling_factor)"/>
+          <arg name="base_obstacle_scale" value="$(var base_obstacle_scale)"/>
+          <arg name="controller_plugin_type" value="$(var controller_plugin_type)"/>
         </include>
       </group>
     </group>

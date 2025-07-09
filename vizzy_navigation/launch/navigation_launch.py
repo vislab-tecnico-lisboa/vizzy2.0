@@ -44,6 +44,49 @@ def Parse_Pose_Str(context):
     pose_args = pose_str.split()
     return pose_args
 
+# --- Opaque Function to save rewritten BT XML ---
+def save_rewritten_bt_xml(context: LaunchContext, output_file_path: str = None):
+    """
+    OpaqueFunction to substitute the controller_id in a BT XML template
+    and save the result to a file.
+    """
+    # Get the package share directory.
+    pkg_dir = get_package_share_directory('vizzy_navigation')
+    
+    # Define the path to your template BT XML file.
+    template_file_path = os.path.join(pkg_dir, 'config', 'custom_navigate_to_pose_bt_navigator_nav2.xml')
+
+    # Get the controller plugin choice from the launch argument.
+    controller_plugin_type = LaunchConfiguration('controller_plugin').perform(context)
+
+    # Map the simple launch argument to the required controller name.
+    controller_mapping = {
+        "DWB": "dwb_controller",
+        "RPP": "rpp_controller",
+        "MPPI": "mppi_controller"
+    }
+    
+    # Get the specific controller name, e.g., "dwb_controller".
+    active_controller_id = controller_mapping.get(controller_plugin_type)
+    
+    if not active_controller_id:
+        raise RuntimeError(f"[Launch Error] Unknown controller_plugin for BT XML: {controller_plugin_type}.")
+
+    # Read the template file.
+    with open(template_file_path, 'r') as f:
+        xml_content = f.read()
+
+    # Perform the substitution.
+    xml_content = xml_content.replace('CONTROLLER_PLACEHOLDER', active_controller_id)
+
+    # Write the modified content to the new XML file.
+    with open(output_file_path, 'w') as f:
+        f.write(xml_content)
+        
+    print(f"[Launch Info] Successfully wrote substituted BT XML to {output_file_path}")
+    
+    return []
+
 # --- Opaque Function to save substituted params ---
 def set_nested_item(data_dict, keys, value):
     """Helper function to set a value in a nested dictionary."""
@@ -51,7 +94,7 @@ def set_nested_item(data_dict, keys, value):
         data_dict = data_dict.setdefault(key, {})
     data_dict[keys[-1]] = value
 
-def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
+def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, output_bt_path: str = None):
     """
     OpaqueFunction to perform substitutions and save the result to a file.
     This function is executed at launch time.
@@ -67,8 +110,22 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
     pose_args = Parse_Pose_Str(context)
 
     # Parse the values of pose_args into floats.
-    # This is done to ensure that the values are in the correct format for the YAML file.
     pose_args = [float(arg) if i % 2 == 1 else arg for i, arg in enumerate(pose_args)]
+
+    # Get the controller plugin type from launch configuration.
+    controller_plugin_type = LaunchConfiguration('controller_plugin').perform(context)
+
+    # Assign the controller plugin based on the type specified in the launch configuration.
+    if controller_plugin_type == "DWB":
+        original_params['controller_server']['ros__parameters']['controller_plugins'] = ["dwb_controller"] 
+    elif controller_plugin_type == "RPP":
+        original_params['controller_server']['ros__parameters']['controller_plugins'] = ["rpp_controller"]
+    elif controller_plugin_type == "MPPI":
+        original_params['controller_server']['ros__parameters']['controller_plugins'] = ["mppi_controller"]
+    else:
+        # Fallback or error if an unknown plugin is specified.
+        print(f"[Launch Error] Unknown controller_plugin: {controller_plugin_type}. Using default or raising error.")
+        pass
 
     # Get the dictionary of substitutions defined in the launch file.
     substitutions_dict = {
@@ -99,6 +156,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
         'bt_navigator.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
         'bt_navigator.ros__parameters.robot_base_frame': LaunchConfiguration('base_frame_id').perform(context),
         'bt_navigator.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),
+        'bt_navigator.ros__parameters.default_nav_to_pose_bt_xml': output_bt_path,
 
         # Behavior Server substitutions.
         'behavior_server.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
@@ -107,13 +165,13 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
         # Controller Server substitutions.
         'controller_server.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),
         'controller_server.ros__parameters.controller_frequency': float(LaunchConfiguration('controller_frequency').perform(context)),
-        #'controller_server.ros__parameters.FollowPath.PathAlign.forward_point_distance': float(LaunchConfiguration('path_align_forward_point_distance').perform(context)),
-        #'controller_server.ros__parameters.FollowPath.GoalAlign.forward_point_distance': float(LaunchConfiguration('goal_align_forward_point_distance').perform(context)),
-        #'controller_server.ros__parameters.FollowPath.PathAlign.scale': float(LaunchConfiguration('path_align_scale').perform(context)),
-        #'controller_server.ros__parameters.FollowPath.GoalAlign.scale': float(LaunchConfiguration('goal_align_scale').perform(context)),
-        #'controller_server.ros__parameters.FollowPath.PathDist.scale': float(LaunchConfiguration('path_dist_scale').perform(context)),
-        #'controller_server.ros__parameters.FollowPath.GoalDist.scale': float(LaunchConfiguration('goal_dist_scale').perform(context)),
-        #'controller_server.ros__parameters.FollowPath.BaseObstacle.scale': float(LaunchConfiguration('base_obstacle_scale').perform(context)),
+        'controller_server.ros__parameters.dwb_controller.PathAlign.forward_point_distance': float(LaunchConfiguration('path_align_forward_point_distance').perform(context)),
+        'controller_server.ros__parameters.dwb_controller.GoalAlign.forward_point_distance': float(LaunchConfiguration('goal_align_forward_point_distance').perform(context)),
+        'controller_server.ros__parameters.dwb_controller.PathAlign.scale': float(LaunchConfiguration('path_align_scale').perform(context)),
+        'controller_server.ros__parameters.dwb_controller.GoalAlign.scale': float(LaunchConfiguration('goal_align_scale').perform(context)),
+        'controller_server.ros__parameters.dwb_controller.PathDist.scale': float(LaunchConfiguration('path_dist_scale').perform(context)),
+        'controller_server.ros__parameters.dwb_controller.GoalDist.scale': float(LaunchConfiguration('goal_dist_scale').perform(context)),
+        'controller_server.ros__parameters.dwb_controller.BaseObstacle.scale': float(LaunchConfiguration('base_obstacle_scale').perform(context)),
 
         # Map Server substitutions.
         'map_server.ros__parameters.topic_name': LaunchConfiguration('map_topic').perform(context),
@@ -140,7 +198,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
         # Velocity Smoother substitutions.
         'velocity_smoother.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),
     }
-    
+
     # Apply substitutions to the loaded params.
     for key_path, value in substitutions_dict.items():
         # The 'use_sim_time' and 'autostart' keys are special cases at the top level.
@@ -157,20 +215,21 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
                      original_params[node_name]['ros__parameters'][key_path] = actual_value
         else:
             keys = key_path.split('.')
-            
-            # Check if we are handling a DWB critic parameter. These are children of 'FollowPath'
-            # and uniquely contain a dot in their final key name (e.g., 'BaseObstacle.scale').
-            if len(keys) > 3 and keys[2] == 'FollowPath':
-                # Path to the parent dict, e.g., ['controller_server', 'ros__parameters', 'FollowPath'].
-                parent_keys = keys[:3] 
+
+            # Check if we are handling a parameter within the active_controller_param_key (dwb_controller).
+            # This is where DWB or other specific controller params would be set.
+            # We explicitly check that the key_path matches the expected structure.
+            if len(keys) > 3 and keys[2] == "dwb_controller":
+                # Path to the parent dict, ['controller_server', 'ros__parameters', 'dwb_controller'].
+                parent_keys = keys[:3]
                 # The final key which contains dots, e.g., 'BaseObstacle.scale'.
-                final_key = '.'.join(keys[3:]) 
+                final_key = '.'.join(keys[3:])
 
                 # Navigate to the parent dictionary.
                 d = original_params
                 for k in parent_keys:
                     d = d[k]
-                
+
                 # Set the value using the complete, un-split final key.
                 d[final_key] = value
             else:
@@ -182,10 +241,10 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
     # Write the modified dictionary to the new YAML file.
     with open(output_file_path, 'w') as f:
         yaml.dump(original_params, f, default_flow_style=False)
-        
+
     # Log a message to the console.
     print(f"[Launch Info] Successfully wrote substituted params to {output_file_path}")
-    
+
     # The OpaqueFunction must return a list of nodes or actions (can be empty).
     return []
 
@@ -355,6 +414,11 @@ def generate_launch_description():
         default_value='0.02',
         description='Base obstacle scale for the costmap. This is used by the local and global costmaps to scale the cost of obstacles.'
     )
+    controller_plugin_arg = DeclareLaunchArgument(
+        'controller_plugin',
+        default_value='MPPI',
+        description='Controller plugin to use for the navigation stack.'
+    )
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -368,6 +432,14 @@ def generate_launch_description():
     # Get the path to the package's install share directory.
     install_share_path = get_package_share_directory(package_name)
 
+    output_bt_dir = os.path.join(get_package_share_directory(package_name), 'behavior_trees')
+    os.makedirs(output_bt_dir, exist_ok=True)
+    output_bt_path = os.path.join(output_bt_dir, 'custom_navigate_to_pose_bt_navigator_nav2.xml')
+    
+    # Add this new action to generate the XML file
+    save_bt_xml_action = OpaqueFunction(function=save_rewritten_bt_xml,
+                                        args=[output_bt_path])
+
     # Define the output path within this packages directory.
     output_dir = os.path.join(install_share_path, 'params')
     os.makedirs(output_dir, exist_ok=True) 
@@ -376,7 +448,7 @@ def generate_launch_description():
     # --- Actions for Logging and Saving ---
     log_sim_time_action = LogInfo(msg=['[Launch Info] Using simulation time: ', use_sim_time])
     save_params_action = OpaqueFunction(function=save_rewritten_yaml,
-                                        args=[output_file_path])
+                                        args=[output_file_path, output_bt_path])
 
     # Create one ParameterFile object with all substitutions
     configured_params = ParameterFile(
@@ -531,9 +603,11 @@ def generate_launch_description():
         goal_dist_scale_arg,
         cost_scaling_factor_arg,
         base_obstacle_scale_arg,
+        controller_plugin_arg,
         
         # Actions
         log_sim_time_action,
         save_params_action,
+        save_bt_xml_action,
         load_nodes,
     ])
