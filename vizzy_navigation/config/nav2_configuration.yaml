@@ -133,45 +133,181 @@ controller_server:
 
     # DWB parameters
     FollowPath:
-      plugin: "dwb_core::DWBLocalPlanner"
-      debug_trajectory_details: True
-      min_vel_x: 0.0
-      min_vel_y: 0.0
-      max_vel_x: 0.5
-      max_vel_y: 0.0
-      max_vel_theta: 0.4
-      min_speed_xy: 0.0
-      max_speed_xy: 0.5
-      min_speed_theta: 0.0
-      acc_lim_x: 2.5
-      acc_lim_y: 0.0
-      acc_lim_theta: 2.5
-      decel_lim_x: -2.5
-      decel_lim_y: 0.0
-      decel_lim_theta: -2.5
-      vx_samples: 20
-      vy_samples: 5
-      vtheta_samples: 30
-      sim_time: 1.7
-      linear_granularity: 0.05
-      angular_granularity: 0.025
-      transform_tolerance: 0.5
-      xy_goal_tolerance: 0.25
-      trans_stopped_velocity: 0.25
-      short_circuit_trajectory_evaluation: True
-      stateful: True
-      critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
-      BaseObstacle.scale: 0.02
-      PathAlign.scale: 32.0 # Configurable
-      PathAlign.forward_point_distance: 0.325 # Configurable
-      GoalAlign.scale: 24.0 # Configurable
-      GoalAlign.forward_point_distance: 0.325 # Configurable
-      PathDist.scale: 32.0 # Configurable
-      GoalDist.scale: 24.0 # Configurable
-      RotateToGoal.scale: 32.0
-      RotateToGoal.slowing_factor: 10.0
-      RotateToGoal.lookahead_time: -1.0
 
+      # * Use the DWB Local Planner for advanced path following with obstacle avoidance and trajectory evaluation.
+      #plugin: "dwb_core::DWBLocalPlanner"
+      #debug_trajectory_details: True
+      #min_vel_x: 0.0
+      #min_vel_y: 0.0
+      #max_vel_x: 0.5
+      #max_vel_y: 0.0
+      #max_vel_theta: 0.4
+      #min_speed_xy: 0.0
+      #max_speed_xy: 0.5
+      #min_speed_theta: 0.0
+      #acc_lim_x: 2.5
+      #acc_lim_y: 0.0
+      #acc_lim_theta: 2.5
+      #decel_lim_x: -2.5
+      #decel_lim_y: 0.0
+      #decel_lim_theta: -2.5
+      #vx_samples: 20
+      #vy_samples: 5
+      #vtheta_samples: 30
+      #sim_time: 2.5
+      #linear_granularity: 0.05
+      #angular_granularity: 0.025
+      #transform_tolerance: 0.5
+      #xy_goal_tolerance: 0.25
+      #trans_stopped_velocity: 0.25
+      #short_circuit_trajectory_evaluation: True
+      #stateful: True
+      #critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
+      #BaseObstacle.scale: 0.02 # * Configurable
+      #PathAlign.scale: 32.0 # * Configurable
+      #PathAlign.forward_point_distance: 0.325 # * Configurable
+      #GoalAlign.scale: 24.0 # * Configurable
+      #GoalAlign.forward_point_distance: 0.325 # * Configurable
+      #PathDist.scale: 32.0 # * Configurable
+      #GoalDist.scale: 24.0 # * Configurable
+      #RotateToGoal.scale: 32.0
+      #RotateToGoal.slowing_factor: 10.0
+      #RotateToGoal.lookahead_time: -1.0
+
+      # * Use the Regulated Pure Pursuit Controller instead of DWB for exact path following with low obstacle avoidance needed.
+      #plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      #desired_linear_vel: 0.5 # The desired maximum linear velocity (m/s) to use.
+      #lookahead_dist: 0.6 # The lookahead distance (m) to use to find the lookahead point when use_velocity_scaled_lookahead_dist is false.
+      #min_lookahead_dist: 0.3 # The minimum lookahead distance (m) threshold when use_velocity_scaled_lookahead_dist is true.
+      #max_lookahead_dist: 0.9 # The maximum lookahead distance (m) threshold when use_velocity_scaled_lookahead_dist is true.
+      #lookahead_time: 1.5 # The time (s) to project the velocity by when use_velocity_scaled_lookahead_dist is true. Also known as the lookahead gain.
+      #rotate_to_heading_angular_vel: 1.4 # If use_rotate_to_heading is true, this is the angular velocity to use. # * In this case (sqrt(2)) rad/s.
+      #transform_tolerance: 0.1 # The TF transform tolerance (s).
+      #use_velocity_scaled_lookahead_dist: false # Whether to use the velocity scaled lookahead distances or constant lookahead_distance.
+      #min_approach_linear_velocity: 0.05 # The minimum velocity (m/s) threshold to apply when approaching the goal to ensure progress. Must be > 0.01.
+      #approach_velocity_scaling_dist: 0.6 # The distance (m) left on the path at which to start slowing down. Should be less than the half the costmap width.
+      #use_collision_detection: true # Whether to enable collision detection.
+      #max_allowed_time_to_collision_up_to_carrot: 3.0 # The time (s) to project a velocity command forward to check for collisions when use_collision_detection is true. 
+      #use_regulated_linear_velocity_scaling: true # Whether to use the regulated features for path curvature (e.g. slow on high curvature paths).
+      #use_fixed_curvature_lookahead: false # Whether to use a fixed lookahead distance to compute curvature from. Since a lookahead distance may be set to vary on velocity, it can introduce a reference cycle that can be problematic for large lookahead distances.
+      #curvature_lookahead_dist: 0.25 # Distance to look ahead on the path to detect curvature.
+      #use_cost_regulated_linear_velocity_scaling: true # Whether to use the regulated features for proximity to obstacles (e.g. slow in close proximity to obstacles).
+      #cost_scaling_dist: 0.3 # The minimum distance from an obstacle to trigger the scaling of linear velocity, if use_cost_regulated_linear_velocity_scaling is enabled. The value set should be smaller or equal to the inflation_radius set in the inflation layer of costmap, since inflation is used to compute the distance from obstacles.
+      #cost_scaling_gain: 1.0 # A multiplier gain, which should be <= 1.0, used to further scale the speed when an obstacle is within cost_scaling_dist. Lower value reduces speed more quickly.
+      #regulated_linear_scaling_min_radius: 0.9 # The turning radius (m) for which the regulation features are triggered when use_regulated_linear_velocity_scaling is true. Remember, sharper turns have smaller radii.
+      #regulated_linear_scaling_min_speed: 0.25 # The minimum speed (m/s) for which any of the regulated heuristics can send, to ensure process is still achievable even in high cost spaces with high curvature. Must be > 0.1.
+      #use_rotate_to_heading: true # Whether to enable rotating to rough heading and goal orientation when using holonomic planners. Recommended on for all robot types that can rotate in place.
+      #allow_reversing: false # Enables the robot to drive in the reverse direction, when the path planned involves reversing (which is represented by orientation cusps). Variants of the smac_planner comes with the support of reversing. 
+      #rotate_to_heading_min_angle: 0.785 # The difference in the path orientation and the starting robot orientation (radians) to trigger a rotate in place, if use_rotate_to_heading is true.
+      #max_angular_accel: 3.2 # Maximum allowable angular acceleration (rad/s/s) while rotating to heading, if use_rotate_to_heading is true.
+      #max_robot_pose_search_dist: 10.0 # Upper bound on integrated distance along the global plan to search for the closest pose to the robot pose. This should be left as the default unless there are paths with loops and intersections that do not leave the local costmap, in which case making this value smaller is necessary to prevent shortcutting. If set to -1, it will use the maximum distance possible to search every point on the path for the nearest path point.
+      #min_distance_to_obstacle: 0.5 # The shortest distance at which the robot is allowed to be from an obstacle along its trajectory. Set <= 0.0 to disable. It is limited to maximum distance of lookahead distance selected. # ? Should be equal to the costmap inflation radius?
+      #stateful: true # Enables stateful goal handling behavior. When set to true, the controller will persist the goal state once the robot reaches the XY tolerance. It will then focus on aligning to the goal heading without reverting to XY position corrections.
+
+      # * Use the MPPI Controller for advanced path following using an optimization based approach, handling dynamic obstacles and complex environments better than DWB. Computationally more expensive.
+      plugin: "nav2_mppi_controller::MPPIController"
+      time_steps: 56
+      model_dt: 0.05
+      batch_size: 2000
+      vx_std: 0.2
+      vy_std: 0.2
+      wz_std: 0.4
+      vx_max: 0.5
+      vx_min: -0.35
+      vy_max: 0.5
+      wz_max: 1.9
+      ax_max: 3.0
+      ax_min: -3.0
+      ay_min: -3.0
+      ay_max: 3.0
+      az_max: 3.5
+      iteration_count: 1
+      prune_distance: 1.7
+      transform_tolerance: 0.1
+      temperature: 0.3
+      gamma: 0.015
+      motion_model: "DiffDrive"
+      visualize: false
+      reset_period: 1.0 
+      regenerate_noises: false
+      TrajectoryVisualizer:
+        trajectory_step: 5
+        time_step: 3
+      AckermannConstraints:
+        min_turning_r: 0.2
+      critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
+      ConstraintCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 4.0
+      GoalCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 5.0
+        threshold_to_consider: 1.4
+      GoalAngleCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 3.0
+        threshold_to_consider: 0.5
+      PreferForwardCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 5.0
+        threshold_to_consider: 0.5
+      ObstaclesCritic:
+        enabled: true
+        cost_power: 1
+        repulsion_weight: 1.5
+        critical_weight: 20.0
+        consider_footprint: false
+        collision_cost: 10000.0
+        collision_margin_distance: 0.1
+        near_goal_distance: 0.5
+        inflation_radius: 0.55 
+        cost_scaling_factor: 10.0 
+      CostCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 3.81
+        critical_cost: 300.0
+        consider_footprint: true
+        collision_cost: 1000000.0
+        near_goal_distance: 1.0
+        trajectory_point_step: 2
+      PathAlignCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 14.0
+        max_path_occupancy_ratio: 0.05
+        trajectory_point_step: 4
+        threshold_to_consider: 0.5
+        offset_from_furthest: 20
+        use_path_orientations: false
+      PathFollowCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 5.0
+        offset_from_furthest: 5
+        threshold_to_consider: 1.4
+      PathAngleCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 2.0
+        offset_from_furthest: 4
+        threshold_to_consider: 0.5
+        max_angle_to_furthest: 1.0
+        mode: 0
+      # VelocityDeadbandCritic:
+      #   enabled: true
+      #   cost_power: 1
+      #   cost_weight: 35.0
+      #   deadband_velocities: [0.05, 0.05, 0.05]
+      # TwirlingCritic:
+      #   enabled: true
+      #   twirling_cost_power: 1
+      #   twirling_cost_weight: 10.0
+  
 local_costmap:
   local_costmap:
     ros__parameters:
@@ -305,7 +441,7 @@ planner_server:
       plugin: "nav2_navfn_planner/NavfnPlanner"
       tolerance: 0.5
       use_astar: false
-      allow_unknown: true
+      allow_unknown: true       
 
 smoother_server:
   ros__parameters:

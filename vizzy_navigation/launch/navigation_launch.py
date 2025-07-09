@@ -107,12 +107,13 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
         # Controller Server substitutions.
         'controller_server.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),
         'controller_server.ros__parameters.controller_frequency': float(LaunchConfiguration('controller_frequency').perform(context)),
-        'controller_server.ros__parameters.PathAlign.forward_point_distance': float(LaunchConfiguration('path_align_forward_point_distance').perform(context)),
-        'controller_server.ros__parameters.GoalAlign.forward_point_distance': float(LaunchConfiguration('goal_align_forward_point_distance').perform(context)),
-        'controller_server.ros__parameters.PathAlign.scale': float(LaunchConfiguration('path_align_scale').perform(context)),
-        'controller_server.ros__parameters.GoalAlign.scale': float(LaunchConfiguration('goal_align_scale').perform(context)),
-        'controller_server.ros__parameters.PathDist.scale': float(LaunchConfiguration('path_dist_scale').perform(context)),
-        'controller_server.ros__parameters.GoalDist.scale': float(LaunchConfiguration('goal_dist_scale').perform(context)),
+        #'controller_server.ros__parameters.FollowPath.PathAlign.forward_point_distance': float(LaunchConfiguration('path_align_forward_point_distance').perform(context)),
+        #'controller_server.ros__parameters.FollowPath.GoalAlign.forward_point_distance': float(LaunchConfiguration('goal_align_forward_point_distance').perform(context)),
+        #'controller_server.ros__parameters.FollowPath.PathAlign.scale': float(LaunchConfiguration('path_align_scale').perform(context)),
+        #'controller_server.ros__parameters.FollowPath.GoalAlign.scale': float(LaunchConfiguration('goal_align_scale').perform(context)),
+        #'controller_server.ros__parameters.FollowPath.PathDist.scale': float(LaunchConfiguration('path_dist_scale').perform(context)),
+        #'controller_server.ros__parameters.FollowPath.GoalDist.scale': float(LaunchConfiguration('goal_dist_scale').perform(context)),
+        #'controller_server.ros__parameters.FollowPath.BaseObstacle.scale': float(LaunchConfiguration('base_obstacle_scale').perform(context)),
 
         # Map Server substitutions.
         'map_server.ros__parameters.topic_name': LaunchConfiguration('map_topic').perform(context),
@@ -155,13 +156,28 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None):
                         actual_value = value
                      original_params[node_name]['ros__parameters'][key_path] = actual_value
         else:
-            # Convert string 'true'/'false' to boolean for all keys ending with 'use_sim_time' or 'autostart' or 'do_beamskip'
-            if key_path.endswith('use_sim_time') or key_path.endswith('autostart') or key_path.endswith('do_beamskip'):
-                if isinstance(value, str):
-                    value = value.lower() in ['true', '1', 't']
-            # Handle dot-notated nested keys.
             keys = key_path.split('.')
-            set_nested_item(original_params, keys, value)
+            
+            # Check if we are handling a DWB critic parameter. These are children of 'FollowPath'
+            # and uniquely contain a dot in their final key name (e.g., 'BaseObstacle.scale').
+            if len(keys) > 3 and keys[2] == 'FollowPath':
+                # Path to the parent dict, e.g., ['controller_server', 'ros__parameters', 'FollowPath'].
+                parent_keys = keys[:3] 
+                # The final key which contains dots, e.g., 'BaseObstacle.scale'.
+                final_key = '.'.join(keys[3:]) 
+
+                # Navigate to the parent dictionary.
+                d = original_params
+                for k in parent_keys:
+                    d = d[k]
+                
+                # Set the value using the complete, un-split final key.
+                d[final_key] = value
+            else:
+                if key_path.endswith('use_sim_time') or key_path.endswith('autostart') or key_path.endswith('do_beamskip'):
+                    if isinstance(value, str):
+                        value = value.lower() in ['true', '1', 't']
+                set_nested_item(original_params, keys, value)
 
     # Write the modified dictionary to the new YAML file.
     with open(output_file_path, 'w') as f:
@@ -333,6 +349,11 @@ def generate_launch_description():
         'cost_scaling_factor',
         default_value='3.0',
         description='Cost scaling factor for the inflation layer in the costmap.'
+    )
+    base_obstacle_scale_arg = DeclareLaunchArgument(
+        'base_obstacle_scale',
+        default_value='0.02',
+        description='Base obstacle scale for the costmap. This is used by the local and global costmaps to scale the cost of obstacles.'
     )
 
     # --- Launch Configurations ---
@@ -509,7 +530,8 @@ def generate_launch_description():
         path_dist_scale_arg,
         goal_dist_scale_arg,
         cost_scaling_factor_arg,
-
+        base_obstacle_scale_arg,
+        
         # Actions
         log_sim_time_action,
         save_params_action,
