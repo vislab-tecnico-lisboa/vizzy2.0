@@ -197,6 +197,9 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
 
         # Velocity Smoother substitutions.
         'velocity_smoother.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),
+
+        # Planner Server substitutions.
+        'planner_server.ros__parameters.expected_planner_frequency': float(LaunchConfiguration('expected_planner_frequency').perform(context)),
     }
 
     # Apply substitutions to the loaded params.
@@ -419,6 +422,11 @@ def generate_launch_description():
         default_value='MPPI',
         description='Controller plugin to use for the navigation stack.'
     )
+    expected_planner_frequency_arg = DeclareLaunchArgument(
+        'expected_planner_frequency',
+        default_value='20.0',
+        description='Expected frequency of the planner in Hz.'
+    )
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -604,6 +612,7 @@ def generate_launch_description():
         cost_scaling_factor_arg,
         base_obstacle_scale_arg,
         controller_plugin_arg,
+        expected_planner_frequency_arg,
         
         # Actions
         log_sim_time_action,

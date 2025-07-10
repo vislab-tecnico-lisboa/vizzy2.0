@@ -438,7 +438,7 @@ map_saver:
 
 planner_server:
   ros__parameters:
-    expected_planner_frequency: 1.0
+    expected_planner_frequency: 20.0 # Configurable
     use_sim_time: True # Configurable
     planner_plugins: ["GridBased"]
     GridBased:

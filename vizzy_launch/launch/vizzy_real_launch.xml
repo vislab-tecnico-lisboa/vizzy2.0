@@ -53,6 +53,7 @@
   <arg name="cost_scaling_factor" default="3.0" description="Cost scaling factor for the inflation layer in the costmap"/>
   <arg name="base_obstacle_scale" default="0.02" description="Base obstacle scale for the costmap. This is used by the local and global costmaps to scale the cost of obstacles."/>
   <arg name="controller_plugin_type" default="MPPI" description="Type of controller plugin to use. Options: DWB, RPP, MPPI"/>
+  <arg name="expected_planner_frequency" default="20.0" description="Expected frequency of the planner in Hz"/>
 
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
@@ -117,6 +118,7 @@
           <arg name="cost_scaling_factor" value="$(var cost_scaling_factor)"/>
           <arg name="base_obstacle_scale" value="$(var base_obstacle_scale)"/>
           <arg name="controller_plugin_type" value="$(var controller_plugin_type)"/>
+          <arg name="expected_planner_frequency" value="$(var expected_planner_frequency)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -151,6 +153,7 @@
           <arg name="cost_scaling_factor" value="$(var cost_scaling_factor)"/>
           <arg name="base_obstacle_scale" value="$(var base_obstacle_scale)"/>
           <arg name="controller_plugin_type" value="$(var controller_plugin_type)"/>
+          <arg name="expected_planner_frequency" value="$(var expected_planner_frequency)"/>
         </include>
       </group>
     </group>
@@ -209,6 +212,7 @@
           <arg name="cost_scaling_factor" value="$(var cost_scaling_factor)"/>
           <arg name="base_obstacle_scale" value="$(var base_obstacle_scale)"/>
           <arg name="controller_plugin_type" value="$(var controller_plugin_type)"/>
+          <arg name="expected_planner_frequency" value="$(var expected_planner_frequency)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -243,6 +247,7 @@
           <arg name="cost_scaling_factor" value="$(var cost_scaling_factor)"/>
           <arg name="base_obstacle_scale" value="$(var base_obstacle_scale)"/>
           <arg name="controller_plugin_type" value="$(var controller_plugin_type)"/>
+          <arg name="expected_planner_frequency" value="$(var expected_planner_frequency)"/>
         </include>
       </group>
     </group>
