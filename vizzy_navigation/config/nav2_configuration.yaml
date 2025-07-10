@@ -210,7 +210,7 @@ controller_server:
     # * Use the MPPI Controller for advanced path following using an optimization based approach, handling dynamic obstacles and complex environments better than DWB. Computationally more expensive.
     mppi_controller: 
       plugin: "nav2_mppi_controller::MPPIController"
-      time_steps: 56
+      time_steps: 64
       model_dt: 0.05
       batch_size: 2000
       vx_std: 0.2
@@ -224,7 +224,7 @@ controller_server:
       ax_min: -3.0
       ay_min: -3.0
       ay_max: 3.0
-      az_max: 1.0
+      az_max: 1.5
       iteration_count: 1
       prune_distance: 1.7
       transform_tolerance: 0.1
@@ -257,7 +257,7 @@ controller_server:
       PreferForwardCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 5.0
+        cost_weight: 50.0
         threshold_to_consider: 0.5
       ObstaclesCritic:
         enabled: true
@@ -266,16 +266,16 @@ controller_server:
         critical_weight: 20.0
         consider_footprint: false
         collision_cost: 10000.0
-        collision_margin_distance: 0.1
+        collision_margin_distance: 0.2
         near_goal_distance: 0.5
-        inflation_radius: 0.55
-        cost_scaling_factor: 10.0
+        inflation_radius: 0.4 # Configurable
+        cost_scaling_factor: 10.0 # Configurable
       CostCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 3.81
+        cost_weight: 10.0
         critical_cost: 300.0
-        consider_footprint: true
+        consider_footprint: false
         collision_cost: 1000000.0
         near_goal_distance: 1.0
         trajectory_point_step: 2
@@ -330,7 +330,7 @@ local_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0 # Configurable
-        inflation_radius: 0.55 #configurable
+        inflation_radius: 0.4 #configurable
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
@@ -418,7 +418,7 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0 # Configurable
-        inflation_radius: 1.0 # Configurable
+        inflation_radius: 0.4 # Configurable
       always_send_full_costmap: True
 
 map_server:
@@ -438,14 +438,26 @@ map_saver:
 
 planner_server:
   ros__parameters:
-    expected_planner_frequency: 20.0 # Configurable
+    expected_planner_frequency: 1.0 # Configurable
     use_sim_time: True # Configurable
     planner_plugins: ["GridBased"]
-    GridBased:
+
+    # NavFn Planner Parameters.
+    # Use the NavFn Planner for grid-based path planning with A* or Dijkstra algorithms.
+    navfv_planner:
       plugin: "nav2_navfn_planner/NavfnPlanner"
       tolerance: 1.0
       use_astar: false
       allow_unknown: true       
+
+    # Theta* Planner Parameters.
+    # Use the Theta* Planner for grid-based path planning with a focus on smooth paths with straight lines (any-angle approach).
+    theta_star_planner:
+      plugin: "nav2_theta_star_planner/ThetaStarPlanner" 
+      how_many_corners: 8
+      w_euc_cost: 1.0
+      w_traversal_cost: 2.0
+      w_heuristic_cost: 1.0
 
 smoother_server:
   ros__parameters:
@@ -500,13 +512,13 @@ waypoint_follower:
 velocity_smoother:
   ros__parameters:
     use_sim_time: True # Configurable
-    smoothing_frequency: 20.0
+    smoothing_frequency: 30.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
     max_velocity: [0.5, 0.0, 0.6]
     min_velocity: [-0.5, 0.0, -0.6]
-    max_accel: [2.5, 0.0, 3.2]
-    max_decel: [-2.5, 0.0, -3.2]
+    max_accel: [2.5, 0.0, 1.5]
+    max_decel: [-2.5, 0.0, -1.5]
     odom_topic: "odometry" # Configurable
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]

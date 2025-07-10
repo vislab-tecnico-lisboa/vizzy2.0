@@ -57,7 +57,7 @@ def save_rewritten_bt_xml(context: LaunchContext, output_file_path: str = None):
     template_file_path = os.path.join(pkg_dir, 'config', 'custom_navigate_to_pose_bt_navigator_nav2.xml')
 
     # Get the controller plugin choice from the launch argument.
-    controller_plugin_type = LaunchConfiguration('controller_plugin').perform(context)
+    controller_plugin_type = LaunchConfiguration('controller_plugin_type').perform(context)
 
     # Map the simple launch argument to the required controller name.
     controller_mapping = {
@@ -70,7 +70,22 @@ def save_rewritten_bt_xml(context: LaunchContext, output_file_path: str = None):
     active_controller_id = controller_mapping.get(controller_plugin_type)
     
     if not active_controller_id:
-        raise RuntimeError(f"[Launch Error] Unknown controller_plugin for BT XML: {controller_plugin_type}.")
+        raise RuntimeError(f"[Launch Error] Unknown controller_plugin_type for BT XML: {controller_plugin_type}.")
+    
+    # Get the planner plugin choice from the launch argument.
+    planner_plugin_type = LaunchConfiguration('planner_plugin_type').perform(context)
+
+    # Map the simple launch argument to the required planner name.
+    planner_mapping = {
+        "ThetaStar": "theta_star_planner",
+        "NavFn": "navfv_planner"
+    }
+
+    # Get the specific planner name, e.g., "theta_star_planner".
+    active_planner_id = planner_mapping.get(planner_plugin_type)
+
+    if not active_planner_id:
+        raise RuntimeError(f"[Launch Error] Unknown planner_plugin_type for BT XML: {planner_plugin_type}.")
 
     # Read the template file.
     with open(template_file_path, 'r') as f:
@@ -79,6 +94,7 @@ def save_rewritten_bt_xml(context: LaunchContext, output_file_path: str = None):
     # Perform the substitution.
     xml_content = xml_content.replace('CONTROLLER_PLACEHOLDER', active_controller_id)
     xml_content = xml_content.replace('GLOBAL_PLANNER_FREQUENCY', LaunchConfiguration('expected_planner_frequency').perform(context))
+    xml_content = xml_content.replace('PLANNER_PLACEHOLDER', active_planner_id)
 
     # Write the modified content to the new XML file.
     with open(output_file_path, 'w') as f:
@@ -114,7 +130,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
     pose_args = [float(arg) if i % 2 == 1 else arg for i, arg in enumerate(pose_args)]
 
     # Get the controller plugin type from launch configuration.
-    controller_plugin_type = LaunchConfiguration('controller_plugin').perform(context)
+    controller_plugin_type = LaunchConfiguration('controller_plugin_type').perform(context)
 
     # Assign the controller plugin based on the type specified in the launch configuration.
     if controller_plugin_type == "DWB":
@@ -125,7 +141,20 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         original_params['controller_server']['ros__parameters']['controller_plugins'] = ["mppi_controller"]
     else:
         # Fallback or error if an unknown plugin is specified.
-        print(f"[Launch Error] Unknown controller_plugin: {controller_plugin_type}. Using default or raising error.")
+        print(f"[Launch Error] Unknown controller_plugin_type: {controller_plugin_type}. Using default or raising error.")
+        pass
+
+    # Get the planner plugin type from launch configuration.
+    planner_plugin_type = LaunchConfiguration('planner_plugin_type').perform(context)
+
+    # Assign the planner plugin based on the type specified in the launch configuration.
+    if planner_plugin_type == "ThetaStar":
+        original_params['planner_server']['ros__parameters']['planner_plugins'] = ["theta_star_planner"]
+    elif planner_plugin_type == "NavFn":
+        original_params['planner_server']['ros__parameters']['planner_plugins'] = ["navfn_planner"]
+    else:
+        # Fallback or error if an unknown plugin is specified.
+        print(f"[Launch Error] Unknown planner_plugin_type: {planner_plugin_type}. Using default or raising error.")
         pass
 
     # Get the dictionary of substitutions defined in the launch file.
@@ -173,6 +202,8 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'controller_server.ros__parameters.dwb_controller.PathDist.scale': float(LaunchConfiguration('path_dist_scale').perform(context)),
         'controller_server.ros__parameters.dwb_controller.GoalDist.scale': float(LaunchConfiguration('goal_dist_scale').perform(context)),
         'controller_server.ros__parameters.dwb_controller.BaseObstacle.scale': float(LaunchConfiguration('base_obstacle_scale').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.ObstaclesCritic.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.ObstaclesCritic.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
 
         # Map Server substitutions.
         'map_server.ros__parameters.topic_name': LaunchConfiguration('map_topic').perform(context),
@@ -419,14 +450,19 @@ def generate_launch_description():
         description='Base obstacle scale for the costmap. This is used by the local and global costmaps to scale the cost of obstacles.'
     )
     controller_plugin_arg = DeclareLaunchArgument(
-        'controller_plugin',
+        'controller_plugin_type',
         default_value='MPPI',
         description='Controller plugin to use for the navigation stack.'
     )
     expected_planner_frequency_arg = DeclareLaunchArgument(
         'expected_planner_frequency',
-        default_value='20.0',
+        default_value='1.0',
         description='Expected frequency of the planner in Hz.'
+    )
+    planner_plugin_arg = DeclareLaunchArgument(
+        'planner_plugin_type',
+        default_value='ThetaStar',
+        description='Planner plugin to use for the navigation stack.'
     )
 
     # --- Launch Configurations ---
@@ -614,6 +650,7 @@ def generate_launch_description():
         base_obstacle_scale_arg,
         controller_plugin_arg,
         expected_planner_frequency_arg,
+        planner_plugin_arg,
         
         # Actions
         log_sim_time_action,

@@ -56,6 +56,7 @@
   <exec_depend>nav2_waypoint_follower</exec_depend> 
   <exec_depend>nav2_velocity_smoother</exec_depend> 
   <exec_depend>nav2_lifecycle_manager</exec_depend> 
+  <exec_depend>nav2_theta_star_planner</exec_depend>
   <exec_depend>nav2_regulated_pure_pursuit_controller</exec_depend>
 
   <!-- General dependencies -->
