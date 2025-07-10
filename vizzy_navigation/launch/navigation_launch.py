@@ -78,6 +78,7 @@ def save_rewritten_bt_xml(context: LaunchContext, output_file_path: str = None):
 
     # Perform the substitution.
     xml_content = xml_content.replace('CONTROLLER_PLACEHOLDER', active_controller_id)
+    xml_content = xml_content.replace('GLOBAL_PLANNER_FREQUENCY', LaunchConfiguration('expected_planner_frequency').perform(context))
 
     # Write the modified content to the new XML file.
     with open(output_file_path, 'w') as f:
