@@ -55,6 +55,7 @@
   <arg name="controller_plugin_type" default="MPPI" description="Type of controller plugin to use. Options: DWB, RPP, MPPI"/>
   <arg name="expected_planner_frequency" default="1.0" description="Expected frequency of the planner in Hz"/>
   <arg name="planner_plugin_type" default="ThetaStar" description="Planner plugin to use for the navigation stack"/>
+  <arg name="robot_radius" default="0.4" description="Robot radius for the navigation stack. This is used by the local and global costmaps to scale the cost of obstacles."/>
 
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
@@ -121,6 +122,7 @@
           <arg name="controller_plugin_type" value="$(var controller_plugin_type)"/>
           <arg name="expected_planner_frequency" value="$(var expected_planner_frequency)"/>
           <arg name="planner_plugin_type" value="$(var planner_plugin_type)"/>
+          <arg name="robot_radius" value="$(var robot_radius)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -157,6 +159,7 @@
           <arg name="controller_plugin_type" value="$(var controller_plugin_type)"/>
           <arg name="expected_planner_frequency" value="$(var expected_planner_frequency)"/>
           <arg name="planner_plugin_type" value="$(var planner_plugin_type)"/>
+          <arg name="robot_radius" value="$(var robot_radius)"/>
         </include>
       </group>
     </group>
@@ -217,6 +220,7 @@
           <arg name="controller_plugin_type" value="$(var controller_plugin_type)"/>
           <arg name="expected_planner_frequency" value="$(var expected_planner_frequency)"/>
           <arg name="planner_plugin_type" value="$(var planner_plugin_type)"/>
+          <arg name="robot_radius" value="$(var robot_radius)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -253,6 +257,7 @@
           <arg name="controller_plugin_type" value="$(var controller_plugin_type)"/>
           <arg name="expected_planner_frequency" value="$(var expected_planner_frequency)"/>
           <arg name="planner_plugin_type" value="$(var planner_plugin_type)"/>
+          <arg name="robot_radius" value="$(var robot_radius)"/>
         </include>
       </group>
     </group>

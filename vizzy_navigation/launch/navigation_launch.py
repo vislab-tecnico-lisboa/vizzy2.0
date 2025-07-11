@@ -218,6 +218,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'global_costmap.global_costmap.ros__parameters.use_sim_time': LaunchConfiguration('use_sim_time').perform(context),
         'global_costmap.global_costmap.ros__parameters.inflation_layer.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
         'global_costmap.global_costmap.ros__parameters.inflation_layer.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
+        'global_costmap.global_costmap.ros__parameters.robot_radius': float(LaunchConfiguration('robot_radius').perform(context)),
         'local_costmap.local_costmap.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
         'local_costmap.local_costmap.ros__parameters.robot_base_frame': LaunchConfiguration('base_frame_id').perform(context),
         'local_costmap.local_costmap.ros__parameters.obstacle_layer.scan_front.topic': LaunchConfiguration('scan_topic_front').perform(context),
@@ -226,6 +227,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'local_costmap.local_costmap.ros__parameters.use_sim_time': LaunchConfiguration('use_sim_time').perform(context),
         'local_costmap.local_costmap.ros__parameters.inflation_layer.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
         'local_costmap.local_costmap.ros__parameters.inflation_layer.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
+        'local_costmap.local_costmap.ros__parameters.robot_radius': float(LaunchConfiguration('robot_radius').perform(context)),
 
         # Velocity Smoother substitutions.
         'velocity_smoother.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),
@@ -464,6 +466,11 @@ def generate_launch_description():
         default_value='ThetaStar',
         description='Planner plugin to use for the navigation stack.'
     )
+    robot_radius_arg = DeclareLaunchArgument(
+        'robot_radius',
+        default_value='0.4',
+        description='Robot radius for the navigation stack.'
+    )
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -651,6 +658,7 @@ def generate_launch_description():
         controller_plugin_arg,
         expected_planner_frequency_arg,
         planner_plugin_arg,
+        robot_radius_arg,
         
         # Actions
         log_sim_time_action,

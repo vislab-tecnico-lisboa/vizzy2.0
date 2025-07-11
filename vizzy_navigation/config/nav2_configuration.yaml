@@ -324,13 +324,13 @@ local_costmap:
       width: 8
       height: 8
       resolution: 0.05
-      robot_radius: 0.4
+      robot_radius: 0.4 # Configurable 
       lethal_cost_threshold: 100
       plugins: ["obstacle_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0 # Configurable
-        inflation_radius: 0.4 #configurable
+        inflation_radius: 0.4 # Configurable
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
@@ -377,7 +377,7 @@ global_costmap:
       global_frame: map # Configurable
       robot_base_frame: base_footprint # Configurable
       use_sim_time: True # Configurable
-      robot_radius: 0.4
+      robot_radius: 0.4 # Configurable
       lethal_cost_threshold: 100
       resolution: 0.05
       track_unknown_space: true
