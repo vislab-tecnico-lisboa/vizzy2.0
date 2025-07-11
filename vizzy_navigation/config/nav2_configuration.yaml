@@ -262,11 +262,11 @@ controller_server:
       ObstaclesCritic:
         enabled: true
         cost_power: 1
-        repulsion_weight: 1.5
-        critical_weight: 20.0
+        repulsion_weight: 1.5 # Configurable
+        critical_weight: 20.0 # Configurable
         consider_footprint: true
         collision_cost: 10000.0
-        collision_margin_distance: 0.2
+        collision_margin_distance: 0.2 # Configurable
         near_goal_distance: 0.5
         inflation_radius: 0.4 # Configurable
         cost_scaling_factor: 10.0 # Configurable

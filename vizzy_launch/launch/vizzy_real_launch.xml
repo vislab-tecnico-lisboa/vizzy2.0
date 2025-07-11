@@ -58,6 +58,9 @@
   <arg name="robot_radius" default="0.4" description="Robot radius for the navigation stack. This is used by the local and global costmaps to scale the cost of obstacles."/>
   <arg name="mppi_cost_critic_cost_weight" default="3.82" description="Cost weight for the MPPI cost critic"/>
   <arg name="mppi_path_align_critic_cost_weight" default="14.0" description="Cost weight for the MPPI path align critic"/>
+  <arg name="mppi_obstacles_critic_repulsion_weight" default="1.5" description="Repulsion weight for the MPPI obstacles critic"/>
+  <arg name="mppi_obstacles_critic_critical_weight" default="20.0" description="Critical weight for the MPPI obstacles critic"/>
+  <arg name="mppi_obstacles_critic_collision_margin_distance" default="0.2" description="Collision margin distance for the MPPI obstacles critic"/>
 
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
@@ -127,6 +130,9 @@
           <arg name="robot_radius" value="$(var robot_radius)"/>
           <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
           <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
+          <arg name="mppi_obstacles_critic_repulsion_weight" value="$(var mppi_obstacles_critic_repulsion_weight)"/>
+          <arg name="mppi_obstacles_critic_critical_weight" value="$(var mppi_obstacles_critic_critical_weight)"/>
+          <arg name="mppi_obstacles_critic_collision_margin_distance" value="$(var mppi_obstacles_critic_collision_margin_distance)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -166,6 +172,9 @@
           <arg name="robot_radius" value="$(var robot_radius)"/>
           <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
           <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
+          <arg name="mppi_obstacles_critic_repulsion_weight" value="$(var mppi_obstacles_critic_repulsion_weight)"/>
+          <arg name="mppi_obstacles_critic_critical_weight" value="$(var mppi_obstacles_critic_critical_weight)"/>
+          <arg name="mppi_obstacles_critic_collision_margin_distance" value="$(var mppi_obstacles_critic_collision_margin_distance)"/>
         </include>
       </group>
     </group>
@@ -229,6 +238,9 @@
           <arg name="robot_radius" value="$(var robot_radius)"/>
           <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
           <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
+          <arg name="mppi_obstacles_critic_repulsion_weight" value="$(var mppi_obstacles_critic_repulsion_weight)"/>
+          <arg name="mppi_obstacles_critic_critical_weight" value="$(var mppi_obstacles_critic_critical_weight)"/>
+          <arg name="mppi_obstacles_critic_collision_margin_distance" value="$(var mppi_obstacles_critic_collision_margin_distance)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -268,6 +280,9 @@
           <arg name="robot_radius" value="$(var robot_radius)"/>
           <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
           <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
+          <arg name="mppi_obstacles_critic_repulsion_weight" value="$(var mppi_obstacles_critic_repulsion_weight)"/>
+          <arg name="mppi_obstacles_critic_critical_weight" value="$(var mppi_obstacles_critic_critical_weight)"/>
+          <arg name="mppi_obstacles_critic_collision_margin_distance" value="$(var mppi_obstacles_critic_collision_margin_distance)"/>
         </include>
       </group>
     </group>

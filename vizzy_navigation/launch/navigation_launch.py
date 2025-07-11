@@ -206,6 +206,9 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'controller_server.ros__parameters.mppi_controller.ObstaclesCritic.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
         'controller_server.ros__parameters.mppi_controller.CostCritic.cost_weight': float(LaunchConfiguration('mppi_cost_critic_cost_weight').perform(context)),
         'controller_server.ros__parameters.mppi_controller.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_path_align_critic_cost_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.ObstaclesCritic.repulsion_weight': float(LaunchConfiguration('mppi_obstacles_critic_repulsion_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.ObstaclesCritic.critical_weight': float(LaunchConfiguration('mppi_obstacles_critic_critical_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.ObstaclesCritic.collision_margin_distance': float(LaunchConfiguration('mppi_obstacles_critic_collision_margin_distance').perform(context)),
 
         # Map Server substitutions.
         'map_server.ros__parameters.topic_name': LaunchConfiguration('map_topic').perform(context),
@@ -483,6 +486,21 @@ def generate_launch_description():
         default_value='14.0',
         description='Cost weight for the MPPI path align critic.'
     )
+    mppi_obstacles_critic_repulsion_weight_arg = DeclareLaunchArgument(
+        'mppi_obstacles_critic_repulsion_weight',
+        default_value='1.5',
+        description='Repulsion weight for the MPPI obstacles critic.'
+    )
+    mppi_obstacles_critic_critical_weight_arg = DeclareLaunchArgument(
+        'mppi_obstacles_critic_critical_weight',
+        default_value='20.0',
+        description='Critical weight for the MPPI obstacles critic.'
+    )
+    mppi_obstacles_critic_collision_margin_distance_arg = DeclareLaunchArgument(
+        'mppi_obstacles_critic_collision_margin_distance',
+        default_value='0.2',
+        description='Collision margin distance for the MPPI obstacles critic.'
+    )
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -672,7 +690,10 @@ def generate_launch_description():
         planner_plugin_arg,
         robot_radius_arg,
         mppi_cost_critic_cost_weight_arg,
-        mppi_path_align_critic_cost_weight_arg,        
+        mppi_path_align_critic_cost_weight_arg,   
+        mppi_obstacles_critic_repulsion_weight_arg,
+        mppi_obstacles_critic_critical_weight_arg,
+        mppi_obstacles_critic_collision_margin_distance_arg,     
 
         # Actions
         log_sim_time_action,
