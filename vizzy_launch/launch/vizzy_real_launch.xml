@@ -61,6 +61,7 @@
   <arg name="mppi_obstacles_critic_repulsion_weight" default="1.5" description="Repulsion weight for the MPPI obstacles critic"/>
   <arg name="mppi_obstacles_critic_critical_weight" default="20.0" description="Critical weight for the MPPI obstacles critic"/>
   <arg name="mppi_obstacles_critic_collision_margin_distance" default="0.2" description="Collision margin distance for the MPPI obstacles critic"/>
+  <arg name="mppi_wz_std" default="0.14" description="Standard deviation for the MPPI angular velocity sampling"/>
 
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
@@ -133,6 +134,7 @@
           <arg name="mppi_obstacles_critic_repulsion_weight" value="$(var mppi_obstacles_critic_repulsion_weight)"/>
           <arg name="mppi_obstacles_critic_critical_weight" value="$(var mppi_obstacles_critic_critical_weight)"/>
           <arg name="mppi_obstacles_critic_collision_margin_distance" value="$(var mppi_obstacles_critic_collision_margin_distance)"/>
+          <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -175,6 +177,7 @@
           <arg name="mppi_obstacles_critic_repulsion_weight" value="$(var mppi_obstacles_critic_repulsion_weight)"/>
           <arg name="mppi_obstacles_critic_critical_weight" value="$(var mppi_obstacles_critic_critical_weight)"/>
           <arg name="mppi_obstacles_critic_collision_margin_distance" value="$(var mppi_obstacles_critic_collision_margin_distance)"/>
+          <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
         </include>
       </group>
     </group>
@@ -241,6 +244,7 @@
           <arg name="mppi_obstacles_critic_repulsion_weight" value="$(var mppi_obstacles_critic_repulsion_weight)"/>
           <arg name="mppi_obstacles_critic_critical_weight" value="$(var mppi_obstacles_critic_critical_weight)"/>
           <arg name="mppi_obstacles_critic_collision_margin_distance" value="$(var mppi_obstacles_critic_collision_margin_distance)"/>
+          <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -283,6 +287,7 @@
           <arg name="mppi_obstacles_critic_repulsion_weight" value="$(var mppi_obstacles_critic_repulsion_weight)"/>
           <arg name="mppi_obstacles_critic_critical_weight" value="$(var mppi_obstacles_critic_critical_weight)"/>
           <arg name="mppi_obstacles_critic_collision_margin_distance" value="$(var mppi_obstacles_critic_collision_margin_distance)"/>
+          <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
         </include>
       </group>
     </group>
