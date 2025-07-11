@@ -204,6 +204,8 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'controller_server.ros__parameters.dwb_controller.BaseObstacle.scale': float(LaunchConfiguration('base_obstacle_scale').perform(context)),
         'controller_server.ros__parameters.mppi_controller.ObstaclesCritic.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
         'controller_server.ros__parameters.mppi_controller.ObstaclesCritic.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.CostCritic.cost_weight': float(LaunchConfiguration('mppi_cost_critic_cost_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_path_align_critic_cost_weight').perform(context)),
 
         # Map Server substitutions.
         'map_server.ros__parameters.topic_name': LaunchConfiguration('map_topic').perform(context),
@@ -471,6 +473,16 @@ def generate_launch_description():
         default_value='0.4',
         description='Robot radius for the navigation stack.'
     )
+    mppi_cost_critic_cost_weight_arg = DeclareLaunchArgument(
+        'mppi_cost_critic_cost_weight',
+        default_value='3.82',
+        description='Cost weight for the MPPI cost critic.'
+    )
+    mppi_path_align_critic_cost_weight_arg = DeclareLaunchArgument(
+        'mppi_path_align_critic_cost_weight',
+        default_value='14.0',
+        description='Cost weight for the MPPI path align critic.'
+    )
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -659,7 +671,9 @@ def generate_launch_description():
         expected_planner_frequency_arg,
         planner_plugin_arg,
         robot_radius_arg,
-        
+        mppi_cost_critic_cost_weight_arg,
+        mppi_path_align_critic_cost_weight_arg,        
+
         # Actions
         log_sim_time_action,
         save_params_action,
