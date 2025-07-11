@@ -350,57 +350,57 @@ def generate_launch_description():
     base_frame_id_arg = DeclareLaunchArgument(
         'base_frame_id',
         default_value='base_footprint',
-        description='Base frame ID for the robot. This is used by the AMCL node to localize the robot in the map. It should match the frame ID of the robot\'s base in the TF tree.'
+        description='Base frame ID for the robot.'
     )
     map_frame_id_arg = DeclareLaunchArgument(
         'map_frame_id',
         default_value='map',
-        description='Map frame ID for the robot. This is used by the AMCL node to localize the robot in the map. It should match the frame ID of the map in the TF tree.'
+        description='Map frame ID for the robot.'
     )
     odom_frame_id_arg = DeclareLaunchArgument(
         'odom_frame_id',
         default_value='odometry',
-        description='Odometry frame ID for the robot. This is used by the AMCL node to localize the robot in the map. It should match the frame ID of the odometry in the TF tree.'
+        description='Odometry frame ID for the robot.'
     )
     odom_topic_arg = DeclareLaunchArgument(
         'odom_topic',
         default_value='odom',
-        description='Odometry topic for the robot. This is used by the AMCL node to localize the robot in the map. It should match the topic name of the odometry in the ROS2 system.'
+        description='Odometry topic for the robot.'
     )
     initial_pose_arg = DeclareLaunchArgument(
         'initial_pose',
         default_value='-x 0.0 -y 0.0 -z 0.0 -Y 0.0',
-        description='Initial pose of the robot in the map frame. This is used by the AMCL node to localize the robot in the map. The format is "-x <x> -y <y> -z <z> -R <roll> -P <pitch> -Y <yaw>". The values are in meters for x, y, and z, and in radians for roll, pitch, and yaw.'
+        description='Initial pose of the robot in the map frame.'
     )
     update_min_d_arg = DeclareLaunchArgument(
         'update_min_d',
         default_value='0.01',
-        description='Minimum distance for localization updates. This is used by the AMCL node to determine when to update the robot\'s pose based on the laser scan data. The value is in meters.'
+        description='Minimum distance for localization updates regarding AMCL.'
     )
     update_min_a_arg = DeclareLaunchArgument(
         'update_min_a',
         default_value='0.01',
-        description='Minimum angle for localization updates. This is used by the AMCL node to determine when to update the robot\'s pose based on the laser scan data. The value is in radians.'
+        description='Minimum angle for localization updates regarding AMCL.'
     )
     laser_max_range_arg = DeclareLaunchArgument(
         'laser_max_range',
         default_value='-1.0',
-        description='Maximum range for the laser scanner. This is used by the AMCL node to filter out laser scan data that is beyond the specified range. The value is in meters. A value of -1.0 means no limit, and the laser scan data will not be filtered based on range.'
+        description='Maximum range for the laser scanner.'
     )
     beam_skip_distance_arg = DeclareLaunchArgument(
         'beam_skip_distance',
         default_value='0.5',
-        description='Distance threshold for beam skipping. This is used by the AMCL node to ignore beams that most particles disagree with in Likelihood field model. Maximum distance to consider skipping for (m).'
+        description='Distance threshold for beam skipping.'
     )
     beam_skip_error_threshold_arg = DeclareLaunchArgument(
         'beam_skip_error_threshold',
         default_value='0.9',
-        description='Error threshold for beam skipping. This is used by the AMCL node as the percentage of beams after not matching map to force full update due to bad convergence.'
+        description='Error threshold for beam skipping.'
     )
     beam_skip_threshold_arg = DeclareLaunchArgument(
         'beam_skip_threshold',
         default_value='0.3',
-        description='Threshold for beam skipping. This is used by the AMCL node as the percentage of beams required to skip.'
+        description='Threshold for beam skipping.'
     )  
     do_beamskip_arg = DeclareLaunchArgument(
         'do_beamskip',
@@ -455,7 +455,7 @@ def generate_launch_description():
     base_obstacle_scale_arg = DeclareLaunchArgument(
         'base_obstacle_scale',
         default_value='0.02',
-        description='Base obstacle scale for the costmap. This is used by the local and global costmaps to scale the cost of obstacles.'
+        description='Base obstacle scale for the costmap.'
     )
     controller_plugin_arg = DeclareLaunchArgument(
         'controller_plugin_type',

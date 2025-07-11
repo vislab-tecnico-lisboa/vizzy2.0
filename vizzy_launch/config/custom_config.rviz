@@ -8,6 +8,7 @@ Panels:
         - /Status1
         - /Map1/Topic1
         - /Path1
+        - /Path2
       Splitter Ratio: 0.5
     Tree Height: 702
   - Class: rviz_common/Selection
@@ -471,7 +472,7 @@ Visualization Manager:
     - Alpha: 1
       Buffer Length: 1
       Class: rviz_default_plugins/Path
-      Color: 25; 255; 0
+      Color: 224; 27; 36
       Enabled: true
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
@@ -494,7 +495,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /plan
+        Value: /plan_smoothed
       Value: true
   Enabled: true
   Global Options:
@@ -542,7 +543,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 13.877426147460938
+      Distance: 8.74450969696045
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -557,10 +558,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8153977990150452
+      Pitch: 0.7753978967666626
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.07038988918066025
+      Yaw: 0.43038755655288696
     Saved: ~
 Window Geometry:
   Displays:

@@ -1,8 +1,15 @@
 
 <!--
-  This Behavior Tree replans the global path periodically at X Hz and it also has
+  This Behavior Tree replans the global path periodically at GLOBAL_PLANNER_FREQUENCY Hz and it also has
   recovery actions specific to planning / control as well as general system issues.
   This will be continuous if a kinematically valid planner is selected.
+
+  * There are placeholders for the following parameters:
+    - PLANNER_PLACEHOLDER: The ID of the global planner to use.
+    - CONTROLLER_PLACEHOLDER: The ID of the controller to use for following the path.
+    - GLOBAL_PLANNER_FREQUENCY: The frequency at which the global planner will be called.
+  
+  These placeholders will be replaced with the actual values when the navigation launch is executed.
 -->
 <root main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
