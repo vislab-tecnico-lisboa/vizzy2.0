@@ -45,7 +45,7 @@
   <arg name="controller_frequency" default="20.0" description="Frequency of the controller in Hz"/>
   <arg name="path_align_forward_point_distance" default="0.325" description="Forward point distance for PathAlign"/>
   <arg name="goal_align_forward_point_distance" default="0.325" description="Forward point distance for GoalAlign"/>
-  <arg name="inflation_radius" default="0.50" description="Inflation radius for the costmap"/>
+  <arg name="inflation_radius" default="1.0" description="Inflation radius for the costmap"/>
   <arg name="path_align_scale" default="32.0" description="Scale for PathAlign"/>
   <arg name="goal_align_scale" default="24.0" description="Scale for GoalAlign"/>
   <arg name="path_dist_scale" default="32.0" description="Scale for PathDist"/>
@@ -53,7 +53,7 @@
   <arg name="cost_scaling_factor" default="3.0" description="Cost scaling factor for the inflation layer in the costmap"/>
   <arg name="base_obstacle_scale" default="0.02" description="Base obstacle scale for the costmap. This is used by the local and global costmaps to scale the cost of obstacles."/>
   <arg name="controller_plugin_type" default="MPPI" description="Type of controller plugin to use. Options: DWB, RPP, MPPI"/>
-  <arg name="expected_planner_frequency" default="1.0" description="Expected frequency of the planner in Hz"/>
+  <arg name="expected_planner_frequency" default="0.1" description="Expected frequency of the planner in Hz"/>
   <arg name="planner_plugin_type" default="ThetaStar" description="Planner plugin to use for the navigation stack"/>
   <arg name="robot_radius" default="0.4" description="Robot radius for the navigation stack. This is used by the local and global costmaps to scale the cost of obstacles."/>
   <arg name="mppi_cost_critic_cost_weight" default="3.82" description="Cost weight for the MPPI cost critic"/>

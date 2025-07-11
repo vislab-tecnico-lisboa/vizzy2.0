@@ -423,7 +423,7 @@ def generate_launch_description():
     )
     inflation_radius_arg = DeclareLaunchArgument(
         'inflation_radius',
-        default_value='0.50',
+        default_value='1.0',
         description='Inflation radius for the costmap. This is used by the local and global costmaps.'
     )
     path_align_scale_arg = DeclareLaunchArgument(
@@ -463,7 +463,7 @@ def generate_launch_description():
     )
     expected_planner_frequency_arg = DeclareLaunchArgument(
         'expected_planner_frequency',
-        default_value='1.0',
+        default_value='0.1',
         description='Expected frequency of the planner in Hz.'
     )
     planner_plugin_arg = DeclareLaunchArgument(
