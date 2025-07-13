@@ -58,6 +58,7 @@
   <exec_depend>nav2_regulated_pure_pursuit_controller</exec_depend>
 
   <!-- General dependencies -->
+  <depend>xterm</depend> 
   <depend>rclcpp</depend> 
   <depend>nav2_util</depend>
   <depend>pluginlib</depend>
