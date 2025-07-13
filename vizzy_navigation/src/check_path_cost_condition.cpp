@@ -24,18 +24,20 @@ void CheckPathCost::initialize()
 
     RCLCPP_INFO(node_->get_logger(), "CheckPathCost node: Initializing...");
 
-    // TEMPORARY DEBUG: List all keys on the blackboard.
+    // List all keys on the blackboard. This is useful for debugging and understanding what data is available.
     RCLCPP_INFO(node_->get_logger(), "CheckPathCost node: Blackboard contains the following keys:");
     for (const auto& key : config().blackboard->getKeys()) {
         RCLCPP_INFO(node_->get_logger(), "- %s", key.data());
     }
 
+    // Get the TF buffer from the blackboard.
     tf_buffer_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
     if (!tf_buffer_) {
         RCLCPP_FATAL(node_->get_logger(), "Failed to get tf2_ros::Buffer from blackboard. This is critical for TF lookups!");
         return;
     }
 
+    // Initilize the costmap ROS node.
     costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
     
     // The costmap needs its own thread to spin and process ROS messages (like topic updates).
@@ -45,6 +47,7 @@ void CheckPathCost::initialize()
     costmap_ros_->on_configure(costmap_ros_->get_current_state());
     costmap_ros_->on_activate(costmap_ros_->get_current_state());
 
+    // Get the costmap pointer from the Costmap2DROS instance.
     costmap_ = costmap_ros_->getCostmap();
 
     getInput("global_frame", global_frame_);
@@ -121,11 +124,11 @@ BT::NodeStatus CheckPathCost::tick()
     high_cost_ratio, ratio_threshold);
 
   if (high_cost_ratio > ratio_threshold) {
-    RCLCPP_INFO(node_->get_logger(), "High cost path segment detected! Switching to NARROW controller.");
+    RCLCPP_INFO(node_->get_logger(), "High cost path segment detected! Using NARROW controller.");
     return BT::NodeStatus::SUCCESS;
   }
 
-  RCLCPP_INFO(node_->get_logger(), "Path segment is clear. Using OPEN controller.");
+  RCLCPP_INFO(node_->get_logger(), "Path segment is clear. Using WIDE controller.");
   return BT::NodeStatus::FAILURE;
 }
 

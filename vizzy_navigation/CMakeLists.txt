@@ -59,12 +59,14 @@ add_library(nav2_check_path_cost_bt_node SHARED
   src/check_path_cost_condition.cpp
 )
 
+# Specify the include directories for the nav2_check_path_cost_bt_node.
 target_include_directories(nav2_check_path_cost_bt_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   ${nav2_behavior_tree_INCLUDE_DIRS}
 )
 
+# Link the nav2_check_path_cost_bt_node with the required libraries.
 ament_target_dependencies(nav2_check_path_cost_bt_node PUBLIC
   "behaviortree_cpp_v3"
   "nav2_behavior_tree"
@@ -84,7 +86,7 @@ install(TARGETS
   RUNTIME DESTINATION bin
 )
 
-# Install directories containing headers, configs, launch files, etc.
+# Install the directories to be accessible via the package.
 install(
   DIRECTORY include/
   DESTINATION include
@@ -95,6 +97,8 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
+# Install the Behaviour Tree plugin description file.
 pluginlib_export_plugin_description_file(nav2_check_path_cost_bt_node config/bt_plugins.xml)
 
+# Install the package.xml and register the package with ament.
 ament_package()
