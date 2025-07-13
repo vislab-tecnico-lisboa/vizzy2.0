@@ -6,7 +6,6 @@
 
   * There are placeholders for the following parameters:
     - PLANNER_PLACEHOLDER: The ID of the global planner to use.
-    - CONTROLLER_PLACEHOLDER: The ID of the controller to use for following the path.
     - GLOBAL_PLANNER_FREQUENCY: The frequency at which the global planner will be called.
   
   These placeholders will be replaced with the actual values when the navigation launch is executed.
@@ -25,7 +24,28 @@
           </RecoveryNode>
         </RateController>
         <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{path}" controller_id="CONTROLLER_PLACEHOLDER"/>
+          <Parallel success_threshold="1" failure_threshold="1">
+            <Repeat num_cycles="-1">
+              <Sequence>
+                <RateController hz="1.0">
+                  <IfThenElse name="CheckAndSelectController">
+                    <CheckPathCost
+                        path="{path}"
+                        tf_buffer="{tf_buffer}"
+                        global_frame="{global_frame}"
+                        robot_base_frame="{robot_base_frame}"
+                        check_distance="1.0"
+                        cost_threshold="30"
+                        ratio_threshold="0.25" />
+                    <SetBlackboard output_key="selected_controller" value="mppi_controller_narrow" />
+                    <SetBlackboard output_key="selected_controller" value="mppi_controller_wide" />
+                  </IfThenElse>
+                </RateController>
+                <Wait wait_duration="0.01" />
+              </Sequence>
+            </Repeat>
+            <FollowPath path="{path}" controller_id="{selected_controller}"/>
+          </Parallel>
           <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
       </PipelineSequence>

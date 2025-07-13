@@ -16,7 +16,7 @@
 #   +---------------------+        +---------------------+        +---------------------+ 
 
 import os
-import tempfile
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction, RegisterEventHandler, LogInfo
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
@@ -28,24 +28,38 @@ from launch.event_handlers import OnProcessStart
 def write_urdf_to_file(context, robot_description_substitution, file_path):
     # Evaluate the substitution using the valid launch context.
     urdf_content = robot_description_substitution.perform(context)
-    if urdf_content is None:
-        raise RuntimeError("URDF content evaluated to None. Check your substitutions.")
+
+    if urdf_content is None or len(urdf_content.strip()) == 0:
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        print("WARNING: URDF content evaluated to empty or None. Xacro might be failing.")
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    else:
+        print(f"Evaluated URDF content (first 200 chars):\n{urdf_content[:200]}...")
+
     # Write the evaluated URDF content to a file.
-    with open(file_path, 'w') as f:
-        f.write(urdf_content)
-    # Log that we wrote the file
-    print(f"URDF written to: {file_path}")
-    return urdf_content # Return content for other nodes to use
+    try:
+        with open(file_path, 'w') as f:
+            f.write(urdf_content)
+        print(f"URDF written to: {file_path}")
+    except Exception as e:
+        print(f"ERROR: Could not write URDF to file {file_path}: {e}")
+        raise # Re-raise to stop the launch if writing fails.
+
+    return urdf_content # Return content for other nodes to use.
 
 # Helper function to print the URDF file.
 def print_urdf_file(context, file_path):
-    # Read and log the content of the file after it has been written
+    # Read and log the content of the file after it has been written.
     try:
         with open(file_path, 'r') as f:
             file_contents = f.read()
-        print("Created URDF file contents:")
+        print("Created URDF file contents (full length):")
+        # Print the full content, or just enough to confirm it's not empty.
+        # print(file_contents) # Be careful with very large files.
+        if not file_contents.strip():
+            print("WARNING: URDF file content is empty after reading back!")
     except Exception as e:
-        print(f"Error reading file: {e}")
+        print(f"Error reading URDF file {file_path}: {e}")
     return []
 
 # This function is used to parse the pose string from the launch configuration.
@@ -70,8 +84,9 @@ def launch_setup(context, *args, **kwargs):
         'odom_topic:=', LaunchConfiguration('odom_topic')
     ])
     
-    urdf_temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, prefix='vizzy_urdf_')
-    urdf_file_path = urdf_temp_file.name
+    # Use the ament index to get the package share directory and build the file path string.
+    package_share = get_package_share_directory('vizzy_description')
+    urdf_file_path = os.path.join(package_share, 'vizzy_final_model.urdf')
     
     robot_description_content = write_urdf_to_file(context, robot_description_command, urdf_file_path)
     print_urdf_file(context, urdf_file_path)

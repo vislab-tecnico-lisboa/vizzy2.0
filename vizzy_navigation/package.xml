@@ -40,13 +40,11 @@
   <exec_depend>std_msgs</exec_depend> 
   <exec_depend>nav2_amcl</exec_depend> 
   <exec_depend>nav2_core</exec_depend> 
-  <exec_depend>nav2_util</exec_depend> 
   <exec_depend>nav2_common</exec_depend> 
   <exec_depend>nav2_planner</exec_depend> 
   <exec_depend>nav2_smoother</exec_depend> 
   <exec_depend>nav2_behaviors</exec_depend> 
   <exec_depend>nav2_controller</exec_depend> 
-  <exec_depend>nav2_costmap_2d</exec_depend> 
   <exec_depend>nav2_map_server</exec_depend> 
   <exec_depend>nav2_bt_navigator</exec_depend> 
   <exec_depend>nav2_navfn_planner</exec_depend> 
@@ -61,9 +59,13 @@
 
   <!-- General dependencies -->
   <depend>rclcpp</depend> 
+  <depend>nav2_util</depend>
+  <depend>pluginlib</depend>
   <depend>sensor_msgs</depend> 
   <depend>geometry_msgs</depend> 
-  <depend>actionlib_msgs</depend> 
+  <depend>actionlib_msgs</depend>
+  <depend>nav2_costmap_2d</depend> 
+  <depend>nav2_behavior_tree</depend>
   <depend>visualization_msgs</depend> 
   <depend>interactive_markers</depend> 
 
@@ -72,5 +74,6 @@
   <!-- Export dependencies -->
   <export>
     <build_type>ament_cmake</build_type>
+    <behaviortree_cpp_v3 plugin="${prefix}/config/bt_plugins.xml" />
   </export>
 </package>

@@ -19,6 +19,7 @@ find_package(rviz2 REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(pluginlib REQUIRED) 
 find_package(nav2_amcl REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_util REQUIRED)
@@ -37,8 +38,10 @@ find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_map_server REQUIRED)
 find_package(nav2_bt_navigator REQUIRED)
 find_package(nav2_smac_planner REQUIRED)
+find_package(nav2_behavior_tree REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(nav2_navfn_planner REQUIRED)
+find_package(behaviortree_cpp_v3 REQUIRED) 
 find_package(interactive_markers REQUIRED)
 find_package(nav2_dwb_controller REQUIRED)
 find_package(nav2_mppi_controller REQUIRED)
@@ -48,27 +51,50 @@ find_package(nav2_lifecycle_manager REQUIRED)
 find_package(nav2_theta_star_planner REQUIRED)
 find_package(nav2_regulated_pure_pursuit_controller REQUIRED)
 
-# Include directories from the package.
-include_directories(${PCL_INCLUDE_DIRS})
-
+# Twistsimulator target.
 add_executable(twistsimulator src/twistsimulator.cpp)
+ament_target_dependencies(twistsimulator rclcpp geometry_msgs)
 
-ament_target_dependencies(twistsimulator
-  rclcpp
-  geometry_msgs)
-
-install(TARGETS
-  twistsimulator
-  DESTINATION lib/${PROJECT_NAME}
+add_library(nav2_check_path_cost_bt_node SHARED
+  src/check_path_cost_condition.cpp
 )
 
-# Install the launch/config/rviz files.
-install(DIRECTORY
-  config
-  launch
-  maps
+target_include_directories(nav2_check_path_cost_bt_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  ${nav2_behavior_tree_INCLUDE_DIRS}
+)
+
+ament_target_dependencies(nav2_check_path_cost_bt_node PUBLIC
+  "behaviortree_cpp_v3"
+  "nav2_behavior_tree"
+  "nav2_costmap_2d"
+  "nav2_util"
+  "nav_msgs"
+  "rclcpp"
+  "tf2_ros"
+)
+
+# Install the executables and libraries.
+install(TARGETS
+  twistsimulator
+  nav2_check_path_cost_bt_node 
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+# Install directories containing headers, configs, launch files, etc.
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
+install(
+  DIRECTORY config launch maps
   DESTINATION share/${PROJECT_NAME}
 )
 
-# Install the package.xml and register the package with ament.
+pluginlib_export_plugin_description_file(nav2_check_path_cost_bt_node config/bt_plugins.xml)
+
 ament_package()

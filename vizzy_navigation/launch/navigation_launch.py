@@ -138,7 +138,9 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
     elif controller_plugin_type == "RPP":
         original_params['controller_server']['ros__parameters']['controller_plugins'] = ["rpp_controller"]
     elif controller_plugin_type == "MPPI":
-        original_params['controller_server']['ros__parameters']['controller_plugins'] = ["mppi_controller"]
+        # Load BOTH profiles for dynamic switching.
+        print("[Launch Info] MPPI selected. Loading 'wide' and 'narrow' controller profiles.")
+        original_params['controller_server']['ros__parameters']['controller_plugins'] = ["mppi_controller_wide", "mppi_controller_narrow"]
     else:
         # Fallback or error if an unknown plugin is specified.
         print(f"[Launch Error] Unknown controller_plugin_type: {controller_plugin_type}. Using default or raising error.")
@@ -202,14 +204,24 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'controller_server.ros__parameters.dwb_controller.PathDist.scale': float(LaunchConfiguration('path_dist_scale').perform(context)),
         'controller_server.ros__parameters.dwb_controller.GoalDist.scale': float(LaunchConfiguration('goal_dist_scale').perform(context)),
         'controller_server.ros__parameters.dwb_controller.BaseObstacle.scale': float(LaunchConfiguration('base_obstacle_scale').perform(context)),
-        'controller_server.ros__parameters.mppi_controller.ObstaclesCritic.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
-        'controller_server.ros__parameters.mppi_controller.ObstaclesCritic.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
-        'controller_server.ros__parameters.mppi_controller.CostCritic.cost_weight': float(LaunchConfiguration('mppi_cost_critic_cost_weight').perform(context)),
-        'controller_server.ros__parameters.mppi_controller.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_path_align_critic_cost_weight').perform(context)),
-        'controller_server.ros__parameters.mppi_controller.ObstaclesCritic.repulsion_weight': float(LaunchConfiguration('mppi_obstacles_critic_repulsion_weight').perform(context)),
-        'controller_server.ros__parameters.mppi_controller.ObstaclesCritic.critical_weight': float(LaunchConfiguration('mppi_obstacles_critic_critical_weight').perform(context)),
-        'controller_server.ros__parameters.mppi_controller.ObstaclesCritic.collision_margin_distance': float(LaunchConfiguration('mppi_obstacles_critic_collision_margin_distance').perform(context)),
-        'controller_server.ros__parameters.mppi_controller.wz_std': float(LaunchConfiguration('mppi_wz_std').perform(context)),
+
+        # Wide MPPI Controller substitutions.
+        'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_wide.CostCritic.cost_weight': float(LaunchConfiguration('mppi_cost_critic_cost_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_wide.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_path_align_critic_cost_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.repulsion_weight': float(LaunchConfiguration('mppi_obstacles_critic_repulsion_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.critical_weight': float(LaunchConfiguration('mppi_obstacles_critic_critical_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.collision_margin_distance': float(LaunchConfiguration('mppi_obstacles_critic_collision_margin_distance').perform(context)),
+
+        # Narrow MPPI Controller substitutions.
+        'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_narrow.CostCritic.cost_weight': float(LaunchConfiguration('mppi_cost_critic_cost_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_narrow.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_path_align_critic_cost_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.repulsion_weight': float(LaunchConfiguration('mppi_obstacles_critic_repulsion_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.critical_weight': float(LaunchConfiguration('mppi_obstacles_critic_critical_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.collision_margin_distance': float(LaunchConfiguration('mppi_obstacles_critic_collision_margin_distance').perform(context)),
 
         # Map Server substitutions.
         'map_server.ros__parameters.topic_name': LaunchConfiguration('map_topic').perform(context),
@@ -502,11 +514,6 @@ def generate_launch_description():
         default_value='0.2',
         description='Collision margin distance for the MPPI obstacles critic.'
     )
-    mppi_wz_std_arg = DeclareLaunchArgument(
-        'mppi_wz_std',
-        default_value='0.14',
-        description='Standard deviation for the MPPI angular velocity sampling.'
-    )
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -601,6 +608,7 @@ def generate_launch_description():
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
+                prefix=['xterm -e gdb -ex run --args'],
                 parameters=[configured_params], 
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings),
@@ -700,7 +708,6 @@ def generate_launch_description():
         mppi_obstacles_critic_repulsion_weight_arg,
         mppi_obstacles_critic_critical_weight_arg,
         mppi_obstacles_critic_collision_margin_distance_arg, 
-        mppi_wz_std_arg,    
 
         # Actions
         log_sim_time_action,
