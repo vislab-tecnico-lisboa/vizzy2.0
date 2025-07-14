@@ -481,6 +481,8 @@ global_costmap:
         observation_sources: scan_front scan_rear
         scan_front:
           topic: /nav_hokuyo_laser/front/scan # Configurable
+          min_obstacle_height: 0.0
+          max_obstacle_height: 2.0 
           clearing: True
           marking: True
           inf_as_valid: True
@@ -493,6 +495,8 @@ global_costmap:
 
         scan_rear:
           topic: /nav_hokuyo_laser/rear/scan # Configurable
+          min_obstacle_height: 0.0
+          max_obstacle_height: 2.0 
           clearing: True
           marking: True
           inf_as_valid: True
