@@ -20,6 +20,7 @@
   <BehaviorTree ID="MainTree">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
+        <SetBlackboard output_key="selected_controller" value="mppi_controller_wide" />   
         <RateController hz="GLOBAL_PLANNER_FREQUENCY">
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
             <Sequence name="ComputeAndSmoothPath">
@@ -30,27 +31,45 @@
           </RecoveryNode>
         </RateController>
         <RecoveryNode number_of_retries="1" name="FollowPath">
-          <Parallel success_threshold="1" failure_threshold="1">
+
+          <!-- The Parallel node is responsible for the dynamic change of the controller
+               It does this by concurrently following the path and checking its cost.
+               Because of the concurrent nature of the Parallel node, it must be controlled
+               very carefully to ensure it does not return FAILURE or SUCCESS prematurely.
+
+               The Parallel node has 2 children:
+                1. GoalReached: This node checks if the goal has been reached.
+                2. FollowPath: This node will follow the path using the selected controller.
+                3. Repeat: This node will continuously check the path cost and select the appropriate controller.
+
+               The success_threshold is set to 1, meaning that if the FollowPath node or the GoalReached node succeed, 
+               the Parallel node will succeed.
+               The Repeat node will run indefinitely until the goal is reached, so it will never return anything.
+
+               The failure_threshold is set to 2, meaning that FAILURE is only returned if the goal is not reached 
+               (GoalReached node fails) and the FollowPath node fails as well.
+           -->
+
+          <Parallel success_threshold="1" failure_threshold="2">
+            <GoalReached goal="{goal}" />
+            <FollowPath path="{path}" controller_id="{selected_controller}"/>
             <Repeat num_cycles="-1">
               <Sequence>
-                <RateController hz="1.0">
-                  <IfThenElse name="CheckAndSelectController">
-                    <CheckPathCost
-                        path="{path}"
-                        tf_buffer="{tf_buffer}"
-                        global_frame="{global_frame}"
-                        robot_base_frame="{robot_base_frame}"
-                        check_distance="1.0"
-                        cost_threshold="30"
-                        ratio_threshold="0.25" />
-                    <SetBlackboard output_key="selected_controller" value="mppi_controller_narrow" />
-                    <SetBlackboard output_key="selected_controller" value="mppi_controller_wide" />
-                  </IfThenElse>
-                </RateController>
-                <Wait wait_duration="0.01" />
+                <IfThenElse name="CheckAndSelectController">
+                  <CheckPathCost
+                      path="{path}"
+                      tf_buffer="{tf_buffer}"
+                      global_frame="{global_frame}"
+                      robot_base_frame="{robot_base_frame}"
+                      check_distance="1.0"
+                      cost_threshold="30"
+                      ratio_threshold="0.25" />
+                  <SetBlackboard output_key="selected_controller" value="mppi_controller_narrow" />
+                  <SetBlackboard output_key="selected_controller" value="mppi_controller_wide" />
+                </IfThenElse>
+                <Wait wait_duration="1.0" />
               </Sequence>
             </Repeat>
-            <FollowPath path="{path}" controller_id="{selected_controller}"/>
           </Parallel>
           <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>

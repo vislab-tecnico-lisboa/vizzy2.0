@@ -208,20 +208,22 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         # Wide MPPI Controller substitutions.
         'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
         'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
-        'controller_server.ros__parameters.mppi_controller_wide.CostCritic.cost_weight': float(LaunchConfiguration('mppi_cost_critic_cost_weight').perform(context)),
-        'controller_server.ros__parameters.mppi_controller_wide.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_path_align_critic_cost_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_wide.CostCritic.cost_weight': float(LaunchConfiguration('mppi_wide_cost_critic_cost_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_wide.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_wide_path_align_critic_cost_weight').perform(context)),
         'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.repulsion_weight': float(LaunchConfiguration('mppi_obstacles_critic_repulsion_weight').perform(context)),
         'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.critical_weight': float(LaunchConfiguration('mppi_obstacles_critic_critical_weight').perform(context)),
         'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.collision_margin_distance': float(LaunchConfiguration('mppi_obstacles_critic_collision_margin_distance').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_wide.wz_std': float(LaunchConfiguration('mppi_wide_wz_std').perform(context)),
 
         # Narrow MPPI Controller substitutions.
         'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
         'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
-        'controller_server.ros__parameters.mppi_controller_narrow.CostCritic.cost_weight': float(LaunchConfiguration('mppi_cost_critic_cost_weight').perform(context)),
-        'controller_server.ros__parameters.mppi_controller_narrow.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_path_align_critic_cost_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_narrow.CostCritic.cost_weight': float(LaunchConfiguration('mppi_narrow_cost_critic_cost_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_narrow.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_narrow_path_align_critic_cost_weight').perform(context)),
         'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.repulsion_weight': float(LaunchConfiguration('mppi_obstacles_critic_repulsion_weight').perform(context)),
         'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.critical_weight': float(LaunchConfiguration('mppi_obstacles_critic_critical_weight').perform(context)),
         'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.collision_margin_distance': float(LaunchConfiguration('mppi_obstacles_critic_collision_margin_distance').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_narrow.wz_std': float(LaunchConfiguration('mppi_narrow_wz_std').perform(context)),
 
         # Map Server substitutions.
         'map_server.ros__parameters.topic_name': LaunchConfiguration('map_topic').perform(context),
@@ -489,15 +491,25 @@ def generate_launch_description():
         default_value='0.4',
         description='Robot radius for the navigation stack.'
     )
-    mppi_cost_critic_cost_weight_arg = DeclareLaunchArgument(
-        'mppi_cost_critic_cost_weight',
+    mppi_wide_cost_critic_cost_weight_arg = DeclareLaunchArgument(
+        'mppi_wide_cost_critic_cost_weight',
         default_value='3.82',
-        description='Cost weight for the MPPI cost critic.'
+        description='Cost weight for the wide MPPI cost critic.'
     )
-    mppi_path_align_critic_cost_weight_arg = DeclareLaunchArgument(
-        'mppi_path_align_critic_cost_weight',
+    mppi_narrow_cost_critic_cost_weight_arg = DeclareLaunchArgument(
+        'mppi_narrow_cost_critic_cost_weight',
+        default_value='10.0',
+        description='Cost weight for the narrow MPPI cost critic.'
+    )
+    mppi_wide_path_align_critic_cost_weight_arg = DeclareLaunchArgument(
+        'mppi_wide_path_align_critic_cost_weight',
         default_value='14.0',
-        description='Cost weight for the MPPI path align critic.'
+        description='Cost weight for the wide MPPI path align critic.'
+    )
+    mppi_narrow_path_align_critic_cost_weight_arg = DeclareLaunchArgument(
+        'mppi_narrow_path_align_critic_cost_weight',
+        default_value='32.0',
+        description='Cost weight for the narrow MPPI path align critic.'
     )
     mppi_obstacles_critic_repulsion_weight_arg = DeclareLaunchArgument(
         'mppi_obstacles_critic_repulsion_weight',
@@ -513,6 +525,16 @@ def generate_launch_description():
         'mppi_obstacles_critic_collision_margin_distance',
         default_value='0.2',
         description='Collision margin distance for the MPPI obstacles critic.'
+    )
+    mppi_wide_wz_std_arg = DeclareLaunchArgument(
+        'mppi_wide_wz_std',
+        default_value='0.2',
+        description='Standard deviation for the wide MPPI controller.'
+    )
+    mppi_narrow_wz_std_arg = DeclareLaunchArgument(
+        'mppi_narrow_wz_std',
+        default_value='0.13',
+        description='Standard deviation for the narrow MPPI controller.'
     )
 
     # --- Launch Configurations ---
@@ -608,7 +630,7 @@ def generate_launch_description():
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,
-                prefix=['xterm -e gdb -ex run --args'],
+                #prefix=['xterm -e gdb -ex run --args'], # Use this line to debug the node.
                 parameters=[configured_params], 
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings),
@@ -703,11 +725,15 @@ def generate_launch_description():
         expected_planner_frequency_arg,
         planner_plugin_arg,
         robot_radius_arg,
-        mppi_cost_critic_cost_weight_arg,
-        mppi_path_align_critic_cost_weight_arg,   
+        mppi_wide_cost_critic_cost_weight_arg,
+        mppi_narrow_cost_critic_cost_weight_arg,
+        mppi_wide_path_align_critic_cost_weight_arg,
+        mppi_narrow_path_align_critic_cost_weight_arg,
         mppi_obstacles_critic_repulsion_weight_arg,
         mppi_obstacles_critic_critical_weight_arg,
         mppi_obstacles_critic_collision_margin_distance_arg, 
+        mppi_wide_wz_std_arg,
+        mppi_narrow_wz_std_arg,
 
         # Actions
         log_sim_time_action,
