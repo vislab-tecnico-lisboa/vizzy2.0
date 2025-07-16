@@ -65,7 +65,7 @@
   <arg name="mppi_obstacles_critic_collision_margin_distance" default="0.2" description="Collision margin distance for the MPPI obstacles critic"/>
   <arg name="mppi_wide_wz_std" default="0.2" description="Standard deviation for the wide MPPI controller"/>
   <arg name="mppi_narrow_wz_std" default="0.13" description="Standard deviation for the narrow MPPI controller"/>
-  <arg name="velocity_smoother_feedback_type" default="CLOSED_LOOP" description="Feedback type for the velocity smoother. Options: CLOSED_LOOP, OPEN_LOOP"/>
+  <arg name="velocity_smoother_feedback_type" default="OPEN_LOOP" description="Feedback type for the velocity smoother. Options: CLOSED_LOOP, OPEN_LOOP"/>
 
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>

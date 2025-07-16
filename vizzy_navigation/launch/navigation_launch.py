@@ -539,7 +539,7 @@ def generate_launch_description():
     )
     velocity_smoother_feedback_type_arg = DeclareLaunchArgument(
         'velocity_smoother_feedback_type',
-        default_value='CLOSED_LOOP',
+        default_value='OPEN_LOOP',
         description='Feedback type for the velocity smoother. Options: CLOSED_LOOP, OPEN_LOOP.'
     )
 
