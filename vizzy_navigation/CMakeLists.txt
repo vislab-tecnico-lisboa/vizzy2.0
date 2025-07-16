@@ -49,6 +49,7 @@ find_package(nav2_velocity_smoother REQUIRED)
 find_package(nav2_waypoint_follower REQUIRED)
 find_package(nav2_lifecycle_manager REQUIRED)
 find_package(nav2_theta_star_planner REQUIRED)
+find_package(nav2_constrained_smoother REQUIRED)
 find_package(nav2_regulated_pure_pursuit_controller REQUIRED)
 
 # Twistsimulator target.

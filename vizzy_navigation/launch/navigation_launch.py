@@ -251,6 +251,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
 
         # Velocity Smoother substitutions.
         'velocity_smoother.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),
+        'velocity_smoother.ros__parameters.feedback': LaunchConfiguration('velocity_smoother_feedback_type').perform(context),
 
         # Planner Server substitutions.
         'planner_server.ros__parameters.expected_planner_frequency': float(LaunchConfiguration('expected_planner_frequency').perform(context)),
@@ -536,6 +537,11 @@ def generate_launch_description():
         default_value='0.13',
         description='Standard deviation for the narrow MPPI controller.'
     )
+    velocity_smoother_feedback_type_arg = DeclareLaunchArgument(
+        'velocity_smoother_feedback_type',
+        default_value='CLOSED_LOOP',
+        description='Feedback type for the velocity smoother. Options: CLOSED_LOOP, OPEN_LOOP.'
+    )
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -734,6 +740,7 @@ def generate_launch_description():
         mppi_obstacles_critic_collision_margin_distance_arg, 
         mppi_wide_wz_std_arg,
         mppi_narrow_wz_std_arg,
+        velocity_smoother_feedback_type_arg,
 
         # Actions
         log_sim_time_action,
