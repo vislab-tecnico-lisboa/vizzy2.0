@@ -1,0 +1,7 @@
+image: map_colored.pgm
+resolution: 0.025000
+origin: [-25.800000, -15.400000, 0.000000]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
+zones: {corridor: 50, bathroom: 12, bedroom: 125, kitchen: 96, dining_room: 150, living_room: 190, outside: 254, unknown: 215}

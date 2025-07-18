@@ -1,0 +1,141 @@
+objects:
+  coke:         kitchen_counter
+  water:        kitchen_counter
+  milkshake:    kitchen_counter
+  juice:        kitchen_counter
+  tea:          kitchen_counter
+  apple:        kitchen_table
+  lemon:        kitchen_table
+  pear:         kitchen_table
+  rice:         kitchen_table
+  macaroni:     kitchen_table
+  cookies:      kitchen_table
+  cloth:        side_table
+  toilet_paper: side_table
+  sponge:       side_table
+  soap:         side_table
+  cup:          dining_table
+  bowl:         dining_table
+
+doors:
+  door_entrance:
+    requires: [entrance]
+    connections: [entrance, 'entrance hall']
+  door_bedroom:
+    requires: [bedroom]
+    connections: [bedroom, 'living room']
+  door_bathroom:
+    requires: [bathroom]
+    connections: [bathroom, hallway]
+
+rooms:
+  'entrance hall': ENTRANCE_HALL_FURNITURE
+  'hallway': HALLWAY_FURNITURE
+  'bedroom': BEDROOM_FURNITURE
+  'living room': LIVING_ROOM_FURNITURE
+  'dining room': DINING_ROOM_FURNITURE
+  'kitchen': KITCHEN_FURNITURE
+  'bathroom': BATHROOM_FURNITURE
+
+movable_furnitures:
+  - trash_bin
+  - plant
+  - coffee_table
+  - arm_chair_1
+  - arm_chair_2
+  - dining_chair
+  - kitchen_chair
+
+furnitures_to_visit:
+  - kitchen_counter
+  - kitchen_table
+  - dining_table
+  - nightstand
+
+furnitures_to_place:
+  - dining_table
+  - kitchen_table
+  - kitchen_counter
+  - side_table
+
+furnitures:
+
+# bedroom
+
+  closet:
+    name: closet
+    room: bedroom
+    look_waypoints: [WARDROBE]
+    manipulation_waypoint: []
+
+  bed:
+    name: bed
+    room: bedroom
+    look_waypoints: [BED_LEFT, BED_RIGHT]
+    manipulation_waypoint: []
+
+  nightstand:
+    name: nightstand
+    room: bedroom
+    look_waypoints: [NIGHTSTAND_CLOSE, NIGHTSTAND_FAR]
+    manipulation_waypoint: []
+
+# living_room
+
+  bookshelf:
+    name: bookshelf
+    room: living_room
+    look_waypoints: [BOOKSHELF_FAR, BOOKSHELF_CLOSE]
+    manipulation_waypoint: []
+
+  coffee_table:
+    name: coffee_table
+    room: living_room
+    look_waypoints: [COFFEE_TABLE_LEFT, COFFEE_TABLE_RIGHT]
+    manipulation_waypoint: []
+
+  side_table:
+    name: side_table
+    room: living_room
+    look_waypoints: [SIDEBOARD_TABLE_FAR, SIDEBOARD_TABLE_CLOSE]
+    manipulation_waypoint: []
+    place_point: []
+
+  couch:
+    name: couch
+    room: living_room
+    look_waypoints: [SOFA_RIGHT, SOFA_LEFT]
+    manipulation_waypoint: []
+
+# dining_room
+
+  dining_table:
+    name: dining_table
+    room: dining_room
+    look_waypoints: [DINING_TABLE_RIGHT, DINING_TABLE_LEFT]
+    manipulation_waypoint: []
+    place_point: []
+
+# kitchen
+
+  kitchen_counter: 
+    name: kitchen_counter
+    room: kitchen
+    look_waypoints: [KITCHEN_COUNTER_LEFT, KITCHEN_COUNTER_RIGHT]
+    manipulation_waypoint: []
+    place_point: []
+
+  kitchen_table:
+    name: kitchen_table
+    room: kitchen
+    look_waypoints: [KITCHEN_TABLE_RIGHT, KITCHEN_TABLE_LEFT]
+    manipulation_waypoint: []
+    place_point: []
+
+# bathroom
+
+  bathroom_drawer:
+    name: bathroom_drawer
+    room: bathroom
+    look_waypoints: [BATHROOM_DOOR]
+    manipulation_waypoint: []

@@ -1,0 +1,345 @@
+map:
+
+  uuid: apartment
+  semantic_name: apartment
+  semantic_type: null
+
+
+rooms:
+
+  dining_room:
+    semantic_name: dining_room
+    semantic_type: null
+    connected_to: [kitchen, living_room]
+    properties:
+      exploration_waypoints: [DINING_ROOM_FURNITURE]
+  kitchen:
+    semantic_name: kitchen
+    semantic_type: null
+    connected_to: [dining_room, living_room, inside_hallway]
+    properties:
+      exploration_waypoints: [KITCHEN_FURNITURE]
+  living_room:
+    semantic_name: living_room
+    semantic_type: null
+    connected_to: [dining_room, kitchen, bedroom]
+    properties:
+      exploration_waypoints: [LIVING_ROOM_FURNITURE]
+  bedroom:
+    semantic_name: bedroom
+    semantic_type: null
+    connected_to: [living_room]
+    properties:
+      exploration_waypoints: [BEDROOM_FURNITURE]
+  bathroom:
+    semantic_name: bathroom
+    semantic_type: null
+    connected_to: [kitchen]
+    properties:
+      exploration_waypoints: [BATHROOM_FURNITURE]
+  inside_hallway:
+    semantic_name: inside_hallway
+    semantic_type: null
+    connected_to: [kitchen, outside_hallway]
+    properties:
+      exploration_waypoints: [HALLWAY_FURNITURE]
+  outside_hallway:
+    semantic_name: outside_hallway
+    semantic_type: null
+    connected_to: [inside_hallway, outside]
+    properties:
+      exploration_waypoints: [ENTRANCE_HALL_FURNITURE]
+  outside:
+    semantic_name: outside
+    semantic_type: null
+    connected_to: [outside_hallway]
+    properties:
+      exploration_waypoints: []
+
+
+locations:
+
+# dining_room
+  dining_table_location:
+    semantic_name: dining_table_location
+    semantic_type: placement
+    in_room: dining_room
+    properties:
+      exploration_waypoints: [DINING_TABLE_RIGHT, DINING_TABLE_LEFT]
+      to_be_explored: True
+      support_surface_polygon: dining_table
+
+# kitchen
+  kitchen_counter_location:
+    semantic_name: kitchen_counter_location
+    semantic_type: placement
+    in_room: kitchen
+    properties:
+      exploration_waypoints: [KITCHEN_COUNTER_LEFT, KITCHEN_COUNTER_RIGHT]
+      to_be_explored: True
+      support_surface_polygon: kitchen_counter
+
+  kitchen_table_location:
+    semantic_name: kitchen_table_location
+    semantic_type: placement
+    in_room: kitchen
+    properties:
+      exploration_waypoints: [KITCHEN_TABLE_RIGHT, KITCHEN_TABLE_LEFT]
+      to_be_explored: True
+      support_surface_polygon: kitchen_table
+
+  trash_bin_location:
+    semantic_name: trash_bin_location
+    semantic_type: location
+    in_room: kitchen
+    properties:
+      exploration_waypoints: []
+
+# living room
+  bookshelf_location:
+    semantic_name: bookshelf_location
+    semantic_type: placement
+    in_room: living_room
+    properties:
+      exploration_waypoints: [BOOKSHELF_FAR, BOOKSHELF_CLOSE]
+
+  coffee_table_location:
+    semantic_name: coffee_table_location
+    semantic_type: placement
+    in_room: living_room
+    properties:
+      exploration_waypoints: [COFFEE_TABLE_LEFT, COFFEE_TABLE_RIGHT]
+
+  side_table_location:
+    semantic_name: side_table_location
+    semantic_type: placement
+    in_room: living_room
+    properties:
+      exploration_waypoints: [SIDEBOARD_TABLE_FAR, SIDEBOARD_TABLE_CLOSE]
+      to_be_explored: True
+      support_surface_polygon: side_table
+
+  sofa_location:
+    semantic_name: sofa_location
+    semantic_type: placement
+    in_room: living_room
+    properties:
+      exploration_waypoints: [SOFA_RIGHT, SOFA_LEFT]
+
+  plant_location:
+    semantic_name: plant_location
+    semantic_type: location
+    in_room: living_room
+    properties:
+      exploration_waypoints: []
+
+  arm_chair_1_location:
+    semantic_name: arm_chair_location
+    semantic_type: location
+    in_room: living_room
+    properties:
+      exploration_waypoints: []
+
+  arm_chair_2_location:
+    semantic_name: arm_chair_location
+    semantic_type: location
+    in_room: living_room
+    properties:
+      exploration_waypoints: []
+
+# bedroom
+  closet_location:
+    semantic_name: closet_location
+    semantic_type: location
+    in_room: bedroom
+    properties:
+      exploration_waypoints: [WARDROBE]
+
+  bed_location:
+    semantic_name: bed_location
+    semantic_type: placement
+    in_room: bedroom
+    properties:
+      exploration_waypoints: [BED_LEFT, BED_RIGHT]
+
+  nightstand_location:
+    semantic_name: nightstand_location
+    semantic_type: placement
+    in_room: bedroom
+    properties:
+      exploration_waypoints: [NIGHTSTAND_CLOSE, NIGHTSTAND_FAR]
+      to_be_explored: True
+      support_surface_polygon: nightstand
+
+# bathroom
+  bathroom_drawer_location:
+    semantic_name: bathroom_drawer_location
+    semantic_type: placement
+    in_room: bathroom
+    properties:
+      exploration_waypoints: [BATHROOM_DOOR]
+
+
+objects:
+
+# furniture objects
+  coffee_table:
+    semantic_name: coffee_table
+    semantic_type: furniture
+    at_location: coffee_table_location
+    properties:
+      can_move_in_tbm1: True
+
+  trash_bin:
+    semantic_name: trash_bin
+    semantic_type: furniture
+    at_location: trash_bin_location
+    properties:
+      can_move_in_tbm1: True
+
+  plant:
+    semantic_name: plant
+    semantic_type: furniture
+    at_location: plant_location
+    properties:
+      can_move_in_tbm1: True
+
+  arm_chair_1:
+    semantic_name: arm_chair
+    semantic_type: furniture
+    at_location: arm_chair_1_location
+    properties:
+      can_move_in_tbm1: True
+
+  arm_chair_2:
+    semantic_name: arm_chair
+    semantic_type: furniture
+    at_location: arm_chair_2_location
+    properties:
+      can_move_in_tbm1: True
+
+  dining_chair:
+    semantic_name: dining_chair
+    semantic_type: furniture
+    at_location: dining_table_location
+    properties:
+      can_move_in_tbm1: True
+
+  kitchen_chair:
+    semantic_name: kitchen_chair
+    semantic_type: furniture
+    at_location: kitchen_table_location
+    properties:
+      can_move_in_tbm1: True
+
+# known objects
+  coke_1:
+    semantic_name: coke
+    semantic_type: known_object
+    at_location: kitchen_counter_location
+    properties:
+      can_move_in_tbm1: True
+  coke_2:
+    semantic_name: coke
+    semantic_type: known_object
+    at_location: kitchen_counter_location
+    properties:
+      can_move_in_tbm1: True
+  water:
+    semantic_name: water
+    semantic_type: known_object
+    at_location: kitchen_counter_location
+    properties:
+      can_move_in_tbm1: True
+  milkshake:
+    semantic_name: milkshake
+    semantic_type: known_object
+    at_location: kitchen_counter_location
+    properties:
+      can_move_in_tbm1: True
+  juice:
+    semantic_name: juice
+    semantic_type: known_object
+    at_location: kitchen_counter_location
+    properties:
+      can_move_in_tbm1: True
+  tea:
+    semantic_name: tea
+    semantic_type: known_object
+    at_location: kitchen_counter_location
+    properties:
+      can_move_in_tbm1: True
+  apple:
+    semantic_name: apple
+    semantic_type: known_object
+    at_location: kitchen_table_location
+    properties:
+      can_move_in_tbm1: True
+  lemon:
+    semantic_name: lemon
+    semantic_type: known_object
+    at_location: kitchen_table_location
+    properties:
+      can_move_in_tbm1: True
+  pear:
+    semantic_name: pear
+    semantic_type: known_object
+    at_location: kitchen_table_location
+    properties:
+      can_move_in_tbm1: True
+  rice:
+    semantic_name: rice
+    semantic_type: known_object
+    at_location: kitchen_table_location
+    properties:
+      can_move_in_tbm1: True
+  macaroni:
+    semantic_name: macaroni
+    semantic_type: known_object
+    at_location: kitchen_table_location
+    properties:
+      can_move_in_tbm1: True
+  cookies:
+    semantic_name: cookies
+    semantic_type: known_object
+    at_location: kitchen_table_location
+    properties:
+      can_move_in_tbm1: True
+  cloth:
+    semantic_name: cloth
+    semantic_type: known_object
+    at_location: side_table_location
+    properties:
+      can_move_in_tbm1: True
+  toilet_paper:
+    semantic_name: toilet_paper
+    semantic_type: known_object
+    at_location: side_table_location
+    properties:
+      can_move_in_tbm1: True
+  sponge:
+    semantic_name: sponge
+    semantic_type: known_object
+    at_location: side_table_location
+    properties:
+      can_move_in_tbm1: True
+  soap:
+    semantic_name: soap
+    semantic_type: known_object
+    at_location: side_table_location
+    properties:
+      can_move_in_tbm1: True
+  cup:
+    semantic_name: cup
+    semantic_type: known_object
+    at_location: dining_table_location
+    properties:
+      can_move_in_tbm1: True
+  bowl:
+    semantic_name: bowl
+    semantic_type: known_object
+    at_location: dining_table_location
+    properties:
+      can_move_in_tbm1: True
+
+

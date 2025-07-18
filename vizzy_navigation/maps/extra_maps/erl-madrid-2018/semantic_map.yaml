@@ -1,0 +1,93 @@
+objects:
+  coke: kitchen_counter
+  water: kitchen_counter
+  juice: kitchen_counter
+  apple: kitchen_table
+  lemon: kitchen_table
+  rice: kitchen_table
+  pringles: kitchen_table
+  kleenex: bathroom_drawer
+  sponge: bathroom_drawer
+  soap: bathroom_drawer
+  whiteboard_cleaner: bathroom_drawer
+  cup: dining_table
+  glass: dining_table
+  candle: side_table_2
+  reading_glasses: side_table_2
+
+rooms:
+  'entrance hall': ENTRANCE_HALL
+  'hallway': HALLWAY
+  'bedroom': BEDROOM
+  'living room': LIVING_ROOM
+  'dining room': DINING_ROOM
+  'kitchen': KITCHEN
+  'bathroom': BATHROOM
+
+movable_furnitures:
+  - trash_bin
+  - plant
+  - side_table_1
+  - coffee_table
+  - arm_chair_1
+  - arm_chair_2
+  - dining_chair
+  - kitchen_chair
+
+furnitures_to_visit:
+  - side_table_2
+  - kitchen_counter
+  - kitchen_table
+  - dining_table
+
+furnitures_to_place:
+  - kitchen_counter
+  - kitchen_table
+  - dining_table
+  - bathroom_drawer
+  - side_table_1
+
+furnitures:
+  side_table_2:
+    name: side_table_2
+    look_point: [-3.153966, 3.022284, 0.65]
+    look_waypoints: [LEFT_SIDE_TABLE, RIGHT_SIDE_TABLE]
+    room: bedroom
+    manipulation_waypoint: []
+
+  kitchen_counter: 
+    name: kitchen_counter
+    look_point: [2.167310, 0.816265, 0.874300]
+    look_waypoints: [LEFT_KITCHEN_COUNTER, RIGHT_KITCHEN_COUNTER]
+    room: kitchen
+    manipulation_waypoint: []
+    place_point: [2.167310, 0.816265, 0.874300]
+
+  kitchen_table:
+    name: kitchen_table
+    look_point: [2.710917, -1.634352, 0.864054]
+    look_waypoints: [LEFT_KITCHEN_TABLE, RIGHT_KITCHEN_TABLE]
+    room: kitchen
+    manipulation_waypoint: []
+    place_point: [2.710917, -1.634352, 0.864054]
+
+  dining_table:
+    name: dining_table
+    look_point: [1.084022, -1.746184, 0.853111]
+    look_waypoints: [LEFT_DINING_TABLE, RIGHT_DINING_TABLE]
+    room: dining_room
+    manipulation_waypoint: []
+    place_point: [1.084022, -1.746184, 0.853111]
+
+  bathroom_drawer:
+    name: bathroom_drawer
+    room: bathroom
+    manipulation_waypoint: []
+    place_point: []
+
+  side_table_1:
+    name: side_table_1
+    room: bedroom
+    manipulation_waypoint: []
+    place_point: []
+

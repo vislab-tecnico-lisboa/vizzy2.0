@@ -1,0 +1,55 @@
+furnitures:
+  - name: bed
+    look_point: [-7.964386, -15.986437, 0.650254]
+    waypoints: [BED_LEFT, BED_RIGHT]
+    room: bedroom
+
+  - name: nightstand 
+    look_point: [-8.928779, -14.725712, 0.704318]
+    waypoints: [NIGHTSTAND_FAR, NIGHTSTAND_CLOSER]
+    room: bedroom
+
+  - name: wardrobe
+    look_point: [-6.487817, -16.470913, 0.111984]
+    waypoints: [WARDROBE]
+    room: bedroom
+
+  - name: bookshelf
+    look_point: [-5.096615, -17.146077, 0.757312]
+    waypoints: [BOOKSHELF_FAR, BOOKSHELF_CLOSE]
+    room: living_room
+
+  - name: living_room_table
+    look_point: [-4.254885, -16.455669, 0.541995]
+    waypoints: [LIVING_ROOM_TABLE_RIGHT, LIVING_ROOM_TABLE_LEFT]
+    room: living_room
+
+  - name: sofa 
+    look_point: [-2.830007, -15.140120, 0.514559]
+    waypoints: [SOFA_LEFT, SOFA_CENTER, SOFA_RIGHT]
+    room: living_room
+
+  - name: coffee_table
+    look_point: [-2.917006, -16.639961, 0.538040]
+    waypoints: [COFFEE_TABLE_RIGHT, COFFEE_TABLE_LEFT]
+    room: living_room
+
+  - name: sideboard
+    look_point: [-1.438118, -17.345838, 0.542938]
+    waypoints: [SIDEBOARD_RIGHT, SIDEBOARD_LEFT]
+    room: living_room
+
+  - name: dining_table
+    look_point: [-1.524472, -12.231823, 0.824037]
+    waypoints: [DINING_TABLE_RIGHT, DINING_TABLE_LEFT]
+    room: dining_room
+
+  - name: kitchen_table 
+    look_point: [-3.230808, -12.289381, 0.820185]
+    waypoints: [KITCHEN_TABLE_RIGHT, KITCHEN_TABLE_LEFT]
+    room: kitchen
+
+  - name: kitchen_counter
+    look_point: [-5.080976, -12.059848, 0.981620]
+    waypoints: [KITCHEN_COUNTER_LEFT, KITCHEN_COUNTER_LEFT]
+    room: kitchen
