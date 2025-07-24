@@ -13,12 +13,15 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # Find all the required packages.
+find_package(VTK REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(PCL REQUIRED)
 find_package(rviz2 REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(tf2_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(tf2_eigen REQUIRED)
 find_package(pluginlib REQUIRED) 
 find_package(nav2_amcl REQUIRED)
 find_package(nav2_core REQUIRED)
@@ -31,6 +34,8 @@ find_package(nav2_smoother REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_behaviors REQUIRED)
 find_package(actionlib_msgs REQUIRED)
+find_package(laser_geometry REQUIRED)
+find_package(pcl_conversions REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_controller REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
@@ -78,10 +83,55 @@ ament_target_dependencies(nav2_check_path_cost_bt_node PUBLIC
   "tf2_ros"
 )
 
+# Create a library from your class implementation files.
+add_library(docking_lib
+  src/docking_estimator.cpp
+  src/pattern_pose_estimation.cpp
+)
+
+# Tell the library where to find ALL header files.
+target_include_directories(docking_lib PUBLIC
+  # This tells it where to find its own headers (e.g., "docking_estimator.h").
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+
+  # These tell it where to find PCL and VTK headers.
+  ${PCL_INCLUDE_DIRS}
+  ${VTK_INCLUDE_DIRS}
+)
+
+# Add this new block.
+# Link the library against all of its ROS 2 dependencies.
+ament_target_dependencies(docking_lib PUBLIC
+  "rclcpp"
+  "tf2_ros"
+  "tf2_geometry_msgs"
+  "tf2_eigen"
+  "pcl_conversions"
+  "laser_geometry"
+  "sensor_msgs"
+  "geometry_msgs"
+)
+
+# Link the library against ALL required libraries.
+target_link_libraries(docking_lib PUBLIC
+  # These link against the actual PCL and VTK library files.
+  ${PCL_LIBRARIES}
+  ${VTK_LIBRARIES}
+)
+
+# Create the executable from ONLY your main() file.
+add_executable(docking_estimator_node src/docking_estimator_node.cpp)
+
+# Link your executable against your new library
+# This automatically handles all includes and links from docking_lib
+target_link_libraries(docking_estimator_node PUBLIC docking_lib)
+
 # Install the executables and libraries.
 install(TARGETS
   twistsimulator
   nav2_check_path_cost_bt_node 
+  docking_estimator_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin

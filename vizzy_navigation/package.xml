@@ -61,12 +61,16 @@
   <!-- General dependencies -->
   <depend>xterm</depend> 
   <depend>rclcpp</depend> 
+  <depend>tf2_ros</depend>
+  <depend>tf2_eigen</depend>
   <depend>nav2_util</depend>
   <depend>pluginlib</depend>
   <depend>sensor_msgs</depend> 
   <depend>geometry_msgs</depend> 
   <depend>actionlib_msgs</depend>
+  <depend>laser_geometry</depend>
   <depend>nav2_costmap_2d</depend> 
+  <depend>pcl_conversions</depend>
   <depend>nav2_behavior_tree</depend>
   <depend>visualization_msgs</depend> 
   <depend>interactive_markers</depend> 

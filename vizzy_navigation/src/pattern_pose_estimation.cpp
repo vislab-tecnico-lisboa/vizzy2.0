@@ -1,4 +1,4 @@
-#include <pattern_pose_estimation.hpp>
+#include <pattern_pose_estimation.h>
 #include <random>
 #include <chrono>
 #include <pcl/visualization/pcl_visualizer.h>
