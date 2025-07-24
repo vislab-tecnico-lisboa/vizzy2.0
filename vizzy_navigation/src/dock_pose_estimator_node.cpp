@@ -6,13 +6,13 @@
  */
 
 /*********************************************************************************************
-*                      Docking Estimator Node C++ File for ROS2                              *
+*                      Dock Pose Estimator Node C++ File for ROS2                            *
 *                                          -                                                 *
-* This file contains the implementation of the main Docking Estimator Node for ROS2.         *
-* It initializes the ROS2 client library, creates a DockingEstimator object,                 *
+* This file contains the implementation of the main Dock Pose Estimator Node for ROS2.       *
+* It initializes the ROS2 client library, creates a DockPoseEstimator object,                *
 * and spins the node.                                                                        *
-* The methods from DockingEstimator defined in docking_estimator.h are implemented in the    *
-* docking_estimator.cpp file.                                                                *
+* The methods from DockPoseEstimator defined in dock_pose_estimator.h are implemented in the *
+* dock_pose_estimator.cpp file.                                                              *
 *                                          -                                                 *
 * This docking estimation procedure was redesigned to work with Nav2's Docking Server.       *
 * More details can be found in the documentation:                                            *   
@@ -20,7 +20,7 @@
 *********************************************************************************************/
 
 // Include necessary headers for ROS2, and other dependencies.
-#include "docking_estimator.h"
+#include "dock_pose_estimator.h"
 #include "rclcpp/rclcpp.hpp"
 #include <memory>
 
@@ -30,13 +30,13 @@ int main(int argc, char **argv)
   // Initialize the ROS 2 C++ client library.
   rclcpp::init(argc, argv);
 
-  // Create a shared pointer to a new DockingEstimator object.
-  auto docking_estimator_node = std::make_shared<DockingEstimator>(rclcpp::NodeOptions());
+  // Create a shared pointer to a new DockPoseEstimator object.
+  auto dock_pose_estimator_node = std::make_shared<DockPoseEstimator>(rclcpp::NodeOptions());
 
   // Spin the node to allow it to process incoming messages and events from 
   // subscribed topics and services, and direct the callbacks to the appropriate methods.
   // This is a blocking call that will keep the node running until it is shut down.
-  rclcpp::spin(docking_estimator_node);
+  rclcpp::spin(dock_pose_estimator_node);
 
   // Cleanly shut down the ROS 2 client library.
   rclcpp::shutdown();

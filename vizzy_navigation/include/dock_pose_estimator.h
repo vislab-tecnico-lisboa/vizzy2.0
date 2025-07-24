@@ -6,9 +6,9 @@
  */
 
 /*********************************************************************************************
-*                       Docking Estimator Header File for ROS2                               *
+*                       Dock Pose Estimator Header File for ROS2                             *
 *                                          -                                                 *
-* This file defines the DockingEstimator class, which is responsible for estimating the pose *
+* This file defines the DockPoseEstimator class, which is responsible for estimating the pose*
 * of a docking pattern using laser scans and PCL (Point Cloud Library). It includes methods  *
 * for subscribing to laser scan data, processing the data to estimate the docking pose, and  *
 * publishing the estimated pose. The class also handles parameter loading and filtering of   *
@@ -20,8 +20,8 @@
 *********************************************************************************************/
 
 // Include guards to prevent multiple inclusions of this header file.
-#ifndef DOCKING_ESTIMATOR_ROS2_HPP_
-#define DOCKING_ESTIMATOR_ROS2_HPP_
+#ifndef DOCK_POSE_ESTIMATOR_ROS2_HPP_
+#define DOCK_POSE_ESTIMATOR_ROS2_HPP_
 
 // Include necessary headers for ROS2, PCL, and other dependencies.
 #include "rclcpp/rclcpp.hpp"
@@ -38,15 +38,15 @@
 #include <memory>
 #include <string>
 
-// We define the DockingEstimator class here.
+// We define the DockPoseEstimator class here.
 // This class inherits from rclcpp::Node, which is the base class for all ROS 2 nodes, thus,    
 // allowing it to utilize ROS 2 functionalities such as publishing and subscribing to topics.
-class DockingEstimator : public rclcpp::Node
+class DockPoseEstimator : public rclcpp::Node
 {
 
 // The 'public' section is where we define the public interface of the class.
 // This section contains the methods that can be called from outside the class,
-// allowing users to interact with the DockingEstimator.
+// allowing users to interact with the DockPoseEstimator.
 public:
     // First we define the constructor for the class.
     // The constructor is a special member function that is called automatically
@@ -54,13 +54,13 @@ public:
     // The constructor will initialize the node.
     // The constructor takes a single argument of type rclcpp::NodeOptions,
     // which allows for additional options to be passed when creating the node.
-    explicit DockingEstimator(const rclcpp::NodeOptions & options);
+    explicit DockPoseEstimator(const rclcpp::NodeOptions & options);
 
     // After, we define the destructor for the class.
     // The destructor is also a special member function that is called automatically
     // when an object of the class is destroyed.
     // In this case, the destructor does not need to do anything.
-    ~DockingEstimator(){};
+    ~DockPoseEstimator(){};
 
     /*
         * Public API Methods:
@@ -94,7 +94,7 @@ private:
 
     /*
         * Private Member Variables:
-        ** - `laser_sub_`: Subscription object to the laser scan topic. Messages are received through here.
+        ** - `point_cloud_sub_`: Subscription object to the point cloud topic. Messages are received through here.
         ** - `docking_pub_`: Publisher object for the estimated docking pose. Messages are published through here.
         ** - `model_pub_`: Publisher object for the model point cloud. Messages are published through here.
         ** - `tf_buffer_`: Buffer for storing TF2 transforms.
@@ -154,4 +154,4 @@ private:
     pcl::PointCloud<pcl::PointNormal>::Ptr cloud_normals_;
 };
 
-#endif // DOCKING_ESTIMATOR_ROS2_HPP_
+#endif // DOCK_POSE_ESTIMATOR_ROS2_HPP_

@@ -6,10 +6,10 @@
  */
 
 /*********************************************************************************************
-*                         Docking Estimator C++ File for ROS2                                *
+*                         Dock Pose Estimator C++ File for ROS2                              *
 *                                          -                                                 *
 * This file contains the implementation of every method defined in the                       *
-* DockingEstimator class header file.                                                        *
+* DockPoseEstimator class header file.                                                       *
 * It includes the constructor, parameter loading, laser scan processing,                     *
 * median filtering, and publishing of the estimated docking pose.                            *
 *                                          -                                                 *
@@ -19,27 +19,27 @@
 *********************************************************************************************/
 
 // Include necessary headers for ROS2, and other dependencies.
-#include "docking_estimator.h" 
+#include "dock_pose_estimator.h" 
 #include <functional>           
 #include "tf2_eigen/tf2_eigen.hpp"
 
-// Constructor implementation for the DockingEstimator class.
+// Constructor implementation for the DockPoseEstimator class.
 // This constructor uses a member initializer list to initialize the base class Node,
 // this happens before the main body of the constructor is executed,
-// which makes the DockingEstimator object initialization more efficient.
+// which makes the DockPoseEstimator object initialization more efficient.
 // The first member of the initializer list is the Node class constructor, 
 // inherited from rclcpp::Node, it initializes the node with the name 
-// "docking_estimator_node" and passes the options provided.
+// "dock_pose_estimator_node" and passes the options provided.
 // The second member initializes the filter buffer size to 10, 
 // which is used for median filtering of the pose estimates.
-DockingEstimator::DockingEstimator(const rclcpp::NodeOptions & options)
+DockPoseEstimator::DockPoseEstimator(const rclcpp::NodeOptions & options)
 
     /*
         Member Initializer List:
-        ** - `Node("docking_estimator_node", options)`: Initializes the base class Node.
+        ** - `Node("dock_pose_estimator_node", options)`: Initializes the base class Node.
         ** - `filter_buffer_size_(10)`: Initializes the filter buffer size to 10.
     */
-    : Node("docking_estimator_node", options),
+    : Node("dock_pose_estimator_node", options),
       filter_buffer_size_(10)
 
 
@@ -52,21 +52,23 @@ DockingEstimator::DockingEstimator(const rclcpp::NodeOptions & options)
     this->declareAndGetParameters();
     
     // Create ROS2 publishers.
-    docking_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/dock_pose", 10);
+    // ! The dock pose topic name needs to be named "/detected_dock_pose" to match the Nav2 Docking Server 
+    // ! SimpleChargingDock plugin expectations.
+    docking_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/detected_dock_pose", 10);
     model_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/model_point_cloud", 10);
 
     // Create Subscriber.
     // Start with the front laser by default.
     this->useFrontLaser();
 
-    // Log a message indicating that the DockingEstimator node has been initialized.
-    RCLCPP_INFO(this->get_logger(), "Docking Estimator node has been initialized.");
+    // Log a message indicating that the DockPoseEstimator node has been initialized.
+    RCLCPP_INFO(this->get_logger(), "Dock Pose Estimator node has been initialized.");
 }
 
 // Declares and loads the necessary parameters from the ROS2 node and 
 // initializes the pattern_pose_estimation_ member with a shared pointer to a new
 // PatternPoseEstimation object with these parameters.
-void DockingEstimator::declareAndGetParameters()
+void DockPoseEstimator::declareAndGetParameters()
 {
     // Declare parameters with default values.
     // Attention: The parameters may not be set with these default values,
@@ -102,26 +104,26 @@ void DockingEstimator::declareAndGetParameters()
 
 // This method switches the laser subscription to the front laser topic.
 // It resets the existing subscription and creates a new one for the specified topic.
-void DockingEstimator::useFrontLaser(std::string laser_topic_front)
+void DockPoseEstimator::useFrontLaser(std::string laser_topic_front)
 {
     // Resetting the smart pointer effectively shuts down the old subscription.
     point_cloud_sub_.reset();
     point_cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        laser_topic_front, 10, std::bind(&DockingEstimator::pointCloudCallback, this, std::placeholders::_1));
+        laser_topic_front, 10, std::bind(&DockPoseEstimator::pointCloudCallback, this, std::placeholders::_1));
 }
 
 // This method switches the laser subscription to the rear laser topic.
 // Similar to the front laser, it resets the existing subscription and creates a new one for the specified topic.
-void DockingEstimator::useRearLaser(std::string laser_topic_rear)
+void DockPoseEstimator::useRearLaser(std::string laser_topic_rear)
 {
     // Resetting the smart pointer effectively shuts down the old subscription.
     point_cloud_sub_.reset();
     point_cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        laser_topic_rear, 10, std::bind(&DockingEstimator::pointCloudCallback, this, std::placeholders::_1));
+        laser_topic_rear, 10, std::bind(&DockPoseEstimator::pointCloudCallback, this, std::placeholders::_1));
 }
 
 // Main callback for processing laser data.
-void DockingEstimator::pointCloudCallback(const std::shared_ptr<sensor_msgs::msg::PointCloud2> scan)
+void DockPoseEstimator::pointCloudCallback(const std::shared_ptr<sensor_msgs::msg::PointCloud2> scan)
 {
 
     // If the estimator is not enabled, do nothing.
@@ -200,13 +202,13 @@ void DockingEstimator::pointCloudCallback(const std::shared_ptr<sensor_msgs::msg
 }
 
 // Getter for the dock pose, returns the current estimated docking pose.
-geometry_msgs::msg::PoseStamped DockingEstimator::getPatternPose()
+geometry_msgs::msg::PoseStamped DockPoseEstimator::getPatternPose()
 {
     return dock_pose_;
 }
 
 // This method computes the median of a deque of doubles.
-double DockingEstimator::findMedian(std::deque<double> a)
+double DockPoseEstimator::findMedian(std::deque<double> a)
 {
     if (a.empty()) return 0.0;
     std::sort(a.begin(), a.end());

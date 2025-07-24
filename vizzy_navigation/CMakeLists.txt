@@ -85,13 +85,13 @@ ament_target_dependencies(nav2_check_path_cost_bt_node PUBLIC
 
 # Create a library from your class implementation files.
 add_library(docking_lib
-  src/docking_estimator.cpp
+  src/dock_pose_estimator.cpp
   src/pattern_pose_estimation.cpp
 )
 
 # Tell the library where to find ALL header files.
 target_include_directories(docking_lib PUBLIC
-  # This tells it where to find its own headers (e.g., "docking_estimator.h").
+  # This tells it where to find its own headers (e.g., "dock_pose_estimator.h").
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 
@@ -121,17 +121,17 @@ target_link_libraries(docking_lib PUBLIC
 )
 
 # Create the executable from ONLY your main() file.
-add_executable(docking_estimator_node src/docking_estimator_node.cpp)
+add_executable(dock_pose_estimator_node src/dock_pose_estimator_node.cpp)
 
 # Link your executable against your new library
 # This automatically handles all includes and links from docking_lib
-target_link_libraries(docking_estimator_node PUBLIC docking_lib)
+target_link_libraries(dock_pose_estimator_node PUBLIC docking_lib)
 
 # Install the executables and libraries.
 install(TARGETS
   twistsimulator
   nav2_check_path_cost_bt_node 
-  docking_estimator_node
+  dock_pose_estimator_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin

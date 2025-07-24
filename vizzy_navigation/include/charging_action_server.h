@@ -3,7 +3,7 @@
 
 
 #include <docking_controller_ros.hpp>
-#include <docking_estimator.hpp>
+#include <dock_pose_estimator.hpp>
 #include <actionlib/server/simple_action_server.h>
 #include <vizzy_msgs/ChargeAction.h>
 #include <move_base_msgs/MoveBaseAction.h>
@@ -17,7 +17,7 @@ private:
     ros::NodeHandle nh_;
     ros::NodeHandle n_priv;
     DockingControllerROS controller_;
-    DockingEstimator estimator_;
+    DockPoseEstimator estimator_;
     tf2_ros::Buffer tfBuffer_;
     tf2_ros::TransformListener tfListener_;
     std::string common_frame_;
