@@ -13,6 +13,10 @@
 * for subscribing to laser scan data, processing the data to estimate the docking pose, and  *
 * publishing the estimated pose. The class also handles parameter loading and filtering of   *
 * the estimated pose using a median filter.                                                  *
+*                                          -                                                 *
+* This docking estimation procedure was redesigned to work with Nav2's Docking Server.       *
+* More details can be found in the documentation:                                            *   
+* https://github.com/open-navigation/opennav_docking/tree/humble                             *                                                     *
 *********************************************************************************************/
 
 // Include guards to prevent multiple inclusions of this header file.

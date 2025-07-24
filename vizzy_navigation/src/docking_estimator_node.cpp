@@ -6,13 +6,17 @@
  */
 
 /*********************************************************************************************
- *                      Docking Estimator Node C++ File for ROS2                             *
- *                                          -                                                *
- * This file contains the implementation of the main Docking Estimator Node for ROS2.        *
- * It initializes the ROS2 client library, creates a DockingEstimator object,                *
- * and spins the node.                                                                       *
- * The methods from DockingEstimator defined in docking_estimator.h are implemented in the   *
- * docking_estimator.cpp file.                                                               *
+*                      Docking Estimator Node C++ File for ROS2                              *
+*                                          -                                                 *
+* This file contains the implementation of the main Docking Estimator Node for ROS2.         *
+* It initializes the ROS2 client library, creates a DockingEstimator object,                 *
+* and spins the node.                                                                        *
+* The methods from DockingEstimator defined in docking_estimator.h are implemented in the    *
+* docking_estimator.cpp file.                                                                *
+*                                          -                                                 *
+* This docking estimation procedure was redesigned to work with Nav2's Docking Server.       *
+* More details can be found in the documentation:                                            *   
+* https://github.com/open-navigation/opennav_docking/tree/humble                             *    
 *********************************************************************************************/
 
 // Include necessary headers for ROS2, and other dependencies.

@@ -6,12 +6,16 @@
  */
 
 /*********************************************************************************************
- *                         Docking Estimator C++ File for ROS2                               *
- *                                          -                                                *
- * This file contains the implementation of every method defined in the                      *
- * DockingEstimator class header file.                                                       *
- * It includes the constructor, parameter loading, laser scan processing,                    *
- * median filtering, and publishing of the estimated docking pose.                           *
+*                         Docking Estimator C++ File for ROS2                                *
+*                                          -                                                 *
+* This file contains the implementation of every method defined in the                       *
+* DockingEstimator class header file.                                                        *
+* It includes the constructor, parameter loading, laser scan processing,                     *
+* median filtering, and publishing of the estimated docking pose.                            *
+*                                          -                                                 *
+* This docking estimation procedure was redesigned to work with Nav2's Docking Server.       *
+* More details can be found in the documentation:                                            *   
+* https://github.com/open-navigation/opennav_docking/tree/humble                             *    
 *********************************************************************************************/
 
 // Include necessary headers for ROS2, and other dependencies.
@@ -195,11 +199,13 @@ void DockingEstimator::pointCloudCallback(const std::shared_ptr<sensor_msgs::msg
     model_pub_->publish(output_cloud_msg);
 }
 
+// Getter for the dock pose, returns the current estimated docking pose.
 geometry_msgs::msg::PoseStamped DockingEstimator::getPatternPose()
 {
     return dock_pose_;
 }
 
+// This method computes the median of a deque of doubles.
 double DockingEstimator::findMedian(std::deque<double> a)
 {
     if (a.empty()) return 0.0;
