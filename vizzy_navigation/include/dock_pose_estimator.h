@@ -153,6 +153,8 @@ private:
     std::shared_ptr<PatternPoseEstimation> pattern_pose_estimation_;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_pcl_;
     pcl::PointCloud<pcl::PointNormal>::Ptr cloud_normals_;
+    int laser_sub_counter_ = 0;
+    bool current_laser_is_front_ = true; // Flag to check if the current laser is the front one.
 };
 
 #endif // DOCK_POSE_ESTIMATOR_ROS2_HPP_

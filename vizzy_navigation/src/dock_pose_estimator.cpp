@@ -11,7 +11,18 @@
 * This file contains the implementation of every method defined in the                       *
 * DockPoseEstimator class header file.                                                       *
 * It includes the constructor, parameter loading, laser scan processing,                     *
-* median filtering, and publishing of the estimated docking pose.                            *
+* median filtering, and publishing of the estimated docking pose.                            *   
+*                                          -                                                 *
+* To simplify execution of the code and to integrate with the Nav2 ecoystem, the following   *
+* approach was used to detect the dock pose:                                                 *
+* 1. Whichever laser is used, the algorithm will try to detect the dock pose.                *
+* 2. If the dock pattern is not detected, a counter will be incremented.                     *
+* 3. If the counter reaches a certain threshold (e.g. 5, meaning 5 consecutive scans         *
+* without detection), the algorithm will switch to the other laser. The counter will         *
+* be reset to zero in this event.                                                            *
+* 4. The counter will be reset to zero when a detection is made.                             *
+* This way, the automated switching between the front and rear lasers remain completely      *
+* autonomous and independent from the Nav2 Docking Server.                                   *
 *                                          -                                                 *
 * This docking estimation procedure was redesigned to work with Nav2's Docking Server.       *
 * More details can be found in the documentation:                                            *   
@@ -164,8 +175,30 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     Eigen::Affine3d transformNN;
     try {
         transformNN = pattern_pose_estimation_->detect(cloud_normals_);
+
+        laser_sub_counter_ = 0; // Reset the counter after a successful detection.
+
     } catch (const std::exception &e) {
         RCLCPP_WARN(this->get_logger(), "Detection failed: %s", e.what());
+
+        // Increment the laser subscription counter.
+        laser_sub_counter_++;
+
+        // If the counter exceeds 5 (5 failed detections in a row), switch to the other laser.
+        if (laser_sub_counter_ > 5) {
+            if (!current_laser_is_front_) {
+                RCLCPP_INFO(this->get_logger(), "Switching to front laser.");
+                this->useFrontLaser();
+            } else {
+                RCLCPP_INFO(this->get_logger(), "Switching to rear laser.");
+                this->useRearLaser();
+            }
+            laser_sub_counter_ = 0; // Reset the counter after switching lasers.
+        }
+
+        // * The main reason for the switch is to implement dynamic automated switching
+        // * so Vizzy can adapt to different environments and situations.
+
         return;
     }
 
