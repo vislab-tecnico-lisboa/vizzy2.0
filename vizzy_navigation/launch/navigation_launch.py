@@ -572,6 +572,10 @@ def generate_launch_description():
     log_sim_time_action = LogInfo(msg=['[Launch Info] Using simulation time: ', use_sim_time])
     save_params_action = OpaqueFunction(function=save_rewritten_yaml,
                                         args=[output_file_path, output_bt_path])
+    
+    # Get the path to your STL file
+    pkg_dir = get_package_share_directory('vizzy_navigation')
+    stl_model_path = os.path.join(pkg_dir, 'models', 'docking_pattern.stl')
 
     # Create one ParameterFile object with all substitutions
     configured_params = ParameterFile(
@@ -689,7 +693,18 @@ def generate_launch_description():
                              'node_names': ['map_server', 'amcl', 'planner_server',
                                             'controller_server', 'smoother_server',
                                             'bt_navigator', 'behavior_server',
-                                            'waypoint_follower', 'velocity_smoother']}])
+                                            'waypoint_follower', 'velocity_smoother']}]),
+            Node(
+                package='vizzy_navigation',
+                executable='dock_pose_estimator_node',
+                name='dock_pose_estimator_node',
+                output='screen',
+                parameters=[{
+                    'model_file': stl_model_path,
+                    'discretization_step': 0.03,  
+                    'tran_thresh': 0.08,         
+                }],
+                prefix=['xterm -e gdb -ex run --args'])
         ]
     )
 

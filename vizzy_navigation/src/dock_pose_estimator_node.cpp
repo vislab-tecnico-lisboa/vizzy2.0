@@ -33,6 +33,9 @@ int main(int argc, char **argv)
   // Create a shared pointer to a new DockPoseEstimator object.
   auto dock_pose_estimator_node = std::make_shared<DockPoseEstimator>(rclcpp::NodeOptions());
 
+  // For now, let us enable immediatly the dock pose estimator.
+  dock_pose_estimator_node->enable();
+
   // Spin the node to allow it to process incoming messages and events from 
   // subscribed topics and services, and direct the callbacks to the appropriate methods.
   // This is a blocking call that will keep the node running until it is shut down.

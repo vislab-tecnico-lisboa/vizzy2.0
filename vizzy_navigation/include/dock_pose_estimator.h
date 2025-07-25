@@ -75,8 +75,8 @@ public:
     bool isReady() { return ready_; };
     void enable() { enabled_ = true; };
     void disable() { enabled_ = false; };
-    void useFrontLaser(std::string laser_topic = "/scan_filtered_front");
-    void useRearLaser(std::string laser_topic = "/scan_filtered_rear");
+    void useFrontLaser(std::string laser_topic = "/nav_hokuyo_laser/front/scan");
+    void useRearLaser(std::string laser_topic = "/nav_hokuyo_laser/rear/scan");
 
 // The 'private' section is where we define the private members of the class.
 // These members are not accessible from outside the class, ensuring encapsulation.
@@ -86,15 +86,15 @@ private:
         * Private API Methods:
         ** - `declareAndGetParameters()`: Loads parameters from the ROS 2 node.
         ** - `findMedian(std::deque<double> a)`: Computes the median of a deque.
-        ** - `pointCloudCallback(const std::shared_ptr<sensor_msgs::msg::PointCloud2> scan)`: Callback for processing point cloud data.
+        ** - `laserCallback(const std::shared_ptr<sensor_msgs::msg::LaserScan> scan)`: Callback for processing laser scan data.
     */
     void declareAndGetParameters();
     double findMedian(std::deque<double> a);
-    void pointCloudCallback(const std::shared_ptr<sensor_msgs::msg::PointCloud2> scan);
+    void laserCallback(const std::shared_ptr<sensor_msgs::msg::LaserScan> scan);
 
     /*
         * Private Member Variables:
-        ** - `point_cloud_sub_`: Subscription object to the point cloud topic. Messages are received through here.
+        ** - `laser_sub_`: Subscription object to the laser topic. Messages are received through here.
         ** - `docking_pub_`: Publisher object for the estimated docking pose. Messages are published through here.
         ** - `model_pub_`: Publisher object for the model point cloud. Messages are published through here.
         ** - `tf_buffer_`: Buffer for storing TF2 transforms.
@@ -136,9 +136,10 @@ private:
 
         FYI: The trailing underscore in variable names is a common convention in C++ to indicate that the variable is a member of a class.
     */
-    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr docking_pub_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr model_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scene_cloud_pub_;
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
     geometry_msgs::msg::PoseStamped dock_pose_;

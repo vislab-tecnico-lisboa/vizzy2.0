@@ -18,7 +18,7 @@ PatternPoseEstimation::PatternPoseEstimation(double rot_thresh_, double tran_thr
 	discretization_step(discretization_step_),
         distance_threshold(distance_threshold_)
 {
-        std::cout << distance_threshold << std::endl;
+    std::cout << distance_threshold << std::endl;
 	pcl::console::setVerbosityLevel(pcl::console::L_ALWAYS);
 	cluster_tran_thresh=3.0*tran_thresh;
 	cluster_rot_thresh=3.0*rot_thresh;
@@ -90,8 +90,14 @@ pcl::PointCloud<PointNormal>::Ptr PatternPoseEstimation::getPointNormal(pcl::Poi
 
 void PatternPoseEstimation::loadModelFromMesh(std::string file_name)
 {
-	pcl::PolygonMesh mesh;
-	pcl::io::loadPolygonFileSTL(file_name, mesh);
+	std::cerr << "[DEBUG] Now entering loadModelFromMesh() function." << std::endl;
+
+    pcl::PolygonMesh mesh;
+    if (pcl::io::loadPolygonFileSTL(file_name, mesh) == -1)
+    {
+        std::cerr << "ERROR: Could not read mesh file: " << file_name << std::endl;
+        return;
+    }
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr verts(new pcl::PointCloud<pcl::PointXYZ>());
 	pcl::fromPCLPointCloud2(mesh.cloud, *verts);
@@ -101,7 +107,7 @@ void PatternPoseEstimation::loadModelFromMesh(std::string file_name)
 
 int PatternPoseEstimation::train(std::vector<pcl::PointCloud<pcl::PointNormal>::Ptr> cloud_models_with_normals_)
 {
-	PCL_INFO ("Training models ...\n");
+	std::cerr << "[DEBUG] Now entering train() function." << std::endl;
 	for (size_t model_i = 0; model_i < cloud_models_with_normals_.size (); ++model_i)
 	{
 		cloud_models_with_normals.push_back (cloud_models_with_normals_[model_i]);
@@ -117,23 +123,40 @@ int PatternPoseEstimation::train(std::vector<pcl::PointCloud<pcl::PointNormal>::
 		hashmap_search->setInputFeatureCloud (cloud_model_ppf);
 		hashmap_search_vector.push_back (hashmap_search);
 	}
-	PCL_INFO ("Done\n");
+	std::cerr << "[DEBUG] Exiting train() function." << std::endl;
 	return 0;
 }	
 
 Eigen::Affine3d PatternPoseEstimation::detect(pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals)
 {
-	/*if(cloud_with_normals->points.empty())
-	{
-		throw std::runtime_error("Empty cloud");
-	}*/
-	
+
+	// Block for debugging purposes.
+	std::cerr << "[DEBUG] Now entering detect() function." << std::endl;
+    if (cloud_models_with_normals.empty()) {
+        std::cerr << "[ERROR] FATAL: No models were trained! The model vector is empty." << std::endl;
+        throw std::runtime_error("No models available for detection.");
+    } else {
+        std::cerr << "[INFO] Number of trained models: " << cloud_models_with_normals.size() << std::endl;
+        if (cloud_models_with_normals[0]) {
+            std::cerr << "[INFO] Model 0 has " << cloud_models_with_normals[0]->points.size() << " points." << std::endl;
+        } else {
+            std::cerr << "[ERROR] FATAL: Model 0 is a null pointer!" << std::endl;
+            throw std::runtime_error("Trained model is null.");
+        }
+    }
+
 	std::vector<Eigen::Affine3d> transforms_;
 
 	try
 	{		
 		for (size_t model_i = 0; model_i < hashmap_search_vector.size (); ++model_i)
 		{
+			if (!cloud_models_with_normals[model_i] || cloud_models_with_normals[model_i]->empty())
+            {
+                std::cerr << "[ERROR] Model cloud at index " << model_i << " is null or empty! Check if the model file was loaded correctly." << std::endl;
+                throw std::runtime_error("Invalid model cloud provided to detect()");
+            }
+
 			std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 			PPFRegistration<PointNormal, PointNormal> ppf_registration;
 			ppf_registration.setSceneReferencePointSamplingRate (1);
@@ -145,6 +168,13 @@ Eigen::Affine3d PatternPoseEstimation::detect(pcl::PointCloud<pcl::PointNormal>:
 			
 			Eigen::Matrix4f mat = ppf_registration.getFinalTransformation ();
 			ppf_registration.align(*cloud_output_subsampled);
+
+			if (cloud_output_subsampled->empty())
+			{
+				std::cerr << "[WARN] PPF alignment failed to produce a result for this model. Skipping." << std::endl;
+				continue;
+			}
+			
 			mat = ppf_registration.getFinalTransformation ();
 			std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
@@ -160,6 +190,11 @@ Eigen::Affine3d PatternPoseEstimation::detect(pcl::PointCloud<pcl::PointNormal>:
 	{
 		throw std::exception(e);
 	}
+
+	if (transforms_.empty())
+    {
+        throw std::runtime_error("Detection failed: No valid transforms were found.");
+    }
 
 	return transforms_[0];
 }

@@ -48,6 +48,10 @@ DockPoseEstimator::DockPoseEstimator(const rclcpp::NodeOptions & options)
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
+    // Create shared pointers for the Point Clouds.
+    cloud_pcl_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    cloud_normals_ = std::make_shared<pcl::PointCloud<pcl::PointNormal>>();
+
     // Declare and get necessary parameters.
     this->declareAndGetParameters();
     
@@ -56,10 +60,11 @@ DockPoseEstimator::DockPoseEstimator(const rclcpp::NodeOptions & options)
     // ! SimpleChargingDock plugin expectations.
     docking_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/detected_dock_pose", 10);
     model_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/model_point_cloud", 10);
+    scene_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/scene_point_cloud", 10);
 
     // Create Subscriber.
-    // Start with the front laser by default.
-    this->useFrontLaser();
+    // Start with the rear laser by default.
+    this->useRearLaser();
 
     // Log a message indicating that the DockPoseEstimator node has been initialized.
     RCLCPP_INFO(this->get_logger(), "Dock Pose Estimator node has been initialized.");
@@ -75,9 +80,9 @@ void DockPoseEstimator::declareAndGetParameters()
     // they are just declared here. That is why we retrieve them later.
     this->declare_parameter<double>("tran_thresh", 0.05);
     this->declare_parameter<double>("rot_thresh", 30.0);
-    this->declare_parameter<double>("fitting_score_thresh", 0.01);
+    this->declare_parameter<double>("fitting_score_thresh", 0.02);
     this->declare_parameter<double>("discretization_step", 0.01);
-    this->declare_parameter<double>("pattern_distance_threshold", 1.5);
+    this->declare_parameter<double>("pattern_distance_threshold", 3);
     this->declare_parameter<std::string>("model_file", "file");
 
     // Get the current active parameter values.
@@ -107,9 +112,9 @@ void DockPoseEstimator::declareAndGetParameters()
 void DockPoseEstimator::useFrontLaser(std::string laser_topic_front)
 {
     // Resetting the smart pointer effectively shuts down the old subscription.
-    point_cloud_sub_.reset();
-    point_cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        laser_topic_front, 10, std::bind(&DockPoseEstimator::pointCloudCallback, this, std::placeholders::_1));
+    laser_sub_.reset();
+    laser_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+        laser_topic_front, 10, std::bind(&DockPoseEstimator::laserCallback, this, std::placeholders::_1));
 }
 
 // This method switches the laser subscription to the rear laser topic.
@@ -117,27 +122,43 @@ void DockPoseEstimator::useFrontLaser(std::string laser_topic_front)
 void DockPoseEstimator::useRearLaser(std::string laser_topic_rear)
 {
     // Resetting the smart pointer effectively shuts down the old subscription.
-    point_cloud_sub_.reset();
-    point_cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        laser_topic_rear, 10, std::bind(&DockPoseEstimator::pointCloudCallback, this, std::placeholders::_1));
+    laser_sub_.reset();
+    laser_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+        laser_topic_rear, 10, std::bind(&DockPoseEstimator::laserCallback, this, std::placeholders::_1));
 }
 
 // Main callback for processing laser data.
-void DockPoseEstimator::pointCloudCallback(const std::shared_ptr<sensor_msgs::msg::PointCloud2> scan)
+void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::LaserScan> scan)
 {
+
+    RCLCPP_INFO(this->get_logger(), "Processing laser scan data...");
 
     // If the estimator is not enabled, do nothing.
     if (!enabled_) return;
 
-    // * The initial version of this method was called `laserCallback`, 
-    // * but it has been renamed to `pointCloudCallback` to better reflect its functionality.
-    // * Since the hokuyo LiDAR scanner also publishes PointCloud2 messages, 
-    // * we now use directly the PointCloud2 message type instead of LaserScan, to 
-    // * avoid unnecessary conversions and to handle the data more efficiently.
+    if (!pattern_pose_estimation_) {
+        RCLCPP_ERROR(this->get_logger(), "ERROR: pattern_pose_estimation_ is null!");
+        return;
+    }
+    if (!cloud_pcl_) {
+        RCLCPP_ERROR(this->get_logger(), "ERROR: cloud_pcl_ is null!");
+        return;
+    }
 
-    // Convert the incoming ROS 2 PointCloud2 message to a PCL point cloud.
-    pcl::fromROSMsg(*scan, *cloud_pcl_);
+    // Convert incoming ROS2 LaserScan message to PCL PointCloud.
+    laser_geometry::LaserProjection projector_;
+    sensor_msgs::msg::PointCloud2 cloud_msg;
+    projector_.projectLaser(*scan, cloud_msg);
+    pcl::fromROSMsg(cloud_msg, *cloud_pcl_);
     cloud_normals_ = pattern_pose_estimation_->getPointNormal(cloud_pcl_);
+    scene_cloud_pub_->publish(cloud_msg);
+
+    if (!cloud_normals_) {
+        RCLCPP_ERROR(this->get_logger(), "ERROR: getPointNormal() returned a null pointer!");
+        return;
+    }
+
+    RCLCPP_INFO(this->get_logger(), "Point cloud with normals has been created.");
 
     // Compute the transform using PPF.
     Eigen::Affine3d transformNN;
@@ -148,10 +169,15 @@ void DockPoseEstimator::pointCloudCallback(const std::shared_ptr<sensor_msgs::ms
         return;
     }
 
+    RCLCPP_INFO(this->get_logger(), "Transform computed successfully.");
+
     // Extract pose from transform.
     Eigen::Matrix3d rotation = transformNN.rotation();
     Eigen::Vector3d translation = transformNN.translation();
     Eigen::Vector3d ea = rotation.eulerAngles(2, 1, 0); // ZYX yaw, pitch, roll
+
+    RCLCPP_INFO(this->get_logger(), "Extracted pose: [x: %f, y: %f, z: %f, yaw: %f]",
+                translation[0], translation[1], translation[2], ea[0]);
 
     if (-M_PI * 0.5 > ea[0]) { ea[0] += M_PI; } 
     else if (M_PI * 0.5 < ea[0]) { ea[0] -= M_PI; }
@@ -171,6 +197,9 @@ void DockPoseEstimator::pointCloudCallback(const std::shared_ptr<sensor_msgs::ms
     double z_filtered = findMedian(z_filter_);
     double yaw_filtered = findMedian(yaw_filter_);
 
+    RCLCPP_INFO(this->get_logger(), "Filtered pose: [x: %f, y: %f, z: %f, yaw: %f]",
+                x_filtered, y_filtered, z_filtered, yaw_filtered);
+
     // Reconstruct filtered transform.
     Eigen::Matrix3d m = Eigen::AngleAxisd(yaw_filtered, Eigen::Vector3d::UnitZ()).toRotationMatrix();
     Eigen::Affine3d transformNNfiltered = Eigen::Affine3d::Identity();
@@ -181,6 +210,9 @@ void DockPoseEstimator::pointCloudCallback(const std::shared_ptr<sensor_msgs::ms
     dock_pose_.pose = tf2::toMsg(transformNNfiltered);
     dock_pose_.header = scan->header;
     docking_pub_->publish(dock_pose_);
+
+    RCLCPP_INFO(this->get_logger(), "Dock pose published: [x: %f, y: %f, z: %f, yaw: %f]", 
+    x_filtered, y_filtered, z_filtered, yaw_filtered);
 
     // Publish model for visualization.
     pattern_pose_estimation_->getOutputCloud()->header.frame_id = scan->header.frame_id;
@@ -199,6 +231,8 @@ void DockPoseEstimator::pointCloudCallback(const std::shared_ptr<sensor_msgs::ms
 
     // Publish the ROS 2 message with the model point cloud.
     model_pub_->publish(output_cloud_msg);
+
+    RCLCPP_INFO(this->get_logger(), "Laser data processed and dock pose published.");
 }
 
 // Getter for the dock pose, returns the current estimated docking pose.

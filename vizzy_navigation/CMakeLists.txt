@@ -130,11 +130,12 @@ target_link_libraries(dock_pose_estimator_node PUBLIC docking_lib)
 # Install the executables and libraries.
 install(TARGETS
   twistsimulator
-  nav2_check_path_cost_bt_node 
+  nav2_check_path_cost_bt_node
   dock_pose_estimator_node
+  docking_lib 
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 # Install the directories to be accessible via the package.
@@ -144,7 +145,7 @@ install(
 )
 
 install(
-  DIRECTORY config launch maps
+  DIRECTORY config launch maps models
   DESTINATION share/${PROJECT_NAME}
 )
 
