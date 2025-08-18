@@ -255,23 +255,33 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     RCLCPP_INFO(this->get_logger(), "Dock pose published: [x: %f, y: %f, z: %f, yaw: %f]", 
     x_filtered, y_filtered, z_filtered, yaw_filtered);
 
+    // TODO: Apply corrective transform for correct visualization of the final model point cloud.
+    // For now, it is commented out for resource sparing purposes.
+
     // Publish model for visualization.
-    pattern_pose_estimation_->getOutputCloud()->header.frame_id = scan->header.frame_id;
+    //pattern_pose_estimation_->getOutputCloud()->header.frame_id = scan->header.frame_id;
 
     // PCL timestamp conversion.
-    pcl_conversions::toPCL(scan->header, pattern_pose_estimation_->getOutputCloud()->header);
+    //pcl_conversions::toPCL(scan->header, pattern_pose_estimation_->getOutputCloud()->header);
+
+    //pcl::PointCloud<pcl::PointNormal>::Ptr rotated_output_cloud(new pcl::PointCloud<pcl::PointNormal>);
+    //Eigen::Affine3f visualization_transform = Eigen::Affine3f::Identity();
+    //float theta_viz = M_PI / 2.0; // 90 degrees around the Y-axis
+    //visualization_transform.rotate(Eigen::AngleAxisf(theta_viz, Eigen::Vector3f::UnitY()));
+    
+    //pcl::transformPointCloudWithNormals(*pattern_pose_estimation_->getOutputCloud(), *rotated_output_cloud, visualization_transform);
 
     // Create a ROS 2 message object.
-    sensor_msgs::msg::PointCloud2 output_cloud_msg;
+    //sensor_msgs::msg::PointCloud2 output_cloud_msg;
 
     // Convert PCL data into the ROS 2 message.
-    pcl::toROSMsg(*pattern_pose_estimation_->getOutputCloud(), output_cloud_msg);
+    //pcl::toROSMsg(*rotated_output_cloud, output_cloud_msg);
 
     // Make sure the header is set correctly on the ROS message.
-    output_cloud_msg.header = scan->header;
+    //output_cloud_msg.header = scan->header;
 
     // Publish the ROS 2 message with the model point cloud.
-    model_pub_->publish(output_cloud_msg);
+    //model_pub_->publish(output_cloud_msg);
 
     RCLCPP_INFO(this->get_logger(), "Laser data processed and dock pose published.");
 }

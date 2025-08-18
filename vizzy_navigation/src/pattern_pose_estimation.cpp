@@ -25,93 +25,104 @@ PatternPoseEstimation::PatternPoseEstimation(double rot_thresh_, double tran_thr
 	train(dense_cloud_models);
 }
 
-pcl::PointCloud<PointNormal>::Ptr PatternPoseEstimation::getPointNormal(pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud)
+pcl::PointCloud<pcl::PointNormal>::Ptr PatternPoseEstimation::getPointNormal(pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud)
 {
-	// Clear previous data.
-	normals->clear();
+    // Log the starting number of points from the raw laser scan.
+    std::cout << "Starting with " << point_cloud->size() << " points from the raw laser scan." << std::endl;
 
-	// Create the filtering object.
-	pcl::VoxelGrid<pcl::PointXYZ> sor;
-	sor.setInputCloud (point_cloud);
-	sor.setLeafSize (discretization_step, discretization_step,1000.0);
-	sor.filter (*point_cloud);
+    // Clear previous data.
+    normals->clear();
+    normals_->clear();
+    point_cloud_->clear();
 
-	// Define random generator with Gaussian distribution.
-	const double mean = 0.0;
-	const double stddev = 0.001;
-	std::default_random_engine generator;
-	std::normal_distribution<double> dist(mean, stddev);
+    // Filter and downsample the point cloud to reduce noise and computation.
+    // A large leaf size is used for Z to treat it as a 2D plane.
+    pcl::VoxelGrid<pcl::PointXYZ> sor;
+    sor.setInputCloud(point_cloud);
+    sor.setLeafSize(discretization_step, discretization_step, 1000.0f);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>());
+    sor.filter(*filtered_cloud);
 
-	for(unsigned int i=0; i<point_cloud->size();++i)
-	{
-		point_cloud->at(i).z=dist(generator);
-	}	
+    // Log the number of points after voxel grid filtering.
+    std::cout << "After VoxelGrid filter, " << filtered_cloud->size() << " points remain." << std::endl;
 
-	// Create the normal estimation class, and pass the input dataset to it.
-	pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
-	ne.setInputCloud (point_cloud);
-	ne.setViewPoint (std::numeric_limits<float>::max (), 0.0, 0.0);
-	ne.setSearchMethod (tree);
-	ne.setRadiusSearch (5.0*discretization_step);
-	ne.compute (*normals);
+    // Estimate 2D Normals.
+    pcl::PointCloud<pcl::Normal>::Ptr estimated_normals(new pcl::PointCloud<pcl::Normal>());
+    pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr kdtree(new pcl::KdTreeFLANN<pcl::PointXYZ>());
+    kdtree->setInputCloud(filtered_cloud);
 
-	normals_->clear();
-	point_cloud_->clear();
+    // Iterate through each point to find neighbors and estimate the normal.
+    // The normal is perpendicular to the tangent of the curve.
+    for (size_t i = 0; i < filtered_cloud->size(); ++i)
+    {
+        pcl::PointXYZ searchPoint = filtered_cloud->points[i];
+        std::vector<int> pointIdxNKNSearch(5); // Use 5 neighbors for robust estimation.
+        std::vector<float> pointNKNSquaredDistance(5);
 
-	for(unsigned int i=0; i<normals->size();++i)
-	{
-		double sqrt_=sqrt(normals->at(i).normal_x*normals->at(i).normal_x+normals->at(i).normal_y*normals->at(i).normal_y);
-		
-		// Check if the normal vector is too small or invalid.
-		if (sqrt_ < 1e-6 || std::isnan(sqrt_) || std::isinf(sqrt_)) 
-		{
-			// If the normal vector is too small or invalid, skip this point.
-			// std::cerr << "Skipping point " << i << " due to invalid normal vector." << std::endl;
-			continue;
-		}
-		
-		// Log the sqrt_ value for debugging.
-		// std::cerr << "sqrt_ value for point " << i << ": " << sqrt_ << std::endl;
+        if (kdtree->nearestKSearch(searchPoint, 5, pointIdxNKNSearch, pointNKNSquaredDistance) > 0)
+        {
+            Eigen::Vector2d tangent_vector(0.0, 0.0);
+            for (size_t j = 1; j < pointIdxNKNSearch.size(); ++j)
+            {
+                const pcl::PointXYZ& neighbor = filtered_cloud->points[pointIdxNKNSearch[j]];
+                tangent_vector.x() += neighbor.x - searchPoint.x;
+                tangent_vector.y() += neighbor.y - searchPoint.y;
+            }
 
-		normals->at(i).normal_x=normals->at(i).normal_x/sqrt_;
-		normals->at(i).normal_y=normals->at(i).normal_y/sqrt_;
-		normals->at(i).normal_z=0.0;
-		point_cloud->at(i).z=0.0;
-		if( isnan(normals->at(i).normal_x)||
-		    isnan(normals->at(i).normal_y)||
-		    isnan(normals->at(i).normal_z)||
-		    isnan(point_cloud->at(i).x)||
-		    isnan(point_cloud->at(i).y)||
-		    isnan(point_cloud->at(i).z)
-		  ) 
-		{
-			// std::cerr << "Skipping point " << i << " due to NaN values." << std::endl;
-			continue;
-		}
-		// filter also based on distance.
-		double distance=sqrt( (point_cloud->at(i).x*point_cloud->at(i).x) + (point_cloud->at(i).y*point_cloud->at(i).y) );
+            Eigen::Vector2d normal_vector(-tangent_vector.y(), tangent_vector.x());
+            if (normal_vector.norm() > 1e-6)
+            {
+                normal_vector.normalize();
 
-		if(distance>distance_threshold) continue;
+                pcl::Normal normal_point;
+                normal_point.normal_x = normal_vector.x();
+                normal_point.normal_y = normal_vector.y();
+                normal_point.normal_z = 0.0;
+                estimated_normals->push_back(normal_point);
+                point_cloud_->push_back(searchPoint);
+            }
+        }
+    }
 
-		normals_->push_back(normals->at(i));
-		point_cloud_->push_back(point_cloud->at(i));
-	}
+    // Log the number of points after normal estimation.
+    std::cout << "After normal estimation, " << point_cloud_->size() << " valid points were found." << std::endl;
 
-	// Check if we have a valid point cloud and normals.
-	if (normals_->empty()) {
-		std::cerr << "No valid points found after normal estimation." << std::endl;
-		return nullptr; // Return a null pointer if no valid points are found.
-	}
+    // Filter points based on distance from origin.
+    pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_points_by_dist(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::PointCloud<pcl::Normal>::Ptr filtered_normals_by_dist(new pcl::PointCloud<pcl::Normal>());
+    for (size_t i = 0; i < point_cloud_->size(); ++i)
+    {
+        double dist = std::sqrt(std::pow(point_cloud_->points[i].x, 2) + std::pow(point_cloud_->points[i].y, 2));
+        if (dist <= distance_threshold)
+        {
+            filtered_points_by_dist->push_back(point_cloud_->points[i]);
+            filtered_normals_by_dist->push_back(estimated_normals->points[i]);
+        }
+    }
 
-	pcl::PointCloud<pcl::PointNormal>::Ptr cloud_normals (new pcl::PointCloud<pcl::PointNormal>);
-	pcl::concatenateFields (*point_cloud_, *normals_, *cloud_normals);
+    // Log the number of points after distance filtering.
+    std::cout << "After distance filter, " << filtered_points_by_dist->size() << " points remain." << std::endl;
+    
+    // Check if we have a valid point cloud and normals.
+    if (filtered_points_by_dist->empty() || filtered_normals_by_dist->empty())
+    {
+        std::cerr << "No valid points found after filtering." << std::endl;
+        return nullptr; // Return a null pointer if no valid points are found.
+    }
 
-	return cloud_normals;
+    // Concatenate points and normals into a single PointNormal cloud.
+    pcl::PointCloud<pcl::PointNormal>::Ptr cloud_normals(new pcl::PointCloud<pcl::PointNormal>());
+    pcl::concatenateFields(*filtered_points_by_dist, *filtered_normals_by_dist, *cloud_normals);
+
+    // Log the final number of points.
+    std::cout << "Final output point cloud has " << cloud_normals->size() << " points." << std::endl;
+
+    return cloud_normals;
 }
 
 void PatternPoseEstimation::loadModelFromMesh(std::string file_name)
 {
-	std::cerr << "[DEBUG] Now entering loadModelFromMesh() function." << std::endl;
+    std::cerr << "[DEBUG] Now entering loadModelFromMesh() function." << std::endl;
 
     pcl::PolygonMesh mesh;
     if (pcl::io::loadPolygonFileSTL(file_name, mesh) == -1)
@@ -120,10 +131,29 @@ void PatternPoseEstimation::loadModelFromMesh(std::string file_name)
         return;
     }
 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr verts(new pcl::PointCloud<pcl::PointXYZ>());
-	pcl::fromPCLPointCloud2(mesh.cloud, *verts);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr verts(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::fromPCLPointCloud2(mesh.cloud, *verts);
 
-	dense_cloud_models.push_back(getPointNormal(verts));
+    // Get a point cloud with normals from the mesh.
+    pcl::PointCloud<pcl::PointNormal>::Ptr model_cloud_with_normals = getPointNormal(verts);
+
+    if (!model_cloud_with_normals) {
+        std::cerr << "Error: Model point cloud with normals could not be created." << std::endl;
+        return;
+    }
+
+    // Apply a rotation to the model to align its coordinate system with the laser scan.
+    // Rotate 90 degrees around the Y-axis.
+    Eigen::Affine3f transform = Eigen::Affine3f::Identity();
+    float theta = M_PI / 2.0; // 90 degrees in radians.
+    transform.rotate(Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitY()));
+    
+    // Apply the transformation to both points and normals.
+    pcl::transformPointCloudWithNormals(*model_cloud_with_normals, *model_cloud_with_normals, transform);
+    
+    dense_cloud_models.push_back(model_cloud_with_normals);
+    train(dense_cloud_models);
+    std::cerr << "[DEBUG] Exiting loadModelFromMesh() function." << std::endl;
 }
 
 int PatternPoseEstimation::train(std::vector<pcl::PointCloud<pcl::PointNormal>::Ptr> cloud_models_with_normals_)

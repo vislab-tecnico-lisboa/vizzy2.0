@@ -704,9 +704,10 @@ def generate_launch_description():
                     'discretization_step': 0.03,  
                     'tran_thresh': 0.015,         
                     'rot_thresh': 30.0,      
-                    'fitting_score_thresh': 0.02,
-                }],
-                prefix=['xterm -e gdb -ex run --args'])
+                    'fitting_score_thresh': 0.1,
+                    'distance_threshold': 3.0,
+                }],)
+                #prefix=['xterm -e gdb -ex run --args'])
         ]
     )
 
