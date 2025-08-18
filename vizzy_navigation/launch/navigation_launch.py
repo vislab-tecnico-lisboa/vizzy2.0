@@ -702,11 +702,11 @@ def generate_launch_description():
                 parameters=[{
                     'model_file': stl_model_path,
                     'discretization_step': 0.03,  
-                    'tran_thresh': 0.08,         
+                    'tran_thresh': 0.015,         
+                    'rot_thresh': 30.0,      
+                    'fitting_score_thresh': 0.02,
                 }],
                 prefix=['xterm -e gdb -ex run --args'])
-
-            
         ]
     )
 

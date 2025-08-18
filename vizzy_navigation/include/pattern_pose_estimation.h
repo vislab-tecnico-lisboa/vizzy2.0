@@ -32,13 +32,13 @@ private:
     double rot_thresh;
     double tran_thresh;
     double fitting_score_thresh;
+    double distance_threshold;
     pcl::PointCloud<pcl::Normal>::Ptr normals;
     pcl::PointCloud<pcl::Normal>::Ptr normals_;
     pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud_;
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree;
     PointCloud<PointNormal>::Ptr cloud_output_subsampled;
     double discretization_step;
-    double distance_threshold;
 
     // Other members not in the initializer list
     vector<pcl::PPFHashMapSearch::Ptr> hashmap_search_vector;
@@ -56,8 +56,8 @@ public:
                 double tran_thresh_=0.05,
                 double fitting_score_thresh_=0.01,
                 double discretization_step_=0.01,
-                std::string file_="file",
-                double distance_threshold_=1.4);
+                double distance_threshold_=1.0,
+                std::string file_="file");
 
     int train (std::vector<pcl::PointCloud<pcl::PointNormal>::Ptr> cloud_models_with_normals_);
     Eigen::Affine3d detect(pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals);

@@ -6,35 +6,37 @@
 using namespace pcl;
 using namespace std;
 
-PatternPoseEstimation::PatternPoseEstimation(double rot_thresh_, double tran_thresh_, double fitting_score_thresh_, double discretization_step_, std::string file_, double distance_threshold_) :
-	rot_thresh( (rot_thresh_ / 180.0) * double (M_PI)),
+PatternPoseEstimation::PatternPoseEstimation(double rot_thresh_, double tran_thresh_, double fitting_score_thresh_, double discretization_step_, double distance_threshold_, std::string file_) :
+	rot_thresh( (rot_thresh_ / 180.0) * double (M_PI)), // Convert degrees to radians.
 	tran_thresh(tran_thresh_),
 	fitting_score_thresh(fitting_score_thresh_),
+	distance_threshold(distance_threshold_),
 	normals (new pcl::PointCloud<pcl::Normal>()),
 	normals_ (new pcl::PointCloud<pcl::Normal>()),
 	point_cloud_ (new pcl::PointCloud<pcl::PointXYZ>()),
 	tree (new pcl::search::KdTree<pcl::PointXYZ> ()),
 	cloud_output_subsampled(new PointCloud<PointNormal>()),
-	discretization_step(discretization_step_),
-        distance_threshold(distance_threshold_)
+	discretization_step(discretization_step_)
 {
-    std::cout << distance_threshold << std::endl;
 	pcl::console::setVerbosityLevel(pcl::console::L_ALWAYS);
-	cluster_tran_thresh=3.0*tran_thresh;
-	cluster_rot_thresh=3.0*rot_thresh;
+	cluster_tran_thresh=tran_thresh;
+	cluster_rot_thresh=rot_thresh;
 	loadModelFromMesh(file_);
 	train(dense_cloud_models);
 }
 
 pcl::PointCloud<PointNormal>::Ptr PatternPoseEstimation::getPointNormal(pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud)
 {
-	// Create the filtering object
+	// Clear previous data.
+	normals->clear();
+
+	// Create the filtering object.
 	pcl::VoxelGrid<pcl::PointXYZ> sor;
 	sor.setInputCloud (point_cloud);
 	sor.setLeafSize (discretization_step, discretization_step,1000.0);
 	sor.filter (*point_cloud);
 
-	// Define random generator with Gaussian distribution
+	// Define random generator with Gaussian distribution.
 	const double mean = 0.0;
 	const double stddev = 0.001;
 	std::default_random_engine generator;
@@ -45,7 +47,7 @@ pcl::PointCloud<PointNormal>::Ptr PatternPoseEstimation::getPointNormal(pcl::Poi
 		point_cloud->at(i).z=dist(generator);
 	}	
 
-	// Create the normal estimation class, and pass the input dataset to it
+	// Create the normal estimation class, and pass the input dataset to it.
 	pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
 	ne.setInputCloud (point_cloud);
 	ne.setViewPoint (std::numeric_limits<float>::max (), 0.0, 0.0);
@@ -59,6 +61,18 @@ pcl::PointCloud<PointNormal>::Ptr PatternPoseEstimation::getPointNormal(pcl::Poi
 	for(unsigned int i=0; i<normals->size();++i)
 	{
 		double sqrt_=sqrt(normals->at(i).normal_x*normals->at(i).normal_x+normals->at(i).normal_y*normals->at(i).normal_y);
+		
+		// Check if the normal vector is too small or invalid.
+		if (sqrt_ < 1e-6 || std::isnan(sqrt_) || std::isinf(sqrt_)) 
+		{
+			// If the normal vector is too small or invalid, skip this point.
+			// std::cerr << "Skipping point " << i << " due to invalid normal vector." << std::endl;
+			continue;
+		}
+		
+		// Log the sqrt_ value for debugging.
+		// std::cerr << "sqrt_ value for point " << i << ": " << sqrt_ << std::endl;
+
 		normals->at(i).normal_x=normals->at(i).normal_x/sqrt_;
 		normals->at(i).normal_y=normals->at(i).normal_y/sqrt_;
 		normals->at(i).normal_z=0.0;
@@ -71,15 +85,22 @@ pcl::PointCloud<PointNormal>::Ptr PatternPoseEstimation::getPointNormal(pcl::Poi
 		    isnan(point_cloud->at(i).z)
 		  ) 
 		{
+			// std::cerr << "Skipping point " << i << " due to NaN values." << std::endl;
 			continue;
 		}
-		// filter also based on distance
+		// filter also based on distance.
 		double distance=sqrt( (point_cloud->at(i).x*point_cloud->at(i).x) + (point_cloud->at(i).y*point_cloud->at(i).y) );
 
-                if(distance>distance_threshold)
-                   continue;
+		if(distance>distance_threshold) continue;
+
 		normals_->push_back(normals->at(i));
 		point_cloud_->push_back(point_cloud->at(i));
+	}
+
+	// Check if we have a valid point cloud and normals.
+	if (normals_->empty()) {
+		std::cerr << "No valid points found after normal estimation." << std::endl;
+		return nullptr; // Return a null pointer if no valid points are found.
 	}
 
 	pcl::PointCloud<pcl::PointNormal>::Ptr cloud_normals (new pcl::PointCloud<pcl::PointNormal>);

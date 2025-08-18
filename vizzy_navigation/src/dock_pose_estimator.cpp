@@ -74,8 +74,16 @@ DockPoseEstimator::DockPoseEstimator(const rclcpp::NodeOptions & options)
     scene_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/scene_point_cloud", 10);
 
     // Create Subscriber.
-    // Start with the rear laser by default.
+    // Start with the front laser by default.
     this->useRearLaser();
+
+    current_laser_is_front_ = false; // Start with the front laser.
+    laser_sub_counter_ = 0; // Initialize the counter for failed detections.
+
+    // Create a timer that calls checkAndSwitchLaser() every second.
+    laser_switch_timer_ = this->create_wall_timer(
+        std::chrono::seconds(1),
+        std::bind(&DockPoseEstimator::checkAndSwitchLaser, this));
 
     // Log a message indicating that the DockPoseEstimator node has been initialized.
     RCLCPP_INFO(this->get_logger(), "Dock Pose Estimator node has been initialized.");
@@ -91,9 +99,9 @@ void DockPoseEstimator::declareAndGetParameters()
     // they are just declared here. That is why we retrieve them later.
     this->declare_parameter<double>("tran_thresh", 0.05);
     this->declare_parameter<double>("rot_thresh", 30.0);
-    this->declare_parameter<double>("fitting_score_thresh", 0.02);
+    this->declare_parameter<double>("fitting_score_thresh", 0.01);
     this->declare_parameter<double>("discretization_step", 0.01);
-    this->declare_parameter<double>("pattern_distance_threshold", 3);
+    this->declare_parameter<double>("distance_threshold", 1.0);
     this->declare_parameter<std::string>("model_file", "file");
 
     // Get the current active parameter values.
@@ -101,7 +109,7 @@ void DockPoseEstimator::declareAndGetParameters()
     double rot_thresh = this->get_parameter("rot_thresh").as_double();
     double fitting_score_thresh = this->get_parameter("fitting_score_thresh").as_double();
     double discretization_step = this->get_parameter("discretization_step").as_double();
-    double pattern_distance_threshold = this->get_parameter("pattern_distance_threshold").as_double();
+    double distance_threshold = this->get_parameter("distance_threshold").as_double();
     std::string model_file = this->get_parameter("model_file").as_string();
 
     // Log the parameters for debugging.
@@ -109,13 +117,13 @@ void DockPoseEstimator::declareAndGetParameters()
     RCLCPP_INFO(this->get_logger(), "rot_thresh: %f", rot_thresh);
     RCLCPP_INFO(this->get_logger(), "fitting_score_thresh: %f", fitting_score_thresh);
     RCLCPP_INFO(this->get_logger(), "discretization_step: %f", discretization_step);
-    RCLCPP_INFO(this->get_logger(), "pattern_distance_threshold: %f", pattern_distance_threshold);
+    RCLCPP_INFO(this->get_logger(), "distance_threshold: %f", distance_threshold);
 
     // Initialize the Point Pair Feature (PPF) registration model with the loaded parameters.
     // Provide the shared pointer to the private member `pattern_pose_estimation_`.
     pattern_pose_estimation_ = std::make_shared<PatternPoseEstimation>(
-        rot_thresh, tran_thresh, fitting_score_thresh, discretization_step,
-        model_file, pattern_distance_threshold);
+        rot_thresh, tran_thresh, fitting_score_thresh, discretization_step, distance_threshold,
+        model_file);
 }
 
 // This method switches the laser subscription to the front laser topic.
@@ -136,6 +144,25 @@ void DockPoseEstimator::useRearLaser(std::string laser_topic_rear)
     laser_sub_.reset();
     laser_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
         laser_topic_rear, 10, std::bind(&DockPoseEstimator::laserCallback, this, std::placeholders::_1));
+}
+
+// This method checks the laser subscription counter and switches the laser if necessary.
+void DockPoseEstimator::checkAndSwitchLaser()
+{
+    // This function runs separately from the laser callback.
+    // This is important to avoid unsafeties with the subscription management.
+    if (laser_sub_counter_ > 5) {
+        if (!current_laser_is_front_) {
+            RCLCPP_INFO(this->get_logger(), "Switching to front laser.");
+            this->useFrontLaser();
+            current_laser_is_front_ = true;
+        } else {
+            RCLCPP_INFO(this->get_logger(), "Switching to rear laser.");
+            this->useRearLaser();
+            current_laser_is_front_ = false;
+        }
+        laser_sub_counter_ = 0; // Reset after switching.
+    }
 }
 
 // Main callback for processing laser data.
@@ -165,7 +192,8 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     scene_cloud_pub_->publish(cloud_msg);
 
     if (!cloud_normals_) {
-        RCLCPP_ERROR(this->get_logger(), "ERROR: getPointNormal() returned a null pointer!");
+        RCLCPP_INFO(this->get_logger(), "getPointNormal() returned a null pointer. No valid points found.");
+        laser_sub_counter_++; // Increment the counter on failure.
         return;
     }
 
@@ -175,30 +203,10 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     Eigen::Affine3d transformNN;
     try {
         transformNN = pattern_pose_estimation_->detect(cloud_normals_);
-
-        laser_sub_counter_ = 0; // Reset the counter after a successful detection.
-
+        laser_sub_counter_ = 0; // Reset on success.
     } catch (const std::exception &e) {
-        RCLCPP_WARN(this->get_logger(), "Detection failed: %s", e.what());
-
-        // Increment the laser subscription counter.
-        laser_sub_counter_++;
-
-        // If the counter exceeds 5 (5 failed detections in a row), switch to the other laser.
-        if (laser_sub_counter_ > 5) {
-            if (!current_laser_is_front_) {
-                RCLCPP_INFO(this->get_logger(), "Switching to front laser.");
-                this->useFrontLaser();
-            } else {
-                RCLCPP_INFO(this->get_logger(), "Switching to rear laser.");
-                this->useRearLaser();
-            }
-            laser_sub_counter_ = 0; // Reset the counter after switching lasers.
-        }
-
-        // * The main reason for the switch is to implement dynamic automated switching
-        // * so Vizzy can adapt to different environments and situations.
-
+        RCLCPP_INFO(this->get_logger(), "No dock found in the current scan.");
+        laser_sub_counter_++; // Increment the counter on failure.
         return;
     }
 

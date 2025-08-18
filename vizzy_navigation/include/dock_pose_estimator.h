@@ -87,10 +87,12 @@ private:
         ** - `declareAndGetParameters()`: Loads parameters from the ROS 2 node.
         ** - `findMedian(std::deque<double> a)`: Computes the median of a deque.
         ** - `laserCallback(const std::shared_ptr<sensor_msgs::msg::LaserScan> scan)`: Callback for processing laser scan data.
+        ** - `checkAndSwitchLaser()`: Checks the laser subscription counter and switches the laser if necessary.
     */
     void declareAndGetParameters();
     double findMedian(std::deque<double> a);
     void laserCallback(const std::shared_ptr<sensor_msgs::msg::LaserScan> scan);
+    void checkAndSwitchLaser();
 
     /*
         * Private Member Variables:
@@ -155,6 +157,7 @@ private:
     pcl::PointCloud<pcl::PointNormal>::Ptr cloud_normals_;
     int laser_sub_counter_ = 0;
     bool current_laser_is_front_ = true; // Flag to check if the current laser is the front one.
+    rclcpp::TimerBase::SharedPtr laser_switch_timer_;
 };
 
 #endif // DOCK_POSE_ESTIMATOR_ROS2_HPP_
