@@ -66,6 +66,12 @@
   <arg name="mppi_wide_wz_std" default="0.2" description="Standard deviation for the wide MPPI controller"/>
   <arg name="mppi_narrow_wz_std" default="0.13" description="Standard deviation for the narrow MPPI controller"/>
   <arg name="velocity_smoother_feedback_type" default="OPEN_LOOP" description="Feedback type for the velocity smoother. Options: CLOSED_LOOP, OPEN_LOOP"/>
+  <arg name="dock_pose_stl_model_path" default="$(find-pkg-share vizzy_navigation)/models/docking_pattern.stl" description="Path to the STL model for the dock pose estimation"/>
+  <arg name="discretization_step" default="0.01" description="Discretization step for the dock pose estimation"/>
+  <arg name="tran_threshold" default="0.015" description="Translation threshold for the dock pose estimation"/>
+  <arg name="rot_threshold" default="30.0" description="Rotation threshold for the dock pose estimation"/>
+  <arg name="fitting_score_threshold" default="0.03" description="Fitting score threshold for the dock pose estimation"/>
+  <arg name="distance_threshold" default="2.0" description="Distance threshold for the dock pose estimation"/>
 
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
@@ -143,6 +149,12 @@
           <arg name="mppi_wide_wz_std" value="$(var mppi_wide_wz_std)"/>
           <arg name="mppi_narrow_wz_std" value="$(var mppi_narrow_wz_std)"/>
           <arg name="velocity_smoother_feedback_type" value="$(var velocity_smoother_feedback_type)"/>
+          <arg name="dock_pose_stl_model_path" value="$(var dock_pose_stl_model_path)"/>
+          <arg name="discretization_step" value="$(var discretization_step)"/>
+          <arg name="tran_threshold" value="$(var tran_threshold)"/>
+          <arg name="rot_threshold" value="$(var rot_threshold)"/>
+          <arg name="fitting_score_threshold" value="$(var fitting_score_threshold)"/>
+          <arg name="distance_threshold" value="$(var distance_threshold)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -190,6 +202,12 @@
           <arg name="mppi_wide_wz_std" value="$(var mppi_wide_wz_std)"/>
           <arg name="mppi_narrow_wz_std" value="$(var mppi_narrow_wz_std)"/>
           <arg name="velocity_smoother_feedback_type" value="$(var velocity_smoother_feedback_type)"/>
+          <arg name="dock_pose_stl_model_path" value="$(var dock_pose_stl_model_path)"/>
+          <arg name="discretization_step" value="$(var discretization_step)"/>
+          <arg name="tran_threshold" value="$(var tran_threshold)"/>
+          <arg name="rot_threshold" value="$(var rot_threshold)"/>
+          <arg name="fitting_score_threshold" value="$(var fitting_score_threshold)"/>
+          <arg name="distance_threshold" value="$(var distance_threshold)"/>
         </include>
       </group>
     </group>
@@ -261,6 +279,12 @@
           <arg name="mppi_wide_wz_std" value="$(var mppi_wide_wz_std)"/>
           <arg name="mppi_narrow_wz_std" value="$(var mppi_narrow_wz_std)"/>
           <arg name="velocity_smoother_feedback_type" value="$(var velocity_smoother_feedback_type)"/>
+          <arg name="dock_pose_stl_model_path" value="$(var dock_pose_stl_model_path)"/>
+          <arg name="discretization_step" value="$(var discretization_step)"/>
+          <arg name="tran_threshold" value="$(var tran_threshold)"/>
+          <arg name="rot_threshold" value="$(var rot_threshold)"/>
+          <arg name="fitting_score_threshold" value="$(var fitting_score_threshold)"/>
+          <arg name="distance_threshold" value="$(var distance_threshold)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -308,6 +332,12 @@
           <arg name="mppi_wide_wz_std" value="$(var mppi_wide_wz_std)"/>
           <arg name="mppi_narrow_wz_std" value="$(var mppi_narrow_wz_std)"/>
           <arg name="velocity_smoother_feedback_type" value="$(var velocity_smoother_feedback_type)"/>
+          <arg name="dock_pose_stl_model_path" value="$(var dock_pose_stl_model_path)"/>
+          <arg name="discretization_step" value="$(var discretization_step)"/>
+          <arg name="tran_threshold" value="$(var tran_threshold)"/>
+          <arg name="rot_threshold" value="$(var rot_threshold)"/>
+          <arg name="fitting_score_threshold" value="$(var fitting_score_threshold)"/>
+          <arg name="distance_threshold" value="$(var distance_threshold)"/>
         </include>
       </group>
     </group>

@@ -17,7 +17,7 @@
 * approach was used to detect the dock pose:                                                 *
 * 1. Whichever laser is used, the algorithm will try to detect the dock pose.                *
 * 2. If the dock pattern is not detected, a counter will be incremented.                     *
-* 3. If the counter reaches a certain threshold (e.g. 5, meaning 5 consecutive scans         *
+* 3. If the counter reaches a certain threshold (e.g. 30, meaning 30 consecutive scans       *
 * without detection), the algorithm will switch to the other laser. The counter will         *
 * be reset to zero in this event.                                                            *
 * 4. The counter will be reset to zero when a detection is made.                             *
@@ -70,7 +70,7 @@ DockPoseEstimator::DockPoseEstimator(const rclcpp::NodeOptions & options)
     // ! The dock pose topic name needs to be named "/detected_dock_pose" to match the Nav2 Docking Server 
     // ! SimpleChargingDock plugin expectations.
     docking_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/detected_dock_pose", 10);
-    model_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/model_point_cloud", 10);
+    //model_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/model_point_cloud", 10);
     scene_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/scene_point_cloud", 10);
 
     // Create Subscriber.
@@ -97,11 +97,11 @@ void DockPoseEstimator::declareAndGetParameters()
     // Declare parameters with default values.
     // Attention: The parameters may not be set with these default values,
     // they are just declared here. That is why we retrieve them later.
-    this->declare_parameter<double>("tran_thresh", 0.05);
+    this->declare_parameter<double>("tran_thresh", 0.015);
     this->declare_parameter<double>("rot_thresh", 30.0);
-    this->declare_parameter<double>("fitting_score_thresh", 0.01);
+    this->declare_parameter<double>("fitting_score_thresh", 0.03);
     this->declare_parameter<double>("discretization_step", 0.01);
-    this->declare_parameter<double>("distance_threshold", 1.0);
+    this->declare_parameter<double>("distance_threshold", 2.0);
     this->declare_parameter<std::string>("model_file", "file");
 
     // Get the current active parameter values.
@@ -151,7 +151,12 @@ void DockPoseEstimator::checkAndSwitchLaser()
 {
     // This function runs separately from the laser callback.
     // This is important to avoid unsafeties with the subscription management.
-    if (laser_sub_counter_ > 5) {
+    // Because the laser publishing frequency is around 15Hz, the algorithm will switch lasers
+    // every 2 seconds if no dock is detected.
+    // A higher counter value before switching helps to avoid unnecessary switching
+    // when the dock is not detected for a few scans due to noise or other temporary factors.
+    // However, a 2 second interval is still a good compromise to ensure responsiveness.
+    if (laser_sub_counter_ > 30) {
         if (!current_laser_is_front_) {
             RCLCPP_INFO(this->get_logger(), "Switching to front laser.");
             this->useFrontLaser();

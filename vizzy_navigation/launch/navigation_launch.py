@@ -542,6 +542,37 @@ def generate_launch_description():
         default_value='OPEN_LOOP',
         description='Feedback type for the velocity smoother. Options: CLOSED_LOOP, OPEN_LOOP.'
     )
+    dock_pose_stl_model_path_arg = DeclareLaunchArgument(
+        'dock_pose_stl_model_path',
+        default_value=os.path.join(pkg_dir, 'models', 'docking_pattern.stl'),
+        description='Path to the STL model for the dock pose estimation.'
+    )
+    discretization_step_arg = DeclareLaunchArgument(
+        'discretization_step',
+        default_value='0.01',
+        description='Discretization step for the dock pose estimation.'
+    )
+    tran_threshold_arg = DeclareLaunchArgument(
+        'tran_threshold',
+        default_value='0.015',
+        description='Translation threshold for the dock pose estimation.'
+    )
+    rot_threshold_arg = DeclareLaunchArgument(
+        'rot_threshold',
+        default_value='30',
+        description='Rotation threshold for the dock pose estimation.'
+    )
+    fitting_score_threshold_arg = DeclareLaunchArgument(
+        'fitting_score_threshold',
+        default_value='0.03',
+        description='Fitting score threshold for the dock pose estimation.'
+    )
+    distance_threshold_arg = DeclareLaunchArgument(
+        'distance_threshold',
+        default_value='2.0',
+        description='Distance threshold for the dock pose estimation.'
+    )
+
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -549,6 +580,12 @@ def generate_launch_description():
     autostart = LaunchConfiguration('autostart')
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
+    dock_pose_stl_model_path = LaunchConfiguration('dock_pose_stl_model_path')
+    discretization_step = LaunchConfiguration('discretization_step')
+    tran_threshold = LaunchConfiguration('tran_threshold')
+    rot_threshold = LaunchConfiguration('rot_threshold')
+    fitting_score_threshold = LaunchConfiguration('fitting_score_threshold')
+    distance_threshold = LaunchConfiguration('distance_threshold')
 
     package_name = 'vizzy_navigation' 
 
@@ -575,7 +612,6 @@ def generate_launch_description():
     
     # Get the path to your STL file
     pkg_dir = get_package_share_directory('vizzy_navigation')
-    stl_model_path = os.path.join(pkg_dir, 'models', 'docking_pattern.stl')
 
     # Create one ParameterFile object with all substitutions
     configured_params = ParameterFile(
@@ -700,13 +736,14 @@ def generate_launch_description():
                 name='dock_pose_estimator_node',
                 output='screen',
                 parameters=[{
-                    'model_file': stl_model_path,
-                    'discretization_step': 0.03,  
-                    'tran_thresh': 0.015,         
-                    'rot_thresh': 30.0,      
-                    'fitting_score_thresh': 0.1,
-                    'distance_threshold': 3.0,
+                    'model_file': dock_pose_stl_model_path,
+                    'discretization_step': discretization_step,
+                    'tran_thresh': tran_threshold,
+                    'rot_thresh': rot_threshold,
+                    'fitting_score_thresh': fitting_score_threshold,
+                    'distance_threshold': distance_threshold,
                 }],)
+                # Uncomment the next line to debug the node with GDB.
                 #prefix=['xterm -e gdb -ex run --args'])
         ]
     )
@@ -759,6 +796,12 @@ def generate_launch_description():
         mppi_wide_wz_std_arg,
         mppi_narrow_wz_std_arg,
         velocity_smoother_feedback_type_arg,
+        dock_pose_stl_model_path_arg,
+        discretization_step_arg,
+        tran_threshold_arg,
+        rot_threshold_arg,
+        fitting_score_threshold_arg,
+        distance_threshold_arg,
 
         # Actions
         log_sim_time_action,
