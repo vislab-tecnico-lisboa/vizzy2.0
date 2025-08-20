@@ -271,4 +271,3 @@ Eigen::Matrix4f PatternPoseEstimation::refine(pcl::PointCloud<pcl::PointNormal>:
 	
 	return icp.getFinalTransformation();
 }
-

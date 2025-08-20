@@ -16,6 +16,7 @@ endif()
 find_package(VTK REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(PCL REQUIRED)
+find_package(rclpy REQUIRED)
 find_package(rviz2 REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -26,6 +27,7 @@ find_package(pluginlib REQUIRED)
 find_package(nav2_amcl REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(vizzy_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(ament_cmake REQUIRED)
@@ -36,7 +38,6 @@ find_package(nav2_behaviors REQUIRED)
 find_package(actionlib_msgs REQUIRED)
 find_package(laser_geometry REQUIRED)
 find_package(pcl_conversions REQUIRED)
-find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_controller REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
@@ -77,6 +78,7 @@ ament_target_dependencies(nav2_check_path_cost_bt_node PUBLIC
   "behaviortree_cpp_v3"
   "nav2_behavior_tree"
   "nav2_costmap_2d"
+  "vizzy_msgs"
   "nav2_util"
   "nav_msgs"
   "rclcpp"
@@ -127,11 +129,29 @@ add_executable(dock_pose_estimator_node src/dock_pose_estimator_node.cpp)
 # This automatically handles all includes and links from docking_lib
 target_link_libraries(dock_pose_estimator_node PUBLIC docking_lib)
 
+# --- Executable: charging_action_server_node ---
+add_executable(charging_action_server_node src/charging_action_server_node.cpp src/charging_action_server.cpp)
+ament_target_dependencies(charging_action_server_node PUBLIC
+  rclcpp
+  rclcpp_action
+  geometry_msgs
+  vizzy_msgs
+  tf2_ros
+  tf2_geometry_msgs
+  nav2_msgs
+)
+
+target_include_directories(charging_action_server_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
 # Install the executables and libraries.
 install(TARGETS
   twistsimulator
   nav2_check_path_cost_bt_node
   dock_pose_estimator_node
+  charging_action_server_node
   docking_lib 
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -149,8 +169,15 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
+install(PROGRAMS
+  script/battery_state_simulator_service.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 # Install the Behaviour Tree plugin description file.
 pluginlib_export_plugin_description_file(nav2_check_path_cost_bt_node config/bt_plugins.xml)
+
+ament_export_dependencies(rosidl_default_runtime)
 
 # Install the package.xml and register the package with ament.
 ament_package()
