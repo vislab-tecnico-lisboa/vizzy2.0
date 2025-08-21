@@ -73,9 +73,11 @@
   <depend>laser_geometry</depend>
   <depend>nav2_costmap_2d</depend> 
   <depend>pcl_conversions</depend>
+  <depend>opennav_docking</depend>
   <depend>nav2_behavior_tree</depend>
   <depend>visualization_msgs</depend> 
   <depend>interactive_markers</depend> 
+  <depend>opennav_docking_msgs</depend>
 
   <member_of_group>rosidl_interface_packages</member_of_group>
 

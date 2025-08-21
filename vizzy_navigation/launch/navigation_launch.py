@@ -718,6 +718,20 @@ def generate_launch_description():
                 respawn_delay=2.0,
                 parameters=[configured_params], 
                 remappings=remappings),
+            
+            Node(
+                package='opennav_docking',
+                executable='opennav_docking',
+                name='docking_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings,
+                # Uncomment the next line to debug the node with GDB.
+                prefix=['xterm -e gdb -ex run --args']),
+            
             Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
@@ -729,7 +743,8 @@ def generate_launch_description():
                              'node_names': ['map_server', 'amcl', 'planner_server',
                                             'controller_server', 'smoother_server',
                                             'bt_navigator', 'behavior_server',
-                                            'waypoint_follower', 'velocity_smoother']}]),
+                                            'waypoint_follower', 'velocity_smoother',
+                                            'docking_server']}],),
             Node(
                 package='vizzy_navigation',
                 executable='dock_pose_estimator_node',
@@ -742,9 +757,18 @@ def generate_launch_description():
                     'rot_thresh': rot_threshold,
                     'fitting_score_thresh': fitting_score_threshold,
                     'distance_threshold': distance_threshold,
-                }],)
+                }],
                 # Uncomment the next line to debug the node with GDB.
-                #prefix=['xterm -e gdb -ex run --args'])
+                prefix=['xterm -e gdb -ex run --args']),
+
+            Node(
+                package='vizzy_navigation',
+                executable='charging_action_server_node',
+                name='charging_action_server_node',
+                output='screen',
+                parameters=[{}],
+                # Uncomment the next line to debug the node with GDB.
+                prefix=['xterm -e gdb -ex run --args']),
         ]
     )
 

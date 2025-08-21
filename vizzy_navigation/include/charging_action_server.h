@@ -22,6 +22,7 @@
 
 // Nav2 action client
 #include <nav2_msgs/action/navigate_to_pose.hpp>
+#include <opennav_docking_msgs/action/dock_robot.hpp>
 
 class ChargingActionServer : public rclcpp::Node
 {
@@ -37,7 +38,9 @@ private:
     rclcpp::Client<vizzy_msgs::srv::BatteryChargingState>::SharedPtr charging_state_client_;
     
     // New: Nav2 action client
-    rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr nav_client_;
+    rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr nav_to_pose_client_;
+    rclcpp_action::Client<opennav_docking_msgs::action::DockRobot>::SharedPtr dock_client_;
+
 
     // TF2 members
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;

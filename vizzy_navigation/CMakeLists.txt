@@ -42,6 +42,7 @@ find_package(nav2_controller REQUIRED)
 find_package(tf2_sensor_msgs REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_map_server REQUIRED)
+find_package(opennav_docking REQUIRED)
 find_package(nav2_bt_navigator REQUIRED)
 find_package(nav2_smac_planner REQUIRED)
 find_package(nav2_behavior_tree REQUIRED)
@@ -50,6 +51,7 @@ find_package(nav2_navfn_planner REQUIRED)
 find_package(behaviortree_cpp_v3 REQUIRED) 
 find_package(interactive_markers REQUIRED)
 find_package(nav2_dwb_controller REQUIRED)
+find_package(opennav_docking_msgs REQUIRED)
 find_package(nav2_mppi_controller REQUIRED)
 find_package(nav2_velocity_smoother REQUIRED)
 find_package(nav2_waypoint_follower REQUIRED)
@@ -85,7 +87,7 @@ ament_target_dependencies(nav2_check_path_cost_bt_node PUBLIC
   "tf2_ros"
 )
 
-# Create a library from your class implementation files.
+# Create a library from the class implementation files.
 add_library(docking_lib
   src/dock_pose_estimator.cpp
   src/pattern_pose_estimation.cpp
@@ -93,7 +95,7 @@ add_library(docking_lib
 
 # Tell the library where to find ALL header files.
 target_include_directories(docking_lib PUBLIC
-  # This tells it where to find its own headers (e.g., "dock_pose_estimator.h").
+  # This tells it where to find its own headers.
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 
@@ -102,7 +104,6 @@ target_include_directories(docking_lib PUBLIC
   ${VTK_INCLUDE_DIRS}
 )
 
-# Add this new block.
 # Link the library against all of its ROS 2 dependencies.
 ament_target_dependencies(docking_lib PUBLIC
   "rclcpp"
@@ -122,15 +123,17 @@ target_link_libraries(docking_lib PUBLIC
   ${VTK_LIBRARIES}
 )
 
-# Create the executable from ONLY your main() file.
+# Create the executable from ONLY the main() file.
 add_executable(dock_pose_estimator_node src/dock_pose_estimator_node.cpp)
 
-# Link your executable against your new library
-# This automatically handles all includes and links from docking_lib
+# Link the executable against the new library.
+# This automatically handles all includes and links from docking_lib.
 target_link_libraries(dock_pose_estimator_node PUBLIC docking_lib)
 
-# --- Executable: charging_action_server_node ---
+# Create the executable for the charging_action_server_node.
 add_executable(charging_action_server_node src/charging_action_server_node.cpp src/charging_action_server.cpp)
+
+# Link the executable against its dependencies.
 ament_target_dependencies(charging_action_server_node PUBLIC
   rclcpp
   rclcpp_action
@@ -139,8 +142,10 @@ ament_target_dependencies(charging_action_server_node PUBLIC
   tf2_ros
   tf2_geometry_msgs
   nav2_msgs
+  opennav_docking_msgs
 )
 
+# Specify the include directories for the charging_action_server_node.
 target_include_directories(charging_action_server_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
