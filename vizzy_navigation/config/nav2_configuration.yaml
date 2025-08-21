@@ -667,6 +667,13 @@ docking_server:
     introspection_mode: "disabled"
 
     dock_plugins: ['vizzy_isr_dock']
+
+    docks: ["dock_1"]
+    dock_1:
+      type: "vizzy_isr_dock"
+      frame: "map"
+      pose: [0.0, 0.0, 0.0]
+
     vizzy_isr_dock:
       plugin: 'opennav_docking::SimpleChargingDock'
       docking_threshold: 0.05

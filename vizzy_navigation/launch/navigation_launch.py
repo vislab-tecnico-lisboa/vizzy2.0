@@ -718,6 +718,22 @@ def generate_launch_description():
                 respawn_delay=2.0,
                 parameters=[configured_params], 
                 remappings=remappings),
+
+            Node(
+                package='vizzy_navigation',
+                executable='dock_pose_estimator_node',
+                name='dock_pose_estimator_node',
+                output='screen',
+                parameters=[{
+                    'model_file': dock_pose_stl_model_path,
+                    'discretization_step': discretization_step,
+                    'tran_thresh': tran_threshold,
+                    'rot_thresh': rot_threshold,
+                    'fitting_score_thresh': fitting_score_threshold,
+                    'distance_threshold': distance_threshold,
+                }],
+                # Uncomment the next line to debug the node with GDB.
+                prefix=['xterm -e gdb -ex run --args']),
             
             Node(
                 package='opennav_docking',
@@ -745,21 +761,6 @@ def generate_launch_description():
                                             'bt_navigator', 'behavior_server',
                                             'waypoint_follower', 'velocity_smoother',
                                             'docking_server']}],),
-            Node(
-                package='vizzy_navigation',
-                executable='dock_pose_estimator_node',
-                name='dock_pose_estimator_node',
-                output='screen',
-                parameters=[{
-                    'model_file': dock_pose_stl_model_path,
-                    'discretization_step': discretization_step,
-                    'tran_thresh': tran_threshold,
-                    'rot_thresh': rot_threshold,
-                    'fitting_score_thresh': fitting_score_threshold,
-                    'distance_threshold': distance_threshold,
-                }],
-                # Uncomment the next line to debug the node with GDB.
-                prefix=['xterm -e gdb -ex run --args']),
 
             Node(
                 package='vizzy_navigation',
