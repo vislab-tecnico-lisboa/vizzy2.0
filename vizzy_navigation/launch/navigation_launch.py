@@ -739,8 +739,8 @@ def generate_launch_description():
                     'rot_thresh': rot_threshold,
                     'fitting_score_thresh': fitting_score_threshold,
                     'distance_threshold': distance_threshold,
-                    'laser_front_topic': laser_front_topic,
-                    'laser_rear_topic': laser_rear_topic,
+                    'front_laser_topic': laser_front_topic,
+                    'rear_laser_topic': laser_rear_topic,
                 }],
                 # Uncomment the next line to debug the node with GDB.
                 prefix=['xterm -e gdb -ex run --args']),
