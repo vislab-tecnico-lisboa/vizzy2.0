@@ -174,7 +174,7 @@ void DockPoseEstimator::checkAndSwitchLaser()
 void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::LaserScan> scan)
 {
 
-    //RCLCPP_INFO(this->get_logger(), "Processing laser scan data...");
+    RCLCPP_INFO(this->get_logger(), "Processing laser scan data...");
 
     // If the estimator is not enabled, do nothing.
     if (!enabled_) return;
@@ -197,7 +197,7 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     scene_cloud_pub_->publish(cloud_msg);
 
     if (!cloud_normals_) {
-        //RCLCPP_INFO(this->get_logger(), "getPointNormal() returned a null pointer. No valid points found.");
+        RCLCPP_INFO(this->get_logger(), "getPointNormal() returned a null pointer. No valid points found.");
         laser_sub_counter_++; // Increment the counter on failure.
         return;
     }
@@ -210,7 +210,7 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
         transformNN = pattern_pose_estimation_->detect(cloud_normals_);
         laser_sub_counter_ = 0; // Reset on success.
     } catch (const std::exception &e) {
-        //RCLCPP_INFO(this->get_logger(), "No dock found in the current scan.");
+        RCLCPP_INFO(this->get_logger(), "No dock found in the current scan.");
         laser_sub_counter_++; // Increment the counter on failure.
         return;
     }
@@ -257,8 +257,8 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     dock_pose_.header = scan->header;
     docking_pub_->publish(dock_pose_);
 
-    //RCLCPP_INFO(this->get_logger(), "Dock pose published: [x: %f, y: %f, z: %f, yaw: %f]", 
-    //x_filtered, y_filtered, z_filtered, yaw_filtered);
+    RCLCPP_INFO(this->get_logger(), "Dock pose published: [x: %f, y: %f, z: %f, yaw: %f]", 
+    x_filtered, y_filtered, z_filtered, yaw_filtered);
 
     // TODO: Apply corrective transform for correct visualization of the final model point cloud.
     // For now, it is commented out for resource sparing purposes.
