@@ -75,8 +75,8 @@ public:
     bool isReady() { return ready_; };
     void enable() { enabled_ = true; };
     void disable() { enabled_ = false; };
-    void useFrontLaser(std::string laser_topic = "/nav_hokuyo_laser/front/scan");
-    void useRearLaser(std::string laser_topic = "/nav_hokuyo_laser/rear/scan");
+    void useFrontLaser();
+    void useRearLaser();
 
 // The 'private' section is where we define the private members of the class.
 // These members are not accessible from outside the class, ensuring encapsulation.
@@ -135,6 +135,11 @@ private:
         ** - `pattern_pose_estimation`: Pointer to the PatternPoseEstimation object for pose estimation.
         ** - `cloud_pcl`: Point cloud for the laser scan.
         ** - `cloud_normals`: Point cloud with normals for the laser scan.
+        ** - `laser_sub_counter_`: Counter to track consecutive failed laser scan processing attempts.
+        ** - `current_laser_is_front_`: Flag to check if the current laser is the front one.
+        ** - `laser_switch_timer_`: Timer to periodically check and switch the laser if necessary.
+        ** - `front_laser_topic_`: Topic name for the front laser scan.
+        ** - `rear_laser_topic_`: Topic name for the rear laser scan.
 
         FYI: The trailing underscore in variable names is a common convention in C++ to indicate that the variable is a member of a class.
     */
@@ -158,6 +163,8 @@ private:
     int laser_sub_counter_ = 0;
     bool current_laser_is_front_ = true; // Flag to check if the current laser is the front one.
     rclcpp::TimerBase::SharedPtr laser_switch_timer_;
+    std::string front_laser_topic_;
+    std::string rear_laser_topic_;
 };
 
 #endif // DOCK_POSE_ESTIMATOR_ROS2_HPP_

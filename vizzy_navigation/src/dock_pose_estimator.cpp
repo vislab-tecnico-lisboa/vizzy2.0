@@ -103,6 +103,8 @@ void DockPoseEstimator::declareAndGetParameters()
     this->declare_parameter<double>("discretization_step", 0.01);
     this->declare_parameter<double>("distance_threshold", 2.0);
     this->declare_parameter<std::string>("model_file", "file");
+    this->declare_parameter<std::string>("front_laser_topic", "/nav_hokuyo_laser/front/scan");
+    this->declare_parameter<std::string>("rear_laser_topic", "/nav_hokuyo_laser/rear/scan");
 
     // Get the current active parameter values.
     double tran_thresh = this->get_parameter("tran_thresh").as_double();
@@ -111,6 +113,8 @@ void DockPoseEstimator::declareAndGetParameters()
     double discretization_step = this->get_parameter("discretization_step").as_double();
     double distance_threshold = this->get_parameter("distance_threshold").as_double();
     std::string model_file = this->get_parameter("model_file").as_string();
+    front_laser_topic_ = this->get_parameter("front_laser_topic").as_string();
+    rear_laser_topic_ = this->get_parameter("rear_laser_topic").as_string();
 
     // Log the parameters for debugging.
     //RCLCPP_INFO(this->get_logger(), "tran_thresh: %f", tran_thresh);
@@ -128,22 +132,22 @@ void DockPoseEstimator::declareAndGetParameters()
 
 // This method switches the laser subscription to the front laser topic.
 // It resets the existing subscription and creates a new one for the specified topic.
-void DockPoseEstimator::useFrontLaser(std::string laser_topic_front)
+void DockPoseEstimator::useFrontLaser()
 {
     // Resetting the smart pointer effectively shuts down the old subscription.
     laser_sub_.reset();
     laser_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-        laser_topic_front, 10, std::bind(&DockPoseEstimator::laserCallback, this, std::placeholders::_1));
+        front_laser_topic_, 10, std::bind(&DockPoseEstimator::laserCallback, this, std::placeholders::_1));
 }
 
 // This method switches the laser subscription to the rear laser topic.
 // Similar to the front laser, it resets the existing subscription and creates a new one for the specified topic.
-void DockPoseEstimator::useRearLaser(std::string laser_topic_rear)
+void DockPoseEstimator::useRearLaser()
 {
     // Resetting the smart pointer effectively shuts down the old subscription.
     laser_sub_.reset();
     laser_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-        laser_topic_rear, 10, std::bind(&DockPoseEstimator::laserCallback, this, std::placeholders::_1));
+        rear_laser_topic_, 10, std::bind(&DockPoseEstimator::laserCallback, this, std::placeholders::_1));
 }
 
 // This method checks the laser subscription counter and switches the laser if necessary.
