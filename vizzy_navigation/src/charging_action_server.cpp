@@ -56,6 +56,7 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
 
                 // Call the docking action server.
                 auto dock_goal = opennav_docking_msgs::action::DockRobot::Goal();
+                dock_goal.dock_id = "dock_1"; 
                 auto send_goal_options = rclcpp_action::Client<opennav_docking_msgs::action::DockRobot>::SendGoalOptions();
                 send_goal_options.result_callback =
                     [this, goal_handle, result](const auto & dock_result)
@@ -102,12 +103,38 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
     {
         RCLCPP_INFO(this->get_logger(), "Received new goal: Stop Charge! \n Leaving docking station!"); // Log message.
 
-        nav2_msgs::action::NavigateToPose::Goal nav2_goal; // Create a new NavigateToPose goal.
-        nav2_goal.pose.header.frame_id = "base_link";  // Set the frame_id to the robot's base frame, just how Nav2 expects.
-        nav2_goal.pose.header.stamp = rclcpp::Time(0); // Set the current time as the goal timestamp.
-        nav2_goal.pose.pose.position.x = 1.0;          // Move 1 meter forward
-        nav2_goal.pose.pose.orientation.w = 1.0;       // Set the orientation to a neutral quaternion (no rotation).
+        geometry_msgs::msg::PoseStamped forward_pose; // Create a new NavigateToPose goal.
+        forward_pose.header.frame_id = "base_footprint";  // Set the frame_id to the robot's base frame, just how Nav2 expects.
+        forward_pose.header.stamp = rclcpp::Time(0); // Set the current time as the goal timestamp.
 
+        // To move away from the docking station, we will move 1 meter forward in the robot's base frame from 
+        // its current position.
+        // To do this, we first define a relative pose 1 meter ahead in the "base_footprint" frame.
+        forward_pose.pose.position.x = 1.0;          // Move 1 meter forward
+        forward_pose.pose.orientation.w = 1.0;       // Set the orientation to a neutral quaternion (no rotation).
+
+        // We now transform this relative pose into a static goal in the "odom" frame.
+        // We do this so the robot does not keep "chasing its own tail".
+        geometry_msgs::msg::PoseStamped nav2_goal_pose;
+        try
+        {
+            // Transform the forward pose from the "base_footprint" frame to the "odometry" frame.
+            // This provides a fixed goal in the "odometry" frame, which Nav2 can then use to navigate.
+            // TODO: Make the frame id a parameter.
+            nav2_goal_pose = tf_buffer_->transform(forward_pose, "odometry");
+        }
+        catch (const tf2::TransformException & ex)
+        {
+            RCLCPP_ERROR(this->get_logger(), "Could not transform from base_footprint to odom: %s", ex.what());
+            result->result = result->STOPPED_FAILED;
+            goal_handle->abort(result);
+            return;
+        }
+
+        // Create the NavigateToPose goal message to send to the Nav2 action server.
+        nav2_msgs::action::NavigateToPose::Goal nav2_goal;
+        nav2_goal.pose = nav2_goal_pose;
+        
         // Define the send goal options for the Nav2 action client.
         auto send_goal_options = rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
         // Send the pose goal to the Nav2 action server.
@@ -125,6 +152,14 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
                 charging_state_client_->async_send_request( request,
                     [this, goal_handle, result](rclcpp::Client<vizzy_msgs::srv::BatteryChargingState>::SharedFuture response)
                     {
+                        // If this is running in the simulation, set the battery state to NOT_CHARGING (0) manually.
+                        // In a real robot, this would be handled by the robot's hardware and charging system.
+                        if (is_simulation_)
+                        {
+                            RCLCPP_WARN(this->get_logger(), "Simulation mode: Forcing battery state to NOT_CHARGING after 1 meter advance.");
+                            response.get()->battery_charging_state = 0; // Force NOT_CHARGING state in simulation.
+                        }
+
                         // Check if the robot is not charging (NOT_CHARGING state is set to 0).
                         if (!response.get()->battery_charging_state)
                         {
@@ -183,6 +218,14 @@ ChargingActionServer::ChargingActionServer(const rclcpp::NodeOptions & options) 
         this,
         "dock"
     );
+
+    // Declare the parameter with a default value
+    this->declare_parameter<bool>("is_simulation", true);
+
+    // Get the parameter's value and STORE IT in the member variable
+    is_simulation_ = this->get_parameter("is_simulation").as_bool();
+    
+    RCLCPP_INFO(this->get_logger(), "is_simulation set to: %s", is_simulation_ ? "true" : "false");
 }
 
 void ChargingActionServer::init_action_server()

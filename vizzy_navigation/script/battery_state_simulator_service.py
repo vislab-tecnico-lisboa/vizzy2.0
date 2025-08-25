@@ -8,9 +8,14 @@ from vizzy_msgs.srv import BatteryChargingState, SetBatteryState
 class BatteryChargingService(Node):
     def __init__(self):
         super().__init__('battery_charging_service')
+
+        self.declare_parameter('initial_battery_state', 0)  # Default to 0 (NOT_CHARGING).
         
-        self.battery_state = BatteryChargingState.Response.UNKNOWN  # Start in UNKNOWN state
-        
+        # Initialize the battery state.
+        initial_state = self.get_parameter('initial_battery_state').get_parameter_value().integer_value
+        self.battery_state = initial_state
+        self.get_logger().info(f"Setting initial battery state to: {self.battery_state}")
+
         # Service 1: Returns the current battery state
         self.get_state_srv = self.create_service(
             BatteryChargingState,

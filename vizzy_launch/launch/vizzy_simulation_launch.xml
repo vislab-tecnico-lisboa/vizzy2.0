@@ -59,6 +59,7 @@
   <arg name="rot_threshold" default="30.0" description="Rotation threshold for the dock pose estimation"/>
   <arg name="fitting_score_threshold" default="0.03" description="Fitting score threshold for the dock pose estimation"/>
   <arg name="distance_threshold" default="2.0" description="Distance threshold for the dock pose estimation"/>
+  <arg name="battery_state" default="0" description="Initial battery state. 0: Not charging, 1: Charging"/>
 
   <!-- Launch gazebo -->
   <include file="$(find-pkg-share vizzy_gazebo)/launch/gazebo_launch.xml">
@@ -167,6 +168,13 @@
       <arg name="fitting_score_threshold" value="$(var fitting_score_threshold)"/>
       <arg name="distance_threshold" value="$(var distance_threshold)"/>
     </include>
+  </group>
+
+  <!-- Launch the battery state simulator script -->
+  <group>
+    <node pkg="vizzy_navigation" exec="battery_state_simulator_service.py" name="battery_charging_service" output="screen">
+        <param name="initial_battery_state" value="$(var battery_state)"/>
+    </node>
   </group>
 
   <!-- Start RViz2 using the new python launcher from vizzy_launch -->

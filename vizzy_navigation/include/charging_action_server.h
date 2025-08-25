@@ -41,6 +41,7 @@ private:
     rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr nav_to_pose_client_;
     rclcpp_action::Client<opennav_docking_msgs::action::DockRobot>::SharedPtr dock_client_;
 
+    bool is_simulation_; // Parameter to indicate if the action server is running in a simulation or on a real robot.
 
     // TF2 members
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;

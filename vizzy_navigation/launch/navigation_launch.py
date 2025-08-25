@@ -744,9 +744,9 @@ def generate_launch_description():
                 respawn_delay=2.0,
                 parameters=[configured_params],
                 arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings,
+                remappings=remappings,),
                 # Uncomment the next line to debug the node with GDB.
-                prefix=['xterm -e gdb -ex run --args']),
+                #prefix=['xterm -e gdb -ex run --args']),
             
             Node(
                 package='nav2_lifecycle_manager',
@@ -767,7 +767,7 @@ def generate_launch_description():
                 executable='charging_action_server_node',
                 name='charging_action_server_node',
                 output='screen',
-                parameters=[{}],
+                parameters=[{'is_simulation': use_sim_time}],
                 # Uncomment the next line to debug the node with GDB.
                 prefix=['xterm -e gdb -ex run --args']),
         ]
