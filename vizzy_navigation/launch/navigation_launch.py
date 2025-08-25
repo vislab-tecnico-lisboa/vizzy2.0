@@ -572,6 +572,11 @@ def generate_launch_description():
         default_value='2.0',
         description='Distance threshold for the dock pose estimation.'
     )
+    use_battery_state_simulation_arg = DeclareLaunchArgument(
+        'use_battery_state_simulation',
+        default_value='true',
+        description='Whether to use the battery state simulation node.'
+    )
 
 
     # --- Launch Configurations ---
@@ -586,6 +591,7 @@ def generate_launch_description():
     rot_threshold = LaunchConfiguration('rot_threshold')
     fitting_score_threshold = LaunchConfiguration('fitting_score_threshold')
     distance_threshold = LaunchConfiguration('distance_threshold')
+    use_battery_state_simulation = LaunchConfiguration('use_battery_state_simulation')
 
     package_name = 'vizzy_navigation' 
 
@@ -767,7 +773,7 @@ def generate_launch_description():
                 executable='charging_action_server_node',
                 name='charging_action_server_node',
                 output='screen',
-                parameters=[{'is_simulation': use_sim_time}],
+                parameters=[{'is_simulation': use_battery_state_simulation}],
                 # Uncomment the next line to debug the node with GDB.
                 prefix=['xterm -e gdb -ex run --args']),
         ]
@@ -827,6 +833,7 @@ def generate_launch_description():
         rot_threshold_arg,
         fitting_score_threshold_arg,
         distance_threshold_arg,
+        use_battery_state_simulation_arg,
 
         # Actions
         log_sim_time_action,
