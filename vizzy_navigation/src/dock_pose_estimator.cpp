@@ -86,7 +86,7 @@ DockPoseEstimator::DockPoseEstimator(const rclcpp::NodeOptions & options)
         std::bind(&DockPoseEstimator::checkAndSwitchLaser, this));
 
     // Log a message indicating that the DockPoseEstimator node has been initialized.
-    RCLCPP_INFO(this->get_logger(), "Dock Pose Estimator node has been initialized.");
+    //RCLCPP_INFO(this->get_logger(), "Dock Pose Estimator node has been initialized.");
 }
 
 // Declares and loads the necessary parameters from the ROS2 node and 
@@ -113,11 +113,11 @@ void DockPoseEstimator::declareAndGetParameters()
     std::string model_file = this->get_parameter("model_file").as_string();
 
     // Log the parameters for debugging.
-    RCLCPP_INFO(this->get_logger(), "tran_thresh: %f", tran_thresh);
-    RCLCPP_INFO(this->get_logger(), "rot_thresh: %f", rot_thresh);
-    RCLCPP_INFO(this->get_logger(), "fitting_score_thresh: %f", fitting_score_thresh);
-    RCLCPP_INFO(this->get_logger(), "discretization_step: %f", discretization_step);
-    RCLCPP_INFO(this->get_logger(), "distance_threshold: %f", distance_threshold);
+    //RCLCPP_INFO(this->get_logger(), "tran_thresh: %f", tran_thresh);
+    //RCLCPP_INFO(this->get_logger(), "rot_thresh: %f", rot_thresh);
+    //RCLCPP_INFO(this->get_logger(), "fitting_score_thresh: %f", fitting_score_thresh);
+    //RCLCPP_INFO(this->get_logger(), "discretization_step: %f", discretization_step);
+    //RCLCPP_INFO(this->get_logger(), "distance_threshold: %f", distance_threshold);
 
     // Initialize the Point Pair Feature (PPF) registration model with the loaded parameters.
     // Provide the shared pointer to the private member `pattern_pose_estimation_`.
@@ -158,11 +158,11 @@ void DockPoseEstimator::checkAndSwitchLaser()
     // However, a 2 second interval is still a good compromise to ensure responsiveness.
     if (laser_sub_counter_ > 30) {
         if (!current_laser_is_front_) {
-            RCLCPP_INFO(this->get_logger(), "Switching to front laser.");
+            //RCLCPP_INFO(this->get_logger(), "Switching to front laser.");
             this->useFrontLaser();
             current_laser_is_front_ = true;
         } else {
-            RCLCPP_INFO(this->get_logger(), "Switching to rear laser.");
+            //RCLCPP_INFO(this->get_logger(), "Switching to rear laser.");
             this->useRearLaser();
             current_laser_is_front_ = false;
         }
@@ -174,7 +174,7 @@ void DockPoseEstimator::checkAndSwitchLaser()
 void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::LaserScan> scan)
 {
 
-    RCLCPP_INFO(this->get_logger(), "Processing laser scan data...");
+    //RCLCPP_INFO(this->get_logger(), "Processing laser scan data...");
 
     // If the estimator is not enabled, do nothing.
     if (!enabled_) return;
@@ -197,12 +197,12 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     scene_cloud_pub_->publish(cloud_msg);
 
     if (!cloud_normals_) {
-        RCLCPP_INFO(this->get_logger(), "getPointNormal() returned a null pointer. No valid points found.");
+        //RCLCPP_INFO(this->get_logger(), "getPointNormal() returned a null pointer. No valid points found.");
         laser_sub_counter_++; // Increment the counter on failure.
         return;
     }
 
-    RCLCPP_INFO(this->get_logger(), "Point cloud with normals has been created.");
+    //RCLCPP_INFO(this->get_logger(), "Point cloud with normals has been created.");
 
     // Compute the transform using PPF.
     Eigen::Affine3d transformNN;
@@ -210,20 +210,20 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
         transformNN = pattern_pose_estimation_->detect(cloud_normals_);
         laser_sub_counter_ = 0; // Reset on success.
     } catch (const std::exception &e) {
-        RCLCPP_INFO(this->get_logger(), "No dock found in the current scan.");
+        //RCLCPP_INFO(this->get_logger(), "No dock found in the current scan.");
         laser_sub_counter_++; // Increment the counter on failure.
         return;
     }
 
-    RCLCPP_INFO(this->get_logger(), "Transform computed successfully.");
+    //RCLCPP_INFO(this->get_logger(), "Transform computed successfully.");
 
     // Extract pose from transform.
     Eigen::Matrix3d rotation = transformNN.rotation();
     Eigen::Vector3d translation = transformNN.translation();
     Eigen::Vector3d ea = rotation.eulerAngles(2, 1, 0); // ZYX yaw, pitch, roll
 
-    RCLCPP_INFO(this->get_logger(), "Extracted pose: [x: %f, y: %f, z: %f, yaw: %f]",
-                translation[0], translation[1], translation[2], ea[0]);
+    //RCLCPP_INFO(this->get_logger(), "Extracted pose: [x: %f, y: %f, z: %f, yaw: %f]",
+                //translation[0], translation[1], translation[2], ea[0]);
 
     if (-M_PI * 0.5 > ea[0]) { ea[0] += M_PI; } 
     else if (M_PI * 0.5 < ea[0]) { ea[0] -= M_PI; }
@@ -243,8 +243,8 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     double z_filtered = findMedian(z_filter_);
     double yaw_filtered = findMedian(yaw_filter_);
 
-    RCLCPP_INFO(this->get_logger(), "Filtered pose: [x: %f, y: %f, z: %f, yaw: %f]",
-                x_filtered, y_filtered, z_filtered, yaw_filtered);
+    //RCLCPP_INFO(this->get_logger(), "Filtered pose: [x: %f, y: %f, z: %f, yaw: %f]",
+                //x_filtered, y_filtered, z_filtered, yaw_filtered);
 
     // Reconstruct filtered transform.
     Eigen::Matrix3d m = Eigen::AngleAxisd(yaw_filtered, Eigen::Vector3d::UnitZ()).toRotationMatrix();
@@ -257,8 +257,8 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     dock_pose_.header = scan->header;
     docking_pub_->publish(dock_pose_);
 
-    RCLCPP_INFO(this->get_logger(), "Dock pose published: [x: %f, y: %f, z: %f, yaw: %f]", 
-    x_filtered, y_filtered, z_filtered, yaw_filtered);
+    //RCLCPP_INFO(this->get_logger(), "Dock pose published: [x: %f, y: %f, z: %f, yaw: %f]", 
+    //x_filtered, y_filtered, z_filtered, yaw_filtered);
 
     // TODO: Apply corrective transform for correct visualization of the final model point cloud.
     // For now, it is commented out for resource sparing purposes.
@@ -288,7 +288,7 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     // Publish the ROS 2 message with the model point cloud.
     //model_pub_->publish(output_cloud_msg);
 
-    RCLCPP_INFO(this->get_logger(), "Laser data processed and dock pose published.");
+    //RCLCPP_INFO(this->get_logger(), "Laser data processed and dock pose published.");
 }
 
 // Getter for the dock pose, returns the current estimated docking pose.

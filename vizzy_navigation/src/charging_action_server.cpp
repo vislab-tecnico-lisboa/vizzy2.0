@@ -113,7 +113,7 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
         forward_pose.pose.position.x = 1.0;          // Move 1 meter forward
         forward_pose.pose.orientation.w = 1.0;       // Set the orientation to a neutral quaternion (no rotation).
 
-        // We now transform this relative pose into a static goal in the "odom" frame.
+        // We now transform this relative pose into a static goal in the "odometry" frame.
         // We do this so the robot does not keep "chasing its own tail".
         geometry_msgs::msg::PoseStamped nav2_goal_pose;
         try
@@ -216,7 +216,7 @@ ChargingActionServer::ChargingActionServer(const rclcpp::NodeOptions & options) 
 
     this->dock_client_ = rclcpp_action::create_client<opennav_docking_msgs::action::DockRobot>(
         this,
-        "dock"
+        "dock_robot"
     );
 
     // Declare the parameter with a default value

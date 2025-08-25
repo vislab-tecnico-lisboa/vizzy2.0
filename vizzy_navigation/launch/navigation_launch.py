@@ -731,9 +731,9 @@ def generate_launch_description():
                     'rot_thresh': rot_threshold,
                     'fitting_score_thresh': fitting_score_threshold,
                     'distance_threshold': distance_threshold,
-                }],
+                }],),
                 # Uncomment the next line to debug the node with GDB.
-                prefix=['xterm -e gdb -ex run --args']),
+                #prefix=['xterm -e gdb -ex run --args']),
             
             Node(
                 package='opennav_docking',

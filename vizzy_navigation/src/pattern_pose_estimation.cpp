@@ -28,7 +28,7 @@ PatternPoseEstimation::PatternPoseEstimation(double rot_thresh_, double tran_thr
 pcl::PointCloud<pcl::PointNormal>::Ptr PatternPoseEstimation::getPointNormal(pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud)
 {
     // Log the starting number of points from the raw laser scan.
-    std::cout << "Starting with " << point_cloud->size() << " points from the raw laser scan." << std::endl;
+    //std::cout << "Starting with " << point_cloud->size() << " points from the raw laser scan." << std::endl;
 
     // Clear previous data.
     normals->clear();
@@ -44,7 +44,7 @@ pcl::PointCloud<pcl::PointNormal>::Ptr PatternPoseEstimation::getPointNormal(pcl
     sor.filter(*filtered_cloud);
 
     // Log the number of points after voxel grid filtering.
-    std::cout << "After VoxelGrid filter, " << filtered_cloud->size() << " points remain." << std::endl;
+    //std::cout << "After VoxelGrid filter, " << filtered_cloud->size() << " points remain." << std::endl;
 
     // Estimate 2D Normals.
     pcl::PointCloud<pcl::Normal>::Ptr estimated_normals(new pcl::PointCloud<pcl::Normal>());
@@ -85,7 +85,7 @@ pcl::PointCloud<pcl::PointNormal>::Ptr PatternPoseEstimation::getPointNormal(pcl
     }
 
     // Log the number of points after normal estimation.
-    std::cout << "After normal estimation, " << point_cloud_->size() << " valid points were found." << std::endl;
+    //std::cout << "After normal estimation, " << point_cloud_->size() << " valid points were found." << std::endl;
 
     // Filter points based on distance from origin.
     pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_points_by_dist(new pcl::PointCloud<pcl::PointXYZ>());
@@ -101,12 +101,12 @@ pcl::PointCloud<pcl::PointNormal>::Ptr PatternPoseEstimation::getPointNormal(pcl
     }
 
     // Log the number of points after distance filtering.
-    std::cout << "After distance filter, " << filtered_points_by_dist->size() << " points remain." << std::endl;
+    //std::cout << "After distance filter, " << filtered_points_by_dist->size() << " points remain." << std::endl;
     
     // Check if we have a valid point cloud and normals.
     if (filtered_points_by_dist->empty() || filtered_normals_by_dist->empty())
     {
-        std::cerr << "No valid points found after filtering." << std::endl;
+        //std::cerr << "No valid points found after filtering." << std::endl;
         return nullptr; // Return a null pointer if no valid points are found.
     }
 
@@ -115,19 +115,19 @@ pcl::PointCloud<pcl::PointNormal>::Ptr PatternPoseEstimation::getPointNormal(pcl
     pcl::concatenateFields(*filtered_points_by_dist, *filtered_normals_by_dist, *cloud_normals);
 
     // Log the final number of points.
-    std::cout << "Final output point cloud has " << cloud_normals->size() << " points." << std::endl;
+    //std::cout << "Final output point cloud has " << cloud_normals->size() << " points." << std::endl;
 
     return cloud_normals;
 }
 
 void PatternPoseEstimation::loadModelFromMesh(std::string file_name)
 {
-    std::cerr << "[DEBUG] Now entering loadModelFromMesh() function." << std::endl;
+    //std::cerr << "[DEBUG] Now entering loadModelFromMesh() function." << std::endl;
 
     pcl::PolygonMesh mesh;
     if (pcl::io::loadPolygonFileSTL(file_name, mesh) == -1)
     {
-        std::cerr << "ERROR: Could not read mesh file: " << file_name << std::endl;
+        //std::cerr << "ERROR: Could not read mesh file: " << file_name << std::endl;
         return;
     }
 
@@ -138,7 +138,7 @@ void PatternPoseEstimation::loadModelFromMesh(std::string file_name)
     pcl::PointCloud<pcl::PointNormal>::Ptr model_cloud_with_normals = getPointNormal(verts);
 
     if (!model_cloud_with_normals) {
-        std::cerr << "Error: Model point cloud with normals could not be created." << std::endl;
+        //std::cerr << "Error: Model point cloud with normals could not be created." << std::endl;
         return;
     }
 
@@ -153,12 +153,12 @@ void PatternPoseEstimation::loadModelFromMesh(std::string file_name)
     
     dense_cloud_models.push_back(model_cloud_with_normals);
     train(dense_cloud_models);
-    std::cerr << "[DEBUG] Exiting loadModelFromMesh() function." << std::endl;
+    //std::cerr << "[DEBUG] Exiting loadModelFromMesh() function." << std::endl;
 }
 
 int PatternPoseEstimation::train(std::vector<pcl::PointCloud<pcl::PointNormal>::Ptr> cloud_models_with_normals_)
 {
-	std::cerr << "[DEBUG] Now entering train() function." << std::endl;
+	//std::cerr << "[DEBUG] Now entering train() function." << std::endl;
 	for (size_t model_i = 0; model_i < cloud_models_with_normals_.size (); ++model_i)
 	{
 		cloud_models_with_normals.push_back (cloud_models_with_normals_[model_i]);
@@ -174,7 +174,7 @@ int PatternPoseEstimation::train(std::vector<pcl::PointCloud<pcl::PointNormal>::
 		hashmap_search->setInputFeatureCloud (cloud_model_ppf);
 		hashmap_search_vector.push_back (hashmap_search);
 	}
-	std::cerr << "[DEBUG] Exiting train() function." << std::endl;
+	//std::cerr << "[DEBUG] Exiting train() function." << std::endl;
 	return 0;
 }	
 
@@ -182,16 +182,16 @@ Eigen::Affine3d PatternPoseEstimation::detect(pcl::PointCloud<pcl::PointNormal>:
 {
 
 	// Block for debugging purposes.
-	std::cerr << "[DEBUG] Now entering detect() function." << std::endl;
+	//std::cerr << "[DEBUG] Now entering detect() function." << std::endl;
     if (cloud_models_with_normals.empty()) {
-        std::cerr << "[ERROR] FATAL: No models were trained! The model vector is empty." << std::endl;
+        //std::cerr << "[ERROR] FATAL: No models were trained! The model vector is empty." << std::endl;
         throw std::runtime_error("No models available for detection.");
     } else {
-        std::cerr << "[INFO] Number of trained models: " << cloud_models_with_normals.size() << std::endl;
+        //std::cerr << "[INFO] Number of trained models: " << cloud_models_with_normals.size() << std::endl;
         if (cloud_models_with_normals[0]) {
-            std::cerr << "[INFO] Model 0 has " << cloud_models_with_normals[0]->points.size() << " points." << std::endl;
+            //std::cerr << "[INFO] Model 0 has " << cloud_models_with_normals[0]->points.size() << " points." << std::endl;
         } else {
-            std::cerr << "[ERROR] FATAL: Model 0 is a null pointer!" << std::endl;
+            //std::cerr << "[ERROR] FATAL: Model 0 is a null pointer!" << std::endl;
             throw std::runtime_error("Trained model is null.");
         }
     }
@@ -204,7 +204,7 @@ Eigen::Affine3d PatternPoseEstimation::detect(pcl::PointCloud<pcl::PointNormal>:
 		{
 			if (!cloud_models_with_normals[model_i] || cloud_models_with_normals[model_i]->empty())
             {
-                std::cerr << "[ERROR] Model cloud at index " << model_i << " is null or empty! Check if the model file was loaded correctly." << std::endl;
+                //std::cerr << "[ERROR] Model cloud at index " << model_i << " is null or empty! Check if the model file was loaded correctly." << std::endl;
                 throw std::runtime_error("Invalid model cloud provided to detect()");
             }
 
@@ -222,7 +222,7 @@ Eigen::Affine3d PatternPoseEstimation::detect(pcl::PointCloud<pcl::PointNormal>:
 
 			if (cloud_output_subsampled->empty())
 			{
-				std::cerr << "[WARN] PPF alignment failed to produce a result for this model. Skipping." << std::endl;
+				//std::cerr << "[WARN] PPF alignment failed to produce a result for this model. Skipping." << std::endl;
 				continue;
 			}
 			
@@ -261,12 +261,12 @@ Eigen::Matrix4f PatternPoseEstimation::refine(pcl::PointCloud<pcl::PointNormal>:
 
 	if(icp.getFitnessScore()>fitting_score_thresh)
 	{
-		//std::cout << "icp did not converge" << std::endl;
+		////std::cout << "icp did not converge" << std::endl;
 		throw std::runtime_error("icp did not converge");
 	}
 	else
 	{
-		//std::cout << "icp converged: "<< icp.getFitnessScore() << std::endl;		
+		////std::cout << "icp converged: "<< icp.getFitnessScore() << std::endl;		
 	}
 	
 	return icp.getFinalTransformation();

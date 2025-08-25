@@ -660,8 +660,8 @@ docking_server:
     undock_linear_tolerance: 0.05
     undock_angular_tolerance: 0.1
     max_retries: 3
-    base_frame: "base_link"
-    fixed_frame: "odom"
+    base_frame: "base_footprint"
+    fixed_frame: "odometry"
     odom_topic: "odom"
     dock_prestaging_tolerance: 0.5
     introspection_mode: "disabled"
@@ -676,21 +676,21 @@ docking_server:
 
     vizzy_isr_dock:
       plugin: 'opennav_docking::SimpleChargingDock'
-      docking_threshold: 0.05
+      docking_threshold: 0.01
       staging_x_offset: -0.7
       use_external_detection_pose: true
       use_battery_status: false
       use_stall_detection: false
       rotate_to_dock: false
 
-      external_detection_timeout: 1.0
-      external_detection_translation_x: -0.18
+      external_detection_timeout: 5.0
+      external_detection_translation_x: 0.0
       external_detection_translation_y: 0.0
       external_detection_rotation_roll: -1.57
-      external_detection_rotation_pitch: -1.57
+      external_detection_rotation_pitch: 0.0
       external_detection_rotation_yaw: 0.0
       filter_coef: 0.1
-      dock_direction: "forward"
+      dock_direction: "backward"
 
     controller:
       k_phi: 3.0
