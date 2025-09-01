@@ -11,6 +11,7 @@
 #include <vizzy_msgs/action/charge.hpp>
 #include <nav2_msgs/action/navigate_to_pose.hpp>
 #include <opennav_docking_msgs/action/dock_robot.hpp>
+#include "ament_index_cpp/get_package_share_directory.hpp"
 
 /***************************************************************************************************************************************************
 * Function: goalCallback                                                                                            						   	   *
@@ -27,10 +28,10 @@
 
 void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::ServerGoalHandle<vizzy_msgs::action::Charge>> goal_handle)
 {
-    auto goal = goal_handle->get_goal(); // Get the new goal from the action client, previously accepted by the action server.
-    auto result = std::make_shared<vizzy_msgs::action::Charge::Result>(); // Create a result message object to send the final result of the action to the action client.    
+    auto goal = goal_handle->get_goal();
+    auto result = std::make_shared<vizzy_msgs::action::Charge::Result>();
 
-    //! --- Goal 1: Handling the 'CHARGE' Goal ---
+    //! --- Goal 1: Handling the 'CHARGE' Goal (Updated Logic) ---
 
     if (goal->goal == vizzy_msgs::action::Charge::Goal::CHARGE)
     {
@@ -43,7 +44,6 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
         {
             if (response.get()->battery_charging_state)
             {
-                // The robot is already charging, so the goal is complete.
                 RCLCPP_INFO(this->get_logger(), "SUCCESS! Robot is already at the dock and charging.");
                 result->result = result->CHARGE_SUCCESS;
                 goal_handle->succeed(result);
@@ -51,27 +51,52 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
             }
             else
             {
-                // The robot is NOT charging, so we must initiate the docking procedure with nav2.
-                RCLCPP_INFO(this->get_logger(), "Robot is not charging. Initiating docking sequence...");
+                RCLCPP_INFO(this->get_logger(), "Robot is not charging. Delegating to Docking Mission BT...");
 
-                // Call the docking action server.
-                auto dock_goal = opennav_docking_msgs::action::DockRobot::Goal();
-                dock_goal.dock_id = "dock_1"; 
-                auto send_goal_options = rclcpp_action::Client<opennav_docking_msgs::action::DockRobot>::SendGoalOptions();
+                // Define the staging pose for the mission.
+                // The BT's NavigateToPose action will use this as its 'goal'.
+                geometry_msgs::msg::PoseStamped staging_pose;
+                staging_pose.header.frame_id = "map";
+                staging_pose.header.stamp = this->get_clock()->now();
+                // TODO: For now we just assume the staging pose is at (-1, 0) in the map frame, 
+                // TODO: and the dock is at (0,0). This should be made a parameter.
+                staging_pose.pose.position.x = -1.0;
+                staging_pose.pose.orientation.w = 1.0;
+
+                // Create a NavigateToPose goal.
+                auto nav_goal = nav2_msgs::action::NavigateToPose::Goal();
+                nav_goal.pose = staging_pose;
+
+                // Get the absolute path to the package's installed share directory.
+                std::string pkg_share_path = ament_index_cpp::get_package_share_directory("vizzy_navigation");
+
+                // Construct the full, absolute path to the BT file.
+                std::string bt_xml_path = pkg_share_path + "/behavior_trees/custom_docking_bt_nav2.xml";
+                
+                // Use the fully resolved path in the action goal.
+                nav_goal.behavior_tree = bt_xml_path;
+                RCLCPP_INFO(this->get_logger(), "Using BT file: %s", bt_xml_path.c_str());
+
+                // Send the goal and handle the result of the entire mission.
+
+                // * Because we defined the BT in the action goal, when we call NavigateToPose, the bt navigator
+                // * will override the default behavior tree with this one, enabling the custom docking behavior.
+
+                auto send_goal_options = rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions();
                 send_goal_options.result_callback =
-                    [this, goal_handle, result](const auto & dock_result)
+                    [this, goal_handle, result](const auto & nav_result)
                 {
-                    if (dock_result.code != rclcpp_action::ResultCode::SUCCEEDED)
+                    // This callback runs after the ENTIRE docking BT is finished.
+                    if (nav_result.code != rclcpp_action::ResultCode::SUCCEEDED)
                     {
-                        RCLCPP_ERROR(this->get_logger(), "Docking failed!");
+                        RCLCPP_ERROR(this->get_logger(), "Docking Mission failed!");
                         result->result = result->CHARGE_FAILED;
                         goal_handle->abort(result);
                         return;
                     }
 
-                    RCLCPP_INFO(this->get_logger(), "Docking sequence completed. Verifying charging status...");
-
-                    // Verify that the robot is now charging.
+                    // The BT succeeded, now we do the final verification.
+                    RCLCPP_INFO(this->get_logger(), "Docking Mission completed. Verifying charging status...");
                     auto final_request = std::make_shared<vizzy_msgs::srv::BatteryChargingState::Request>();
                     charging_state_client_->async_send_request(final_request,
                         [this, goal_handle, result](rclcpp::Client<vizzy_msgs::srv::BatteryChargingState>::SharedFuture final_response)
@@ -84,14 +109,16 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
                             }
                             else
                             {
-                                RCLCPP_ERROR(this->get_logger(), "FAILURE! Docking seemed to have succeeded, but robot is not charging.");
+                                RCLCPP_ERROR(this->get_logger(), "FAILURE! Docking Mission succeeded, but robot is not charging.");
                                 result->result = result->CHARGE_FAILED;
                                 goal_handle->abort(result);
                             }
                         });
                 };
+
+                RCLCPP_INFO(this->get_logger(), "Sending docking mission goal to Nav2...");
                 
-                this->dock_client_->async_send_goal(dock_goal, send_goal_options);
+                this->nav_to_pose_client_->async_send_goal(nav_goal, send_goal_options);
             }
         });
     }

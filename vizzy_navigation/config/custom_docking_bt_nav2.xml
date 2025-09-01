@@ -1,24 +1,23 @@
 <!--
-  This Behavior Tree replans the global path periodically at GLOBAL_PLANNER_FREQUENCY Hz and it also has
-  recovery actions specific to planning / control as well as general system issues.
-  This will be continuous if a kinematically valid planner is selected.
+  This Behavior Tree is designed to perform a complete docking mission using Nav2's Docking Server.
 
-  * There are placeholders for the following parameters:
-    - PLANNER_PLACEHOLDER: The ID of the global planner to use.
-    - GLOBAL_PLANNER_FREQUENCY: The frequency at which the global planner will be called.
-  
-  These placeholders will be replaced with the actual values when the navigation launch is executed.
+  It consists of the following steps:
+    1. Navigate to a predefined staging pose near the docking station using the NavigateToPose action.
+    2. Activate the dock_pose_estimator_node to start estimating the dock's pose using laser scan data.
+    3. Execute the docking maneuver using the DockRobot action, which utilizes the estimated dock pose.
+    4. Deactivate the dock_pose_estimator_node after the docking maneuver is complete to conserve resources.    
+    The BT ensures that the dock_pose_estimator_node is only active during the docking procedure, optimizing resource usage.
 
-  This Behaviour Tree is designed to be used with the Vizzy Navigation stack and has a dynamic controller selection functionality based on the path cost.
-  It will select between two controllers: `mppi_controller_narrow` and `mppi_controller_wide` based on the cost of the path computed by the `CheckPathCost` node.
-  The controller selection is done in a loop with a rate of 1 Hz, allowing for dynamic adjustments based on the path cost at runtime.
+  The automatic navigation to the staging pose handled by the docking server is not used due to the need
+  for the integration of the dock_pose_estimator_node activation and deactivation within the docking process.
 
-  * The main objective of this BT is to ensure optimal performance in different navigation environments.
+  * The main objective of this BT is to ensure a seamless and efficient docking procedure by using as few
+  * resources as possible.
 -->
-<root main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree">
+<root main_tree_to_execute="DockingMission">
+  <BehaviorTree ID="DockingMission">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
-      <PipelineSequence name="NavigateWithReplanning">
+      <PipelineSequence name="DockingSequence">
         <SetBlackboard output_key="selected_controller" value="mppi_controller_wide" />   
         <RateController hz="GLOBAL_PLANNER_FREQUENCY">
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
@@ -47,6 +46,10 @@
 
                The failure_threshold is set to 2, meaning that FAILURE is only returned if the goal is not reached 
                (GoalReached node fails) and the FollowPath node fails as well.
+
+               This is explained as well in the default custom_docking_bt_plugin.xml file in this package.
+               The difference in with this implementation is that it is only used during the docking procedure,
+               (overriding the default one used by the bt_navigator in the event of a docking mission).
            -->
 
           <Parallel success_threshold="1" failure_threshold="2">
@@ -72,6 +75,16 @@
           </Parallel>
           <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
+
+        <!-- Activate the dock pose estimator node only in the staging pose. This will save unecessary resources. -->
+        <ManageLifecycleNodes transition="activate" node="{node}"/>
+
+        <!-- Once in the staging pose and the dock pose estimator is active, we can dock the robot. -->
+        <DockRobot dock_id="dock_1" navigate_to_staging_pose="false"/>
+
+        <!-- Deactivate the dock pose estimator node after docking is complete. -->
+        <ManageLifecycleNodes transition="deactivate" node="{node}"/>
+
       </PipelineSequence>
       <ReactiveFallback name="RecoveryFallback">
         <GoalUpdated/>

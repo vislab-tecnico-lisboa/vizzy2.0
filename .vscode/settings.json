@@ -72,7 +72,11 @@
         "cinttypes": "cpp",
         "typeindex": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "any": "cpp",
+        "charconv": "cpp",
+        "ranges": "cpp",
+        "valarray": "cpp"
     },
     "cmake.sourceDirectory": "/home/joao_pl/Documents/ISR/vizzy2_ws/src/vizzy2/vizzy_description"
 }

@@ -33,7 +33,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, LogInfo, OpaqueFunction
 from launch.launch_context import LaunchContext
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node, PushRosNamespace
+from launch_ros.actions import Node, PushRosNamespace, LifecycleNode
 from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import RewrittenYaml
 
@@ -45,16 +45,11 @@ def Parse_Pose_Str(context):
     return pose_args
 
 # --- Opaque Function to save rewritten BT XML ---
-def save_rewritten_bt_xml(context: LaunchContext, output_file_path: str = None):
+def save_rewritten_bt_xml(context: LaunchContext, template_file_path: str, output_file_path: str = None):
     """
     OpaqueFunction to substitute the controller_id in a BT XML template
     and save the result to a file.
     """
-    # Get the package share directory.
-    pkg_dir = get_package_share_directory('vizzy_navigation')
-    
-    # Define the path to your template BT XML file.
-    template_file_path = os.path.join(pkg_dir, 'config', 'custom_navigate_to_pose_bt_navigator_nav2.xml')
 
     # Get the controller plugin choice from the launch argument.
     controller_plugin_type = LaunchConfiguration('controller_plugin_type').perform(context)
@@ -603,10 +598,21 @@ def generate_launch_description():
     output_bt_dir = os.path.join(get_package_share_directory(package_name), 'behavior_trees')
     os.makedirs(output_bt_dir, exist_ok=True)
     output_bt_path = os.path.join(output_bt_dir, 'custom_navigate_to_pose_bt_navigator_nav2.xml')
-    
-    # Add this new action to generate the XML file
+
+    # Get the template file path for the default navigation BT.
+    template_file_path = os.path.join(get_package_share_directory(package_name), 'config', 'custom_navigate_to_pose_bt_navigator_nav2.xml')
+
+    # Add this new action to generate the BT XML file for default navigation.
     save_bt_xml_action = OpaqueFunction(function=save_rewritten_bt_xml,
-                                        args=[output_bt_path])
+                                        args=[template_file_path, output_bt_path])
+    
+    # Get the template file path for the docking mission BT.
+    template_file_path_docking = os.path.join(get_package_share_directory(package_name), 'config', 'custom_docking_bt_nav2.xml')
+
+    # Add this new action to generate the BT XML file for the docking mission.
+    output_bt_path_docking = os.path.join(output_bt_dir, 'custom_docking_bt_nav2.xml')
+    save_bt_xml_action_docking = OpaqueFunction(function=save_rewritten_bt_xml,
+                                                args=[template_file_path_docking, output_bt_path_docking])
 
     # Define the output path within this packages directory.
     output_dir = os.path.join(install_share_path, 'params')
@@ -727,7 +733,10 @@ def generate_launch_description():
                 parameters=[configured_params], 
                 remappings=remappings),
 
-            Node(
+            # This node needs to be setup as a LifecycleNode for the charging_action_server_node
+            # to be able to manage its lifecycle properly.
+            LifecycleNode(
+                namespace='',
                 package='vizzy_navigation',
                 executable='dock_pose_estimator_node',
                 name='dock_pose_estimator_node',
@@ -739,11 +748,10 @@ def generate_launch_description():
                     'rot_thresh': rot_threshold,
                     'fitting_score_thresh': fitting_score_threshold,
                     'distance_threshold': distance_threshold,
-                    'front_laser_topic': laser_front_topic,
                     'rear_laser_topic': laser_rear_topic,
-                }],
+                }],),
                 # Uncomment the next line to debug the node with GDB.
-                prefix=['xterm -e gdb -ex run --args']),
+                # prefix=['xterm -e gdb -ex run --args']),
             
             Node(
                 package='opennav_docking',
@@ -768,7 +776,7 @@ def generate_launch_description():
                              'autostart': autostart,
                              'node_names': ['map_server', 'amcl', 'planner_server',
                                             'controller_server', 'smoother_server',
-                                            'bt_navigator', 'behavior_server',
+                                            'behavior_server', 'bt_navigator',
                                             'waypoint_follower', 'velocity_smoother',
                                             'docking_server']}],),
 
@@ -777,9 +785,23 @@ def generate_launch_description():
                 executable='charging_action_server_node',
                 name='charging_action_server_node',
                 output='screen',
-                parameters=[{'is_simulation': use_battery_state_simulation}],
+                parameters=[{'is_simulation': use_battery_state_simulation}],),
                 # Uncomment the next line to debug the node with GDB.
-                prefix=['xterm -e gdb -ex run --args']),
+                # prefix=['xterm -e gdb -ex run --args']),
+
+            # A separate Lifecycle manager for the dock_pose_estimator_node
+            # to be able to launch the node without starting it.
+            # (The lifecycle manager above may have autostart as true)
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_docking',
+                output='screen',
+                arguments=['--ros-args', '--log-level', log_level],
+                parameters=[{'use_sim_time': use_sim_time,
+                             'autostart': False,
+                             'node_names': ['dock_pose_estimator_node'], 
+                             'bond_timeout': 0.0}]),
         ]
     )
 
@@ -843,5 +865,6 @@ def generate_launch_description():
         log_sim_time_action,
         save_params_action,
         save_bt_xml_action,
+        save_bt_xml_action_docking,
         load_nodes,
     ])

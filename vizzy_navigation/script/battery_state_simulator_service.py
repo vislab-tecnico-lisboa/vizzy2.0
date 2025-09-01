@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# filepath: /home/zenario/vizzy2_ws/src/vizzy2/vizzy_navigation/script/battery_state_simulator_service.py
 
 import rclpy
 from rclpy.node import Node

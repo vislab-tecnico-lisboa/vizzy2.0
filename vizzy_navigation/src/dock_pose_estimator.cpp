@@ -15,14 +15,12 @@
 *                                          -                                                 *
 * To simplify execution of the code and to integrate with the Nav2 ecoystem, the following   *
 * approach was used to detect the dock pose:                                                 *
-* 1. Whichever laser is used, the algorithm will try to detect the dock pose.                *
-* 2. If the dock pattern is not detected, a counter will be incremented.                     *
-* 3. If the counter reaches a certain threshold (e.g. 30, meaning 30 consecutive scans       *
-* without detection), the algorithm will switch to the other laser. The counter will         *
-* be reset to zero in this event.                                                            *
-* 4. The counter will be reset to zero when a detection is made.                             *
-* This way, the automated switching between the front and rear lasers remain completely      *
-* autonomous and independent from the Nav2 Docking Server.                                   *
+* 1. The dock_pose_estimator_node is implemented as a Lifecycle node, which allows for better*
+* management of its state and resources externally.                                          *
+* 2. When, in due processing, the robot reaches the staging pose during a docking procedure, *
+* the dock_pose_estimator_node is activated by the lifecycle manager.                        *
+* 3. The node then subscribes to the rear laser scan topic and starts processing the data to *
+* estimate and publish the dock pose.                                                        *
 *                                          -                                                 *
 * This docking estimation procedure was redesigned to work with Nav2's Docking Server.       *
 * More details can be found in the documentation:                                            *   
@@ -44,49 +42,10 @@
 // The second member initializes the filter buffer size to 10, 
 // which is used for median filtering of the pose estimates.
 DockPoseEstimator::DockPoseEstimator(const rclcpp::NodeOptions & options)
-
-    /*
-        Member Initializer List:
-        ** - `Node("dock_pose_estimator_node", options)`: Initializes the base class Node.
-        ** - `filter_buffer_size_(10)`: Initializes the filter buffer size to 10.
-    */
-    : Node("dock_pose_estimator_node", options),
+    : rclcpp_lifecycle::LifecycleNode("dock_pose_estimator_node", options),
       filter_buffer_size_(10)
-
-
 {
-    // Create a shared pointer for the TF2 buffer and listener.
-    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-
-    // Create shared pointers for the Point Clouds.
-    cloud_pcl_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    cloud_normals_ = std::make_shared<pcl::PointCloud<pcl::PointNormal>>();
-
-    // Declare and get necessary parameters.
-    this->declareAndGetParameters();
-    
-    // Create ROS2 publishers.
-    // ! The dock pose topic name needs to be named "/detected_dock_pose" to match the Nav2 Docking Server 
-    // ! SimpleChargingDock plugin expectations.
-    docking_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/detected_dock_pose", 10);
-    //model_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/model_point_cloud", 10);
-    scene_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/scene_point_cloud", 10);
-
-    // Create Subscriber.
-    // Start with the front laser by default.
-    this->useRearLaser();
-
-    current_laser_is_front_ = false; // Start with the front laser.
-    laser_sub_counter_ = 0; // Initialize the counter for failed detections.
-
-    // Create a timer that calls checkAndSwitchLaser() every second.
-    laser_switch_timer_ = this->create_wall_timer(
-        std::chrono::seconds(1),
-        std::bind(&DockPoseEstimator::checkAndSwitchLaser, this));
-
-    // Log a message indicating that the DockPoseEstimator node has been initialized.
-    //RCLCPP_INFO(this->get_logger(), "Dock Pose Estimator node has been initialized.");
+    RCLCPP_INFO(this->get_logger(), "Dock Pose Estimator node has been created and is in an 'unconfigured' state.");
 }
 
 // Declares and loads the necessary parameters from the ROS2 node and 
@@ -103,7 +62,6 @@ void DockPoseEstimator::declareAndGetParameters()
     this->declare_parameter<double>("discretization_step", 0.01);
     this->declare_parameter<double>("distance_threshold", 2.0);
     this->declare_parameter<std::string>("model_file", "file");
-    this->declare_parameter<std::string>("front_laser_topic", "/nav_hokuyo_laser/front/scan");
     this->declare_parameter<std::string>("rear_laser_topic", "/nav_hokuyo_laser/rear/scan");
 
     // Get the current active parameter values.
@@ -113,7 +71,6 @@ void DockPoseEstimator::declareAndGetParameters()
     double discretization_step = this->get_parameter("discretization_step").as_double();
     double distance_threshold = this->get_parameter("distance_threshold").as_double();
     std::string model_file = this->get_parameter("model_file").as_string();
-    front_laser_topic_ = this->get_parameter("front_laser_topic").as_string();
     rear_laser_topic_ = this->get_parameter("rear_laser_topic").as_string();
 
     // Log the parameters for debugging.
@@ -130,48 +87,114 @@ void DockPoseEstimator::declareAndGetParameters()
         model_file);
 }
 
-// This method switches the laser subscription to the front laser topic.
-// It resets the existing subscription and creates a new one for the specified topic.
-void DockPoseEstimator::useFrontLaser()
+// --- LIFECYCLE CALLBACKS ---
+
+/**
+ * @brief on_configure: This callback is called when the node transitions from the 'unconfigured' to the 'inactive' state.
+ * All setup that does not require ROS communication should be done here, such as loading parameters,
+ * initializing variables, and creating publishers/services.
+ */
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+DockPoseEstimator::on_configure(const rclcpp_lifecycle::State &)
 {
-    // Resetting the smart pointer effectively shuts down the old subscription.
-    laser_sub_.reset();
-    laser_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-        front_laser_topic_, 10, std::bind(&DockPoseEstimator::laserCallback, this, std::placeholders::_1));
+    RCLCPP_INFO(this->get_logger(), "Configuring Dock Pose Estimator...");
+
+    // Initialize TF2 buffer and listener.
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
+    // Initialize Point Clouds.
+    cloud_pcl_ = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    cloud_normals_ = std::make_shared<pcl::PointCloud<pcl::PointNormal>>();
+
+    // Declare and get necessary parameters.
+    this->declareAndGetParameters();
+    
+    // Create the publishers. They are inactive until the node is activated.
+    docking_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/detected_dock_pose", 10);
+    scene_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/scene_point_cloud", 10);
+    // model_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/model_point_cloud", 10);
+
+    ready_ = true;
+    RCLCPP_INFO(this->get_logger(), "Configuration successful. Node is now 'inactive'.");
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
-// This method switches the laser subscription to the rear laser topic.
-// Similar to the front laser, it resets the existing subscription and creates a new one for the specified topic.
-void DockPoseEstimator::useRearLaser()
+/**
+ * @brief on_activate: This callback is called when the node transitions from 'inactive' to 'active'.
+ * This is where we create subscriptions, timers, and activate publishers to start processing data.
+ */
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+DockPoseEstimator::on_activate(const rclcpp_lifecycle::State &)
 {
-    // Resetting the smart pointer effectively shuts down the old subscription.
-    laser_sub_.reset();
+    RCLCPP_INFO(this->get_logger(), "Activating Dock Pose Estimator...");
+
+    // Activate the publishers to allow them to publish messages.
+    docking_pub_->on_activate();
+    scene_cloud_pub_->on_activate();
+
+    // Create the subscription ONLY to the rear laser. This starts the flow of data.
     laser_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
         rear_laser_topic_, 10, std::bind(&DockPoseEstimator::laserCallback, this, std::placeholders::_1));
+    
+    enabled_ = true;
+
+    RCLCPP_INFO(this->get_logger(), "Activation successful. Subscribed to '%s'. Node is now 'active'.", rear_laser_topic_.c_str());
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
-// This method checks the laser subscription counter and switches the laser if necessary.
-void DockPoseEstimator::checkAndSwitchLaser()
+/**
+ * @brief on_deactivate: This callback is called when the node transitions from 'active' to 'inactive'.
+ * This is where we destroy subscriptions and timers to stop processing data and save resources.
+ */
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+DockPoseEstimator::on_deactivate(const rclcpp_lifecycle::State &)
 {
-    // This function runs separately from the laser callback.
-    // This is important to avoid unsafeties with the subscription management.
-    // Because the laser publishing frequency is around 15Hz, the algorithm will switch lasers
-    // every 2 seconds if no dock is detected.
-    // A higher counter value before switching helps to avoid unnecessary switching
-    // when the dock is not detected for a few scans due to noise or other temporary factors.
-    // However, a 2 second interval is still a good compromise to ensure responsiveness.
-    if (laser_sub_counter_ > 30) {
-        if (!current_laser_is_front_) {
-            //RCLCPP_INFO(this->get_logger(), "Switching to front laser.");
-            this->useFrontLaser();
-            current_laser_is_front_ = true;
-        } else {
-            //RCLCPP_INFO(this->get_logger(), "Switching to rear laser.");
-            this->useRearLaser();
-            current_laser_is_front_ = false;
-        }
-        laser_sub_counter_ = 0; // Reset after switching.
-    }
+    RCLCPP_INFO(this->get_logger(), "Deactivating Dock Pose Estimator...");
+    
+    enabled_ = false;
+
+    // Destroy the subscription to stop receiving laser scans.
+    laser_sub_.reset();
+
+    // Deactivate publishers to prevent them from publishing.
+    docking_pub_->on_deactivate();
+    scene_cloud_pub_->on_deactivate();
+
+    RCLCPP_INFO(this->get_logger(), "Deactivation successful. Node is now 'inactive'.");
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
+/**
+ * @brief on_cleanup: Called when the node transitions from 'inactive' to 'unconfigured'.
+ * This is where we release all resources allocated in on_configure.
+ */
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+DockPoseEstimator::on_cleanup(const rclcpp_lifecycle::State &)
+{
+    RCLCPP_INFO(this->get_logger(), "Cleaning up Dock Pose Estimator...");
+
+    // Release all resources.
+    tf_listener_.reset();
+    tf_buffer_.reset();
+    docking_pub_.reset();
+    scene_cloud_pub_.reset();
+    laser_sub_.reset();
+    pattern_pose_estimation_.reset();
+
+    ready_ = false;
+    RCLCPP_INFO(this->get_logger(), "Cleanup successful. Node is now 'unconfigured'.");
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
+/**
+ * @brief on_shutdown: Called when the node is shutting down.
+ */
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+DockPoseEstimator::on_shutdown(const rclcpp_lifecycle::State &)
+{
+    RCLCPP_INFO(this->get_logger(), "Shutting down Dock Pose Estimator.");
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 // Main callback for processing laser data.
@@ -202,7 +225,6 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
 
     if (!cloud_normals_) {
         RCLCPP_INFO(this->get_logger(), "getPointNormal() returned a null pointer. No valid points found.");
-        laser_sub_counter_++; // Increment the counter on failure.
         return;
     }
 
@@ -212,10 +234,8 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     Eigen::Affine3d transformNN;
     try {
         transformNN = pattern_pose_estimation_->detect(cloud_normals_);
-        laser_sub_counter_ = 0; // Reset on success.
     } catch (const std::exception &e) {
         RCLCPP_INFO(this->get_logger(), "No dock found in the current scan.");
-        laser_sub_counter_++; // Increment the counter on failure.
         return;
     }
 

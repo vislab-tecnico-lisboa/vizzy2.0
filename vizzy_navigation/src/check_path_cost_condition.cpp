@@ -1,3 +1,8 @@
+/* 
+ * Copyright 2025, João Penha Lopes and João Zenário.
+ * All rights reserved.
+ */
+
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
 

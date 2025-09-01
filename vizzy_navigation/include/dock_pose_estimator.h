@@ -1,30 +1,32 @@
-/* 
- * Copyright 2025, Joao Avelino, João Penha Lopes and João Zenário.
+/* * Copyright 2025, Joao Avelino, João Penha Lopes and João Zenário.
  * This code was originaly developped by João Avelino for ROS1 in 2019.
  * It was later refactored for ROS2 in 2025 by João Penha Lopes and João Zenário.
  * All rights reserved.
  */
 
 /*********************************************************************************************
-*                       Dock Pose Estimator Header File for ROS2                             *
-*                                          -                                                 *
+* Dock Pose Estimator Header File for ROS2                                                   *
+* -                                                                                          *
 * This file defines the DockPoseEstimator class, which is responsible for estimating the pose*
 * of a docking pattern using laser scans and PCL (Point Cloud Library). It includes methods  *
 * for subscribing to laser scan data, processing the data to estimate the docking pose, and  *
 * publishing the estimated pose. The class also handles parameter loading and filtering of   *
 * the estimated pose using a median filter.                                                  *
-*                                          -                                                 *
+* -                                                                                          *
 * This docking estimation procedure was redesigned to work with Nav2's Docking Server.       *
-* More details can be found in the documentation:                                            *   
-* https://github.com/open-navigation/opennav_docking/tree/humble                             *                                                     *
+* More details can be found in the documentation:                                            * 
+* https://github.com/open-navigation/opennav_docking/tree/humble                             *
 *********************************************************************************************/
 
 // Include guards to prevent multiple inclusions of this header file.
 #ifndef DOCK_POSE_ESTIMATOR_ROS2_HPP_
 #define DOCK_POSE_ESTIMATOR_ROS2_HPP_
 
-// Include necessary headers for ROS2, PCL, and other dependencies.
-#include "rclcpp/rclcpp.hpp"
+// Include headers for Lifecycle Nodes and Publishers.
+#include "rclcpp_lifecycle/lifecycle_node.hpp" 
+#include "rclcpp_lifecycle/lifecycle_publisher.hpp" 
+
+// Include other necessary headers.
 #include "yaml-cpp/yaml.h"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -38,12 +40,12 @@
 #include <memory>
 #include <string>
 
-// We define the DockPoseEstimator class here.
-// This class inherits from rclcpp::Node, which is the base class for all ROS 2 nodes, thus,    
-// allowing it to utilize ROS 2 functionalities such as publishing and subscribing to topics.
-class DockPoseEstimator : public rclcpp::Node
+// Inherit from rclcpp_lifecycle::LifecycleNode
+// We change the base class from rclcpp::Node to rclcpp_lifecycle::LifecycleNode.
+// This gives our class the state machine (unconfigured, inactive, active, finalized)
+// and the transition callbacks that can be managed externally.
+class DockPoseEstimator : public rclcpp_lifecycle::LifecycleNode
 {
-
 // The 'public' section is where we define the public interface of the class.
 // This section contains the methods that can be called from outside the class,
 // allowing users to interact with the DockPoseEstimator.
@@ -65,18 +67,11 @@ public:
     /*
         * Public API Methods:
         ** - `getPatternPose()`: Returns the estimated pose of the dock pattern.
-        ** - `isReady()`: Checks if the estimator is ready to provide estimates.
-        ** - `enable()`: Enables the estimator to start processing laser scans.
-        ** - `disable()`: Disables the estimator, stopping it from processing scans.
-        ** - `useFrontLaser(std::string laser_topic)`: Subscribes to the front laser scan topic.
-        ** - `useBackLaser(std::string laser_topic)`: Subscribes to the back laser scan topic.
+         The node's state is controlled by the ROS 2 Lifecycle Manager,
+         which makes these manual control functions obsolete and simplifies the class API.
     */
+
     geometry_msgs::msg::PoseStamped getPatternPose();
-    bool isReady() { return ready_; };
-    void enable() { enabled_ = true; };
-    void disable() { enabled_ = false; };
-    void useFrontLaser();
-    void useRearLaser();
 
 // The 'private' section is where we define the private members of the class.
 // These members are not accessible from outside the class, ensuring encapsulation.
@@ -87,22 +82,38 @@ private:
         ** - `declareAndGetParameters()`: Loads parameters from the ROS 2 node.
         ** - `findMedian(std::deque<double> a)`: Computes the median of a deque.
         ** - `laserCallback(const std::shared_ptr<sensor_msgs::msg::LaserScan> scan)`: Callback for processing laser scan data.
-        ** - `checkAndSwitchLaser()`: Checks the laser subscription counter and switches the laser if necessary.
     */
     void declareAndGetParameters();
     double findMedian(std::deque<double> a);
     void laserCallback(const std::shared_ptr<sensor_msgs::msg::LaserScan> scan);
-    void checkAndSwitchLaser();
+
+    // Define Lifecycle Callback Declarations.
+    // These are the callback functions that will be executed when the node transitions
+    // between its different states (e.g., from "unconfigured" to "inactive").
+    /*
+        * Lifecycle Callback Methods:
+        ** - `on_configure()`: Called when configuring the node. Used for parameter loading and one-time setup.
+        ** - `on_activate()`: Called when activating the node. Used to create subscriptions and start processing.
+        ** - `on_deactivate()`: Called when deactivating the node. Used to destroy subscriptions and stop processing.
+        ** - `on_cleanup()`: Called to release resources allocated in on_configure.
+        ** - `on_shutdown()`: Called before the node is destroyed.
+    */
+    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_configure(const rclcpp_lifecycle::State &);
+    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_activate(const rclcpp_lifecycle::State &);
+    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State &);
+    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_cleanup(const rclcpp_lifecycle::State &);
+    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn on_shutdown(const rclcpp_lifecycle::State &);
 
     /*
         * Private Member Variables:
+        Publishers are changed to rclcpp_lifecycle::LifecyclePublisher so their state can be managed.
         ** - `laser_sub_`: Subscription object to the laser topic. Messages are received through here.
-        ** - `docking_pub_`: Publisher object for the estimated docking pose. Messages are published through here.
-        ** - `model_pub_`: Publisher object for the model point cloud. Messages are published through here.
+        ** - `docking_pub_`: LifecyclePublisher for the estimated docking pose.
+        ** - `model_pub_`: LifecyclePublisher for the model point cloud.
         ** - `tf_buffer_`: Buffer for storing TF2 transforms.
         ** - `tf_listener_`: Listener for TF2 transforms.
         ** - `dock_pose_`: PoseStamped message that holds the last estimated pose of the dock pattern.
-        ** - `yaw_filter_`, `x_filter_`, `y_filter_`, `z_filter_`: Four std::deque (double-ended queue) containers. 
+        ** - `yaw_filter_`, `x_filter_`, `y_filter_`, `z_filter_`: Deques for the median filter.
         They act as sliding window buffers for a median filter, smoothing the raw pose estimates over time to produce a more stable output.
 
         Deques:
@@ -129,24 +140,20 @@ private:
 
         For more information on Median Filters, refer to: https://en.wikipedia.org/wiki/Median_filter
 
-        ** - `enabled_`: Flag indicating if the estimator is enabled.
-        ** - `ready_`: Flag indicating if the estimator is ready to provide estimates.
+        ** - `enabled_`: Flag indicating if the estimator is enabled (now controlled by on_activate/on_deactivate).
+        ** - `ready_`: Flag indicating if the estimator is ready to provide estimates (now controlled by on_configure).
         ** - `filter_buffer_size`: Size of the filter buffer for pose estimation.
         ** - `pattern_pose_estimation`: Pointer to the PatternPoseEstimation object for pose estimation.
         ** - `cloud_pcl`: Point cloud for the laser scan.
         ** - `cloud_normals`: Point cloud with normals for the laser scan.
-        ** - `laser_sub_counter_`: Counter to track consecutive failed laser scan processing attempts.
-        ** - `current_laser_is_front_`: Flag to check if the current laser is the front one.
-        ** - `laser_switch_timer_`: Timer to periodically check and switch the laser if necessary.
-        ** - `front_laser_topic_`: Topic name for the front laser scan.
         ** - `rear_laser_topic_`: Topic name for the rear laser scan.
 
         FYI: The trailing underscore in variable names is a common convention in C++ to indicate that the variable is a member of a class.
     */
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr docking_pub_;
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr model_pub_;
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scene_cloud_pub_;
+    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>> docking_pub_;
+    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>> model_pub_;
+    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>> scene_cloud_pub_;
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
     geometry_msgs::msg::PoseStamped dock_pose_;
@@ -160,10 +167,6 @@ private:
     std::shared_ptr<PatternPoseEstimation> pattern_pose_estimation_;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_pcl_;
     pcl::PointCloud<pcl::PointNormal>::Ptr cloud_normals_;
-    int laser_sub_counter_ = 0;
-    bool current_laser_is_front_ = true; // Flag to check if the current laser is the front one.
-    rclcpp::TimerBase::SharedPtr laser_switch_timer_;
-    std::string front_laser_topic_;
     std::string rear_laser_topic_;
 };
 

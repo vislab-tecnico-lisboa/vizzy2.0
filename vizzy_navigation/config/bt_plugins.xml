@@ -3,3 +3,13 @@
     <description>Checks if the path ahead has a high cost.</description>
   </class>
 </library>
+
+<library path="nav2_lifecycle_manager_bt_node">
+  <class name="ManageLifecycleNodes"
+         type="vizzy_navigation::ManageLifecycleNodes"
+         base_class_type="BT::AsyncActionNode">
+    <description>
+      A custom Behavior Tree node to manage the lifecycle states of the specified nodes.
+    </description>
+  </class>
+</library>
