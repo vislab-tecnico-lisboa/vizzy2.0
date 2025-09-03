@@ -1,6 +1,7 @@
-/* * Copyright 2025, João Penha Lopes and João Zenário.
- * All rights reserved.
- */
+ /**
+  * Copyright 2025, João Penha Lopes and João Zenário.
+  * All rights reserved.
+  */
 
 /*********************************************************************************************
 * Manage Lifecycle Nodes BT Action                                                           *
@@ -18,38 +19,12 @@
 #include "docking_lifecycle_state_manager.h" 
 
 namespace vizzy_navigation {
-  /**
-   * @brief ManageLifecycleNodes constructor.
-   * This constructor initializes the AsyncActionNode, sets up the ROS2 node and client,
-   * and starts a separate thread to spin the node.
-   * * @param name The name of the node from the BT XML.
-   * @param config The node configuration from the BT.
-   */
+
   ManageLifecycleNodes::ManageLifecycleNodes(const std::string& name, const BT::NodeConfiguration& config)
-    : BT::AsyncActionNode(name, config) // Initializes the base class, passing the node name and configuration.
-  {
-    // The "node" object is provided by the bt_navigator.
-    getInput<rclcpp::Node::SharedPtr>("node", node_);
-    
-    // Create a ROS2 client for the 'manage_nodes' service. 
-    // This client will be used to send state change requests to the lifecycle manager.
-    client_ = node_->create_client<nav2_msgs::srv::ManageLifecycleNodes>(
-        "/lifecycle_manager_docking/manage_nodes");
-  }
-
-  /**
-   * @brief ManageLifecycleNodes destructor.
-   */
-  ManageLifecycleNodes::~ManageLifecycleNodes()
+    : BT::StatefulActionNode(name, config) // Initializes the base class, passing the node name and configuration.
   {
   }
 
-  /**
-   * @brief providedPorts.
-   * This static method is required by BehaviorTree.CPP to declare the input ports
-   * that this node expects from the Behavior Tree XML.
-   * * @return A list of input ports.
-   */
   BT::PortsList ManageLifecycleNodes::providedPorts()
   {
     // Ports in the context of Behaviour Trees are like variables, to which there are
@@ -69,16 +44,23 @@ namespace vizzy_navigation {
     };
   }
 
-  /**
-   * @brief Tick method.
-   * This is the core logic of the asynchronous action. It's called by the BT every tick
-   * and is responsible for initiating the service call and handling its response.
-   * * @return BT::NodeStatus, which is RUNNING, SUCCESS, or FAILURE.
-   */
-  BT::NodeStatus ManageLifecycleNodes::tick()
+  BT::NodeStatus ManageLifecycleNodes::onStart()
   {
+    // Initialize the node shared pointer instance.
+    if (!getInput<rclcpp::Node::SharedPtr>("node", node_)) {
+      RCLCPP_ERROR(rclcpp::get_logger("ManageLifecycleNodes"), "Missing required input [node]");
+      return BT::NodeStatus::FAILURE;
+    }
+
+    // Create a ROS2 client for the 'manage_nodes' service.
+    // This client will be used to send state change requests to the lifecycle manager.
+    if (!client_) {
+      client_ = node_->create_client<nav2_msgs::srv::ManageLifecycleNodes>(
+        "/lifecycle_manager_docking/manage_nodes");
+    }
+
     // Retrieve the string value from the "transition" input port.
-    BT::Optional<std::string> transition_str = getInput<std::string>("transition");
+    BT::Expected<std::string> transition_str = getInput<std::string>("transition");
 
     // Check if either of the required input ports is missing a value.
     if (!transition_str.has_value()) {
@@ -113,31 +95,29 @@ namespace vizzy_navigation {
     request->command = command;
 
     // This is the implementation of the asynchronous call.
-    // We send the request and provide a lambda function as a callback.
-    // The lambda's capture list [this, request] is crucial. It ensures 'this' (the class instance)
-    // and 'request' (the shared pointer to the request) are available inside the lambda's body.
-    client_->async_send_request(request, [this, request](const rclcpp::Client<nav2_msgs::srv::ManageLifecycleNodes>::SharedFuture future) {
-      // The lambda is executed when the service response is received.
-      // It gets the result from the shared future object.
-      auto result = future.get();
-      
-      // Check if the service call was successful.
-      if (result->success) {
-        // Log a success message.
-        RCLCPP_INFO(node_->get_logger(), "Successfully executed the command.");
-        // Set the node's status to SUCCESS. The Behavior Tree will read this on its next tick.
-        this->setStatus(BT::NodeStatus::SUCCESS);
-      } else {
-        // Log an error if the service call failed.
-        RCLCPP_ERROR(node_->get_logger(), "Failed to execute the command.");
-        // Set the node's status to FAILURE.
-        this->setStatus(BT::NodeStatus::FAILURE);
-      }
-    });
+    future_result_ = client_->async_send_request(request).share();
 
     // Immediately return RUNNING. This is what makes the node asynchronous; it tells
     // the Behavior Tree that the action has started but is not yet complete.
     // The BT is now free to tick other nodes while the service call is pending.
+    return BT::NodeStatus::RUNNING;
+  }
+
+  BT::NodeStatus ManageLifecycleNodes::onRunning()
+  {
+    // Check if the future is ready.
+    if (future_result_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+      auto result = future_result_.get();
+      if (result->success) {
+        RCLCPP_INFO(node_->get_logger(), "Successfully executed the command.");
+        return BT::NodeStatus::SUCCESS;
+      } else {
+        RCLCPP_ERROR(node_->get_logger(), "Failed to execute the command.");
+        return BT::NodeStatus::FAILURE;
+      }
+    }
+
+    // The service call is still in progress.
     return BT::NodeStatus::RUNNING;
   }
 
@@ -146,7 +126,7 @@ namespace vizzy_navigation {
    * This method is called by the Behavior Tree if the node needs to be stopped
    * before it completes (e.g., if a parent node is halted).
    */
-  void ManageLifecycleNodes::halt()
+  void ManageLifecycleNodes::onHalted()
   {
     // Log an informational message to indicate that the action was halted.
     // For this simple service call, no further action is required, as the service
@@ -155,29 +135,7 @@ namespace vizzy_navigation {
   }
 } // namespace vizzy_navigation
 
-// Register the node with BehaviorTree.CPP as well as the DockRobot and UndockRobot actions from
-// the opennav_docking_bt package.
-#include "behaviortree_cpp_v3/bt_factory.h"
-
-// Ensure this function is exported with default visibility.
-extern "C"
+BT_REGISTER_NODES(factory)
 {
-  void __attribute__((visibility("default"))) BT_RegisterNodesFromPlugin(BT::BehaviorTreeFactory& factory)
-  {
-    factory.registerNodeType<vizzy_navigation::ManageLifecycleNodes>("ManageLifecycleNodes");
-
-    BT::NodeBuilder dock_builder =
-      [&](const std::string & name, const BT::NodeConfiguration & config)
-      {
-        return std::make_unique<opennav_docking_bt::DockRobotAction>(name, "dock_robot", config);
-      };
-    factory.registerBuilder<opennav_docking_bt::DockRobotAction>("DockRobot", dock_builder);
-
-    BT::NodeBuilder undock_builder =
-      [&](const std::string & name, const BT::NodeConfiguration & config)
-      {
-        return std::make_unique<opennav_docking_bt::UndockRobotAction>(name, "undock_robot", config);
-      };
-    factory.registerBuilder<opennav_docking_bt::UndockRobotAction>("UndockRobot", undock_builder);
-  }
+  factory.registerNodeType<vizzy_navigation::ManageLifecycleNodes>("ManageLifecycleNodes");
 }

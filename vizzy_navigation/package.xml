@@ -78,6 +78,7 @@
   <depend>opennav_docking_bt</depend>
   <depend>nav2_behavior_tree</depend>
   <depend>visualization_msgs</depend> 
+  <depend>behaviortree_cpp</depend>
   <depend>interactive_markers</depend> 
   <depend>opennav_docking_msgs</depend>
   <depend>nav2_lifecycle_manager</depend>
@@ -87,6 +88,6 @@
   <!-- Export dependencies -->
   <export>
     <build_type>ament_cmake</build_type>
-    <behaviortree_cpp_v3 plugin="${prefix}/config/bt_plugins.xml" />
+    <behaviortree_cpp plugin="${prefix}/config/bt_plugins.xml" />
   </export>
 </package>

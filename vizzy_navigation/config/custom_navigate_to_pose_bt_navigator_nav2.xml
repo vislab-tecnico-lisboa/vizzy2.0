@@ -56,10 +56,6 @@
               <Sequence>
                 <IfThenElse name="CheckAndSelectController">
                   <CheckPathCost
-                      path="{path}"
-                      tf_buffer="{tf_buffer}"
-                      global_frame="{global_frame}"
-                      robot_base_frame="{robot_base_frame}"
                       check_distance="1.0"
                       cost_threshold="30"
                       ratio_threshold="0.25" />

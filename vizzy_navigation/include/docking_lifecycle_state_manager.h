@@ -1,9 +1,10 @@
-/* * Copyright 2025, João Penha Lopes and João Zenário.
+/*
+ * Copyright 2025, João Penha Lopes and João Zenário.
  * All rights reserved.
  */
 
 /*********************************************************************************************
-* Header File for the ManageLifecycleNodes C++ Class                                         *
+* Header File for the ManageLifecycleNodes C++ Class (BehaviorTree.CPP v4)                   *
 * -                                                                                          *
 * This header file provides the declaration for the ManageLifecycleNodes class,              *
 * a custom Behavior Tree (BT) node designed for ROS2. This class allows a Behavior Tree      *
@@ -11,88 +12,77 @@
 * -                                                                                          *
 *********************************************************************************************/
 
-#ifndef MANAGE_LIFECYCLE_NODES_HPP
-#define MANAGE_LIFECYCLE_NODES_HPP
+#ifndef VIZZY_NAVIGATION__MANAGE_LIFECYCLE_NODES_HPP_
+#define VIZZY_NAVIGATION__MANAGE_LIFECYCLE_NODES_HPP_
 
-// Include necessary headers.
-#include <behaviortree_cpp_v3/bt_factory.h>
-#include <behaviortree_cpp_v3/action_node.h>
-#include <rclcpp/rclcpp.hpp>
-#include <nav2_msgs/srv/manage_lifecycle_nodes.hpp>
+#include <string>
+#include <memory>
 #include <thread>
 #include <future>
-#include "opennav_docking_bt/dock_robot.hpp"
-#include "opennav_docking_bt/undock_robot.hpp"
-#include "ament_index_cpp/get_package_share_directory.hpp"
 
-namespace vizzy_navigation {
+#include <behaviortree_cpp/bt_factory.h>
+#include <behaviortree_cpp/action_node.h>
+#include <rclcpp/rclcpp.hpp>
+
+#include <nav2_msgs/srv/manage_lifecycle_nodes.hpp>
+#include <ament_index_cpp/get_package_share_directory.hpp>
+
+namespace vizzy_navigation
+{
+
+/**
+ * @brief Manages the state of ROS2 lifecycle nodes from a Behavior Tree.
+ * This class inherits from 'BT::StatefulActionNode' to perform a non-blocking
+ * service call to a lifecycle manager.
+ */
+class ManageLifecycleNodes : public BT::StatefulActionNode
+{
+public:
+  /**
+   * @brief Constructor for the ManageLifecycleNodes class.
+   * @param name The name of the node instance.
+   * @param config The configuration passed to the node.
+   */
+  ManageLifecycleNodes(const std::string & name, const BT::NodeConfiguration & config);
 
   /**
-   * @brief Manages the state of ROS2 lifecycle nodes from a Behavior Tree.
-   * This class inherits from `BT::AsyncActionNode` to perform a non-blocking
-   * service call to a lifecycle manager.
+   * @brief A static method that defines the input ports for this BT node.
+   * @return A list of input ports.
    */
-  class ManageLifecycleNodes : public BT::AsyncActionNode
-  {
-  public:
-    /**
-     * @brief Constructor for the ManageLifecycleNodes class.
-     * This is a declaration; the implementation is in the .cpp file.
-     * It takes the node's name and configuration from the Behavior Tree.
-     * @param name The name of the node instance.
-     * @param config The configuration passed to the node.
-     */
-    ManageLifecycleNodes(const std::string& name, const BT::NodeConfiguration& config);
+  static BT::PortsList providedPorts();
 
-    /**
-     * @brief Destructor for the ManageLifecycleNodes class.
-     * Cleans up any resources, such as joining the spinning thread.
-     */
-    ~ManageLifecycleNodes();
+  /**
+   * @brief Method called when the node is ticked for the first time.
+   * It is responsible for initializing the service call.
+   * @return BT::NodeStatus::RUNNING if the action was successfully started.
+   */
+  BT::NodeStatus onStart() override;
 
-    /**
-     * @brief A static method that defines the input ports for this BT node.
-     * This tells the BT factory what data can be provided to the node from the XML.
-     * @return A list of input and output ports.
-     */
-    static BT::PortsList providedPorts();
+  /**
+   * @brief Method called periodically while the node is in the RUNNING state.
+   * It checks the result of the asynchronous service call.
+   * @return BT::NodeStatus::SUCCESS or BT::NodeStatus::FAILURE when the action is completed,
+   * or BT::NodeStatus::RUNNING if it is still in progress.
+   */
+  BT::NodeStatus onRunning() override;
 
-    /**
-     * @brief The main execution method for the node.
-     * Overridden from `BT::AsyncActionNode`, this function initiates the service call
-     * and immediately returns `RUNNING`.
-     * @return The status of the node, typically `RUNNING` on initiation.
-     */
-    BT::NodeStatus tick() override;
+  /**
+   * @brief Method called when the node is halted by the Behavior Tree.
+   * It is responsible for any cleanup, like canceling the service call.
+   */
+  void onHalted() override;
 
-    /**
-     * @brief The halt method for the node.
-     * Overridden from `BT::AsyncActionNode`, this function is called when the
-     * Behavior Tree halts the node's execution before it completes.
-     */
-    void halt() override;
+private:
+  // A shared pointer to the ROS2 node.
+  rclcpp::Node::SharedPtr node_;
 
-  private:
-    /**
-     * @brief A shared pointer to the ROS2 node.
-     * This is the handle for the ROS2 entity that will create the client.
-     */
-    rclcpp::Node::SharedPtr node_;
+  // A shared pointer to the ROS2 service client.
+  rclcpp::Client<nav2_msgs::srv::ManageLifecycleNodes>::SharedPtr client_;
+  
+  // Future to store the result of the async service call.
+  std::shared_future<rclcpp::Client<nav2_msgs::srv::ManageLifecycleNodes>::SharedResponse> future_result_;
+};
 
-    /**
-     * @brief A shared pointer to the ROS2 service client.
-     * This client is used to send requests to the lifecycle manager.
-     */
-    rclcpp::Client<nav2_msgs::srv::ManageLifecycleNodes>::SharedPtr client_;
+}  // namespace vizzy_navigation
 
-    /**
-     * @brief A standard C++ thread.
-     * This thread is used to spin the ROS2 node in the background, allowing
-     * it to receive service responses asynchronously without blocking the BT.
-     */
-    //std::thread executor_thread_;
-  };
-
-} // namespace vizzy_navigation
-
-#endif // MANAGE_LIFECYCLE_NODES_HPP
+#endif  // VIZZY_NAVIGATION__MANAGE_LIFECYCLE_NODES_HPP_

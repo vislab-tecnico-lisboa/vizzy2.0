@@ -2,7 +2,7 @@
   This Behavior Tree is designed to perform a complete docking mission using Nav2's Docking Server.
 
   It consists of the following steps:
-    1. Navigate to a predefined staging pose near the docking station using the NavigateToPose action.
+    1. Navigate to a predefined staging pose near the docking station using the custom navigation sequence.
     2. Activate the dock_pose_estimator_node to start estimating the dock's pose using laser scan data.
     3. Execute the docking maneuver using the DockRobot action, which utilizes the estimated dock pose.
     4. Deactivate the dock_pose_estimator_node after the docking maneuver is complete to conserve resources.    
@@ -17,8 +17,12 @@
 <root main_tree_to_execute="DockingMission">
   <BehaviorTree ID="DockingMission">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+
+      <!-- Docking sequence. -->
       <PipelineSequence name="DockingSequence">
         <SetBlackboard output_key="selected_controller" value="mppi_controller_wide" />   
+
+        <!-- Compute path and Smooth it. -->
         <RateController hz="GLOBAL_PLANNER_FREQUENCY">
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
             <Sequence name="ComputeAndSmoothPath">
@@ -28,30 +32,11 @@
             <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
           </RecoveryNode>
         </RateController>
+
+        <!-- Follow the computed path. -->
+        <!-- The detailed explanation regarding this section is detailed in the
+        custom_navigate_to_pose_bt_navigator_nav2.xml -->
         <RecoveryNode number_of_retries="1" name="FollowPath">
-
-          <!-- The Parallel node is responsible for the dynamic change of the controller
-               It does this by concurrently following the path and checking its cost.
-               Because of the concurrent nature of the Parallel node, it must be controlled
-               very carefully to ensure it does not return FAILURE or SUCCESS prematurely.
-
-               The Parallel node has 2 children:
-                1. GoalReached: This node checks if the goal has been reached.
-                2. FollowPath: This node will follow the path using the selected controller.
-                3. Repeat: This node will continuously check the path cost and select the appropriate controller.
-
-               The success_threshold is set to 1, meaning that if the FollowPath node or the GoalReached node succeed, 
-               the Parallel node will succeed.
-               The Repeat node will run indefinitely until the goal is reached, so it will never return anything.
-
-               The failure_threshold is set to 2, meaning that FAILURE is only returned if the goal is not reached 
-               (GoalReached node fails) and the FollowPath node fails as well.
-
-               This is explained as well in the default custom_docking_bt_plugin.xml file in this package.
-               The difference in with this implementation is that it is only used during the docking procedure,
-               (overriding the default one used by the bt_navigator in the event of a docking mission).
-           -->
-
           <Parallel success_threshold="1" failure_threshold="2">
             <GoalReached goal="{goal}" />
             <FollowPath path="{path}" controller_id="{selected_controller}"/>
@@ -86,6 +71,8 @@
         <ManageLifecycleNodes transition="deactivate" node="{node}"/>
 
       </PipelineSequence>
+
+      <!-- Fallback behaviour. -->
       <ReactiveFallback name="RecoveryFallback">
         <GoalUpdated/>
         <RoundRobin name="RecoveryActions">

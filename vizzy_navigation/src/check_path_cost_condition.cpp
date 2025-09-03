@@ -3,74 +3,74 @@
  * All rights reserved.
  */
 
-#include "nav2_util/node_utils.hpp"
-#include "nav2_util/geometry_utils.hpp"
-
 #include "check_path_cost_condition.h"
 
 namespace vizzy_navigation
 {
 
-CheckPathCost::CheckPathCost(
-  const std::string & condition_name,
-  const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf)
+CheckPathCost::CheckPathCost(const std::string& name, const BT::NodeConfiguration& conf)
+: BT::ConditionNode(name, conf)
 {
-}
+  // The node is expected to be available on the blackboard.
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  if (!node_) {
+      RCLCPP_FATAL(rclcpp::get_logger("CheckPathCost"), "Failed to get rclcpp::Node::SharedPtr from blackboard. This is critical!");
+      return;
+  }
 
-void CheckPathCost::initialize()
-{
-    // The node is expected to be available on the blackboard.
-    node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
-    if (!node_) {
-        RCLCPP_FATAL(rclcpp::get_logger("CheckPathCost"), "Failed to get rclcpp::Node::SharedPtr from blackboard. This is critical!");
-        return;
-    }
+  RCLCPP_INFO(node_->get_logger(), "CheckPathCost node: Initializing...");
 
-    RCLCPP_INFO(node_->get_logger(), "CheckPathCost node: Initializing...");
+  // Log the Blackboard keys for debugging.
+  RCLCPP_INFO(node_->get_logger(), "");
+  RCLCPP_INFO(node_->get_logger(), "--- BLACKBOARD KEYS AT THIS TICK ---");
+  for (const auto& key : config().blackboard->getKeys()) {
+      RCLCPP_INFO(node_->get_logger(), "- %s", key.data());
+  }
+  RCLCPP_INFO(node_->get_logger(), "------------------------------------\n");
 
-    // List all keys on the blackboard. This is useful for debugging and understanding what data is available.
-    RCLCPP_INFO(node_->get_logger(), "CheckPathCost node: Blackboard contains the following keys:");
-    for (const auto& key : config().blackboard->getKeys()) {
-        RCLCPP_INFO(node_->get_logger(), "- %s", key.data());
-    }
+  // Get the shared TF buffer from the blackboard.
+  tf_buffer_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
+  if (!tf_buffer_) {
+      RCLCPP_FATAL(node_->get_logger(), "Failed to get TF buffer from blackboard.");
+      return;
+  }
 
-    // Get the TF buffer from the blackboard.
-    tf_buffer_ = config().blackboard->get<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer");
-    if (!tf_buffer_) {
-        RCLCPP_FATAL(node_->get_logger(), "Failed to get tf2_ros::Buffer from blackboard. This is critical for TF lookups!");
-        return;
-    }
+  // Initialize the costmap ROS2 node shared pointer with the pointer to the existing global costmap node.
+  costmap_ros_ = config().blackboard->get<std::shared_ptr<nav2_costmap_2d::Costmap2DROS>>("global_costmap");
+  if (!costmap_ros_) {
+    RCLCPP_ERROR(node_->get_logger(), "Failed to get global_costmap from blackboard");
+    initialized_ = false;
+    return; 
+  }
+  
+  // Get the costmap pointer from the Costmap2DROS instance.
+  costmap_ = costmap_ros_->getCostmap();
+  if (!costmap_) {
+    RCLCPP_ERROR(node_->get_logger(), "Failed to get costmap from global_costmap");
+    initialized_ = false;
+    return;
+  }
+  
+  global_frame_ = config().blackboard->get<std::string>("global_frame");
+  robot_base_frame_ = config().blackboard->get<std::string>("robot_base_frame");
 
-    // Initilize the costmap ROS node.
-    costmap_ros_ = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
-    
-    // The costmap needs its own thread to spin and process ROS messages (like topic updates).
-    costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
-
-    // The costmap is a lifecycle node, so we must also bring it up.
-    costmap_ros_->on_configure(costmap_ros_->get_current_state());
-    costmap_ros_->on_activate(costmap_ros_->get_current_state());
-
-    // Get the costmap pointer from the Costmap2DROS instance.
-    costmap_ = costmap_ros_->getCostmap();
-
-    getInput("global_frame", global_frame_);
-    getInput("robot_base_frame", robot_base_frame_);
-    
-    initialized_ = true;
-    RCLCPP_INFO(node_->get_logger(), "CheckPathCost node initialized successfully.");
+  initialized_ = true;
+  RCLCPP_INFO(node_->get_logger(), "CheckPathCost node initialized successfully.");
 }
 
 BT::NodeStatus CheckPathCost::tick()
 {
+
+  // If initialized_ is false, return FAILURE.
   if (!initialized_) {
-    initialize();
+    RCLCPP_WARN(node_->get_logger(), "CheckPathCost node is not initialized.");
+    return BT::NodeStatus::FAILURE;
   }
 
   nav_msgs::msg::Path path;
-  if (!getInput("path", path) || path.poses.empty()) {
-    RCLCPP_WARN(node_->get_logger(), "Input path not available or empty.");
+  path = config().blackboard->get<nav_msgs::msg::Path>("path");
+  if (path.poses.empty()) {
+    RCLCPP_WARN(node_->get_logger(), "Input path is empty.");
     return BT::NodeStatus::FAILURE;
   }
 
@@ -140,7 +140,7 @@ BT::NodeStatus CheckPathCost::tick()
 } 
 
 // Register the node with BehaviorTree.CPP.
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 // Ensure this function is exported with default visibility.
 extern "C"

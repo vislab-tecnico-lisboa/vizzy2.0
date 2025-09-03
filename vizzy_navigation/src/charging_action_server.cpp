@@ -1,30 +1,5 @@
-#include <charging_action_server.h>
-#include <vizzy_msgs/srv/battery_charging_state.hpp>
+#include "charging_action_server.h"
 
-#include <rclcpp/rclcpp.hpp>
-#include <rclcpp_action/rclcpp_action.hpp>
-#include <geometry_msgs/msg/pose_stamped.hpp>
-#include <geometry_msgs/msg/transform_stamped.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
-#include <vizzy_msgs/action/charge.hpp>
-#include <nav2_msgs/action/navigate_to_pose.hpp>
-#include <opennav_docking_msgs/action/dock_robot.hpp>
-#include "ament_index_cpp/get_package_share_directory.hpp"
-
-/***************************************************************************************************************************************************
-* Function: goalCallback                                                                                            						   	   *
-* Class: ChargingActionServer                                                                                             						   *
-* Description: 																											  						   *
-*		This function is called when a new goal is received by the action server. It handles three type of goals:								   *
-*		1. CHARGE - Verifies if the robot is charging.							   				                                                   *	
-*		2. STOP_CHARGE - Stops the charging process by moving the robot away from the docking station to a pre-defined pose (1 meter ahead),	   *					  
-*						 and verifying if the robot is not charging.																		       *
-*		3. Invalid goal - Logs an error message if the received goal is not valid.																   *				
-* Parameters:                                                                                                                                      *
-*		goal_handle - A shared pointer to the goal handle, which contains the goal message.                                                        *
-***************************************************************************************************************************************************/
 
 void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::ServerGoalHandle<vizzy_msgs::action::Charge>> goal_handle)
 {
@@ -71,7 +46,7 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
                 std::string pkg_share_path = ament_index_cpp::get_package_share_directory("vizzy_navigation");
 
                 // Construct the full, absolute path to the BT file.
-                std::string bt_xml_path = pkg_share_path + "/behavior_trees/custom_docking_bt_nav2.xml";
+                std::string bt_xml_path = pkg_share_path + "/behavior_trees/custom_docking_bt_navigator_nav2.xml";
                 
                 // Use the fully resolved path in the action goal.
                 nav_goal.behavior_tree = bt_xml_path;
@@ -239,11 +214,6 @@ ChargingActionServer::ChargingActionServer(const rclcpp::NodeOptions & options) 
     this->nav_to_pose_client_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
         this,
         "navigate_to_pose"
-    );
-
-    this->dock_client_ = rclcpp_action::create_client<opennav_docking_msgs::action::DockRobot>(
-        this,
-        "dock_robot"
     );
 
     // Declare the parameter with a default value

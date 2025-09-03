@@ -50,7 +50,7 @@ find_package(nav2_behavior_tree REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(nav2_navfn_planner REQUIRED)
 find_package(opennav_docking_bt REQUIRED)
-find_package(behaviortree_cpp_v3 REQUIRED) 
+find_package(behaviortree_cpp REQUIRED) 
 find_package(interactive_markers REQUIRED)
 find_package(nav2_dwb_controller REQUIRED)
 find_package(opennav_docking_msgs REQUIRED)
@@ -75,7 +75,7 @@ target_include_directories(nav2_check_path_cost_bt_node PUBLIC
 
 # Link the nav2_check_path_cost_bt_node with the required libraries.
 ament_target_dependencies(nav2_check_path_cost_bt_node PUBLIC
-  "behaviortree_cpp_v3"
+  "behaviortree_cpp"
   "nav2_behavior_tree"
   "nav2_costmap_2d"
   "vizzy_msgs"
@@ -142,7 +142,7 @@ ament_target_dependencies(charging_action_server_node PUBLIC
   tf2_geometry_msgs
   nav2_msgs
   opennav_docking_msgs
-  behaviortree_cpp_v3
+  behaviortree_cpp
   nav2_behavior_tree
 )
 
@@ -169,8 +169,28 @@ target_include_directories(nav2_lifecycle_manager_bt_node PUBLIC
 ament_target_dependencies(nav2_lifecycle_manager_bt_node PUBLIC
   "rclcpp"
   "rclcpp_lifecycle"
-  "behaviortree_cpp_v3"
+  "behaviortree_cpp"
   "nav2_msgs"
+  "opennav_docking_msgs"
+  "opennav_docking_bt"
+)
+
+# Create the library with the opennav plugin registrations.
+add_library(opennav_docking_bt_plugin SHARED
+  src/opennav_docking_bt_plugin_register.cpp
+)
+
+# Specify the include directories for the opennav_docking_bt_plugin.
+target_include_directories(opennav_docking_bt_plugin PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+# Link the opennav_docking_bt_plugin against its dependencies.
+ament_target_dependencies(opennav_docking_bt_plugin PUBLIC
+  "rclcpp"
+  "rclcpp_lifecycle"
+  "behaviortree_cpp_v3"
   "opennav_docking_msgs"
   "opennav_docking_bt"
 )
@@ -182,6 +202,7 @@ install(TARGETS
   charging_action_server_node
   docking_lib 
   nav2_lifecycle_manager_bt_node
+  opennav_docking_bt_plugin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

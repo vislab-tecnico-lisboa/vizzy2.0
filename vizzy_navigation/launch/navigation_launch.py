@@ -607,10 +607,10 @@ def generate_launch_description():
                                         args=[template_file_path, output_bt_path])
     
     # Get the template file path for the docking mission BT.
-    template_file_path_docking = os.path.join(get_package_share_directory(package_name), 'config', 'custom_docking_bt_nav2.xml')
+    template_file_path_docking = os.path.join(get_package_share_directory(package_name), 'config', 'custom_docking_bt_navigator_nav2.xml')
 
     # Add this new action to generate the BT XML file for the docking mission.
-    output_bt_path_docking = os.path.join(output_bt_dir, 'custom_docking_bt_nav2.xml')
+    output_bt_path_docking = os.path.join(output_bt_dir, 'custom_docking_bt_navigator_nav2.xml')
     save_bt_xml_action_docking = OpaqueFunction(function=save_rewritten_bt_xml,
                                                 args=[template_file_path_docking, output_bt_path_docking])
 
