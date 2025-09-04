@@ -27,20 +27,8 @@
 * https://github.com/open-navigation/opennav_docking/tree/humble                             *    
 *********************************************************************************************/
 
-// Include necessary headers for ROS2, and other dependencies.
 #include "dock_pose_estimator.h" 
-#include <functional>           
-#include "tf2_eigen/tf2_eigen.hpp"
 
-// Constructor implementation for the DockPoseEstimator class.
-// This constructor uses a member initializer list to initialize the base class Node,
-// this happens before the main body of the constructor is executed,
-// which makes the DockPoseEstimator object initialization more efficient.
-// The first member of the initializer list is the Node class constructor, 
-// inherited from rclcpp::Node, it initializes the node with the name 
-// "dock_pose_estimator_node" and passes the options provided.
-// The second member initializes the filter buffer size to 10, 
-// which is used for median filtering of the pose estimates.
 DockPoseEstimator::DockPoseEstimator(const rclcpp::NodeOptions & options)
     : rclcpp_lifecycle::LifecycleNode("dock_pose_estimator_node", options),
       filter_buffer_size_(10)
@@ -48,9 +36,6 @@ DockPoseEstimator::DockPoseEstimator(const rclcpp::NodeOptions & options)
     RCLCPP_INFO(this->get_logger(), "Dock Pose Estimator node has been created and is in an 'unconfigured' state.");
 }
 
-// Declares and loads the necessary parameters from the ROS2 node and 
-// initializes the pattern_pose_estimation_ member with a shared pointer to a new
-// PatternPoseEstimation object with these parameters.
 void DockPoseEstimator::declareAndGetParameters()
 {
     // Declare parameters with default values.
@@ -89,11 +74,6 @@ void DockPoseEstimator::declareAndGetParameters()
 
 // --- LIFECYCLE CALLBACKS ---
 
-/**
- * @brief on_configure: This callback is called when the node transitions from the 'unconfigured' to the 'inactive' state.
- * All setup that does not require ROS communication should be done here, such as loading parameters,
- * initializing variables, and creating publishers/services.
- */
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 DockPoseEstimator::on_configure(const rclcpp_lifecycle::State &)
 {
@@ -112,7 +92,7 @@ DockPoseEstimator::on_configure(const rclcpp_lifecycle::State &)
     
     // Create the publishers. They are inactive until the node is activated.
     docking_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/detected_dock_pose", 10);
-    scene_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/scene_point_cloud", 10);
+    // scene_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/scene_point_cloud", 10);
     // model_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/model_point_cloud", 10);
 
     ready_ = true;
@@ -120,10 +100,6 @@ DockPoseEstimator::on_configure(const rclcpp_lifecycle::State &)
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
-/**
- * @brief on_activate: This callback is called when the node transitions from 'inactive' to 'active'.
- * This is where we create subscriptions, timers, and activate publishers to start processing data.
- */
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 DockPoseEstimator::on_activate(const rclcpp_lifecycle::State &)
 {
@@ -143,10 +119,6 @@ DockPoseEstimator::on_activate(const rclcpp_lifecycle::State &)
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
-/**
- * @brief on_deactivate: This callback is called when the node transitions from 'active' to 'inactive'.
- * This is where we destroy subscriptions and timers to stop processing data and save resources.
- */
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 DockPoseEstimator::on_deactivate(const rclcpp_lifecycle::State &)
 {
@@ -165,10 +137,6 @@ DockPoseEstimator::on_deactivate(const rclcpp_lifecycle::State &)
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
-/**
- * @brief on_cleanup: Called when the node transitions from 'inactive' to 'unconfigured'.
- * This is where we release all resources allocated in on_configure.
- */
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 DockPoseEstimator::on_cleanup(const rclcpp_lifecycle::State &)
 {
@@ -187,9 +155,6 @@ DockPoseEstimator::on_cleanup(const rclcpp_lifecycle::State &)
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
-/**
- * @brief on_shutdown: Called when the node is shutting down.
- */
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 DockPoseEstimator::on_shutdown(const rclcpp_lifecycle::State &)
 {
@@ -197,7 +162,6 @@ DockPoseEstimator::on_shutdown(const rclcpp_lifecycle::State &)
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
-// Main callback for processing laser data.
 void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::LaserScan> scan)
 {
 

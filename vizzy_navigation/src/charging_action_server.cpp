@@ -1,5 +1,11 @@
-#include "charging_action_server.h"
+/* 
+ * Copyright 2025, João Avelino, Rui Figueiredo, Plinio Moreno, João Penha Lopes and João Zenário.
+ * This code was originaly developped by João Avelino, Rui Figueiredo and Plinio Moreno for ROS1 in 2022.
+ * It was later refactored for ROS2 in 2025 by João Penha Lopes and João Zenário.
+ * All rights reserved.
+ */
 
+#include "charging_action_server.h"
 
 void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::ServerGoalHandle<vizzy_msgs::action::Charge>> goal_handle)
 {

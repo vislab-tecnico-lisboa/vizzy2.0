@@ -1,21 +1,27 @@
+/* 
+ * Copyright 2025, João Avelino, Rui Figueiredo, Plinio Moreno, João Penha Lopes and João Zenário.
+ * This code was originaly developped by João Avelino, Rui Figueiredo and Plinio Moreno for ROS1 in 2022.
+ * It was later refactored for ROS2 in 2025 by João Penha Lopes and João Zenário.
+ * All rights reserved.
+ */
+
 #ifndef CHARGING_ACTION_SERVER_H_
 #define CHARGING_ACTION_SERVER_H_
 
 #include <memory>
 #include <string>
-
 #include <tf2_ros/buffer.h>
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/transform_listener.h>
-#include <vizzy_msgs/action/charge.hpp>
+#include "vizzy_msgs/action/charge.hpp"
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav2_msgs/action/navigate_to_pose.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#include <vizzy_msgs/srv/battery_charging_state.hpp>
+#include "vizzy_msgs/srv/battery_charging_state.hpp"
 #include <opennav_docking_msgs/action/dock_robot.hpp>
-#include "ament_index_cpp/get_package_share_directory.hpp"
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 /**
  * @brief A ROS 2 action server for managing charging behavior.

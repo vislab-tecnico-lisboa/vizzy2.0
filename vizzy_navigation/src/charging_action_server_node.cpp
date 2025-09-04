@@ -1,3 +1,10 @@
+/* 
+ * Copyright 2025, João Avelino, Rui Figueiredo, Plinio Moreno, João Penha Lopes and João Zenário.
+ * This code was originaly developped by João Avelino, Rui Figueiredo and Plinio Moreno for ROS1 in 2022.
+ * It was later refactored for ROS2 in 2025 by João Penha Lopes and João Zenário.
+ * All rights reserved.
+ */
+
 #include "charging_action_server.h"
 
 int main(int argc, char * argv[])

@@ -1,34 +1,32 @@
 #ifndef PATTERN_POSE_ESTIMATION_HPP_
 #define PATTERN_POSE_ESTIMATION_HPP_
 
-#include <pcl/registration/ppf_registration.h>
-#include <pcl/registration/icp.h>
+#include <random>
+#include <chrono>
 #include <pcl/common/io.h>
-#include <pcl/console/print.h>
 #include <pcl/io/ply_io.h>
-#include <pcl/io/ascii_io.h>
-#include <pcl/io/vtk_lib_io.h>
-#include <pcl/PCLPointCloud2.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/statistical_outlier_removal.h>
-
-#include <boost/thread/thread.hpp>
-#include <pcl/common/common_headers.h>
-#include <pcl/features/normal_3d.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/io/ascii_io.h>
+#include <pcl/console/print.h>
+#include <pcl/io/vtk_lib_io.h>
 #include <pcl/console/parse.h>
-
-
-using namespace pcl;
-using namespace std;
+#include <pcl/PCLPointCloud2.h>
+#include <pcl/registration/icp.h>
+#include <boost/thread/thread.hpp>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/common/common_headers.h>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/registration/ppf_registration.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 
 class PatternPoseEstimation
 {
 private:
-    // Reordered to match the constructor initializer list
+    
+
     double rot_thresh;
     double tran_thresh;
     double fitting_score_thresh;
@@ -37,18 +35,18 @@ private:
     pcl::PointCloud<pcl::Normal>::Ptr normals_;
     pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud_;
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree;
-    PointCloud<PointNormal>::Ptr cloud_output_subsampled;
+    pcl::PointCloud<pcl::PointNormal>::Ptr cloud_output_subsampled;
     double discretization_step;
 
     // Other members not in the initializer list
-    vector<pcl::PPFHashMapSearch::Ptr> hashmap_search_vector;
+    std::vector<pcl::PPFHashMapSearch::Ptr> hashmap_search_vector;
     double cluster_tran_thresh;
     double cluster_rot_thresh;
     
 public:
     // --- Public Methods ---
-    pcl::PointCloud<PointNormal>::Ptr getPointNormal(pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud);
-	PointCloud<PointNormal>::Ptr getOutputCloud() const { return cloud_output_subsampled; }
+    pcl::PointCloud<pcl::PointNormal>::Ptr getPointNormal(pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud);
+    pcl::PointCloud<pcl::PointNormal>::Ptr getOutputCloud() const { return cloud_output_subsampled; }
     std::vector<pcl::PointCloud<pcl::PointNormal>::Ptr> dense_cloud_models;
     std::vector<pcl::PointCloud<pcl::PointNormal>::Ptr> cloud_models_with_normals;
 

@@ -17,8 +17,6 @@
 
 // Include necessary headers for ROS2, and other dependencies.
 #include "dock_pose_estimator.h"
-#include "rclcpp/rclcpp.hpp"
-#include <memory>
 
 // This is the main function of the ROS 2 node.
 int main(int argc, char **argv)

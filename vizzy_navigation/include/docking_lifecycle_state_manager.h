@@ -19,16 +19,11 @@
 #include <memory>
 #include <thread>
 #include <future>
-
+#include <rclcpp/rclcpp.hpp>
 #include <behaviortree_cpp/bt_factory.h>
 #include <behaviortree_cpp/action_node.h>
-#include <rclcpp/rclcpp.hpp>
-
 #include <nav2_msgs/srv/manage_lifecycle_nodes.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
-
-namespace vizzy_navigation
-{
 
 /**
  * @brief Manages the state of ROS2 lifecycle nodes from a Behavior Tree.
@@ -82,7 +77,5 @@ private:
   // Future to store the result of the async service call.
   std::shared_future<rclcpp::Client<nav2_msgs::srv::ManageLifecycleNodes>::SharedResponse> future_result_;
 };
-
-}  // namespace vizzy_navigation
 
 #endif  // VIZZY_NAVIGATION__MANAGE_LIFECYCLE_NODES_HPP_

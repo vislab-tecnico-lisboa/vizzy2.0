@@ -5,9 +5,6 @@
 
 #include "check_path_cost_condition.h"
 
-namespace vizzy_navigation
-{
-
 CheckPathCost::CheckPathCost(const std::string& name, const BT::NodeConfiguration& conf)
 : BT::ConditionNode(name, conf)
 {
@@ -21,7 +18,7 @@ CheckPathCost::CheckPathCost(const std::string& name, const BT::NodeConfiguratio
   RCLCPP_INFO(node_->get_logger(), "CheckPathCost node: Initializing...");
 
   // Log the Blackboard keys for debugging.
-  RCLCPP_INFO(node_->get_logger(), "");
+  RCLCPP_INFO(node_->get_logger(), "-");
   RCLCPP_INFO(node_->get_logger(), "--- BLACKBOARD KEYS AT THIS TICK ---");
   for (const auto& key : config().blackboard->getKeys()) {
       RCLCPP_INFO(node_->get_logger(), "- %s", key.data());
@@ -137,16 +134,11 @@ BT::NodeStatus CheckPathCost::tick()
   return BT::NodeStatus::FAILURE;
 }
 
-} 
-
-// Register the node with BehaviorTree.CPP.
-#include "behaviortree_cpp/bt_factory.h"
-
 // Ensure this function is exported with default visibility.
 extern "C"
 {
   void __attribute__((visibility("default"))) BT_RegisterNodesFromPlugin(BT::BehaviorTreeFactory& factory)
   {
-    factory.registerNodeType<vizzy_navigation::CheckPathCost>("CheckPathCost");
+    factory.registerNodeType<CheckPathCost>("CheckPathCost");
   }
 }

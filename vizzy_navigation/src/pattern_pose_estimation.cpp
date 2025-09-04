@@ -1,10 +1,4 @@
-#include <pattern_pose_estimation.h>
-#include <random>
-#include <chrono>
-#include <pcl/visualization/pcl_visualizer.h>
-
-using namespace pcl;
-using namespace std;
+#include "pattern_pose_estimation.h"
 
 PatternPoseEstimation::PatternPoseEstimation(double rot_thresh_, double tran_thresh_, double fitting_score_thresh_, double discretization_step_, double distance_threshold_, std::string file_) :
 	rot_thresh( (rot_thresh_ / 180.0) * double (M_PI)), // Convert degrees to radians.
@@ -15,7 +9,7 @@ PatternPoseEstimation::PatternPoseEstimation(double rot_thresh_, double tran_thr
 	normals_ (new pcl::PointCloud<pcl::Normal>()),
 	point_cloud_ (new pcl::PointCloud<pcl::PointXYZ>()),
 	tree (new pcl::search::KdTree<pcl::PointXYZ> ()),
-	cloud_output_subsampled(new PointCloud<PointNormal>()),
+	cloud_output_subsampled(new pcl::PointCloud<pcl::PointNormal>()),
 	discretization_step(discretization_step_)
 {
 	pcl::console::setVerbosityLevel(pcl::console::L_ALWAYS);
@@ -163,14 +157,14 @@ int PatternPoseEstimation::train(std::vector<pcl::PointCloud<pcl::PointNormal>::
 	{
 		cloud_models_with_normals.push_back (cloud_models_with_normals_[model_i]);
 
-		PointCloud<PPFSignature>::Ptr cloud_model_ppf (new PointCloud<PPFSignature> ());
-		PPFEstimation<PointNormal, PointNormal, PPFSignature> ppf_estimator;
+		pcl::PointCloud<pcl::PPFSignature>::Ptr cloud_model_ppf (new pcl::PointCloud<pcl::PPFSignature> ());
+		pcl::PPFEstimation<pcl::PointNormal, pcl::PointNormal, pcl::PPFSignature> ppf_estimator;
 
 		ppf_estimator.setInputCloud (cloud_models_with_normals_[model_i]);
 		ppf_estimator.setInputNormals (cloud_models_with_normals_[model_i]);
 		ppf_estimator.compute (*cloud_model_ppf);
 
-		PPFHashMapSearch::Ptr hashmap_search (new PPFHashMapSearch (rot_thresh, tran_thresh));
+		pcl::PPFHashMapSearch::Ptr hashmap_search (new pcl::PPFHashMapSearch (rot_thresh, tran_thresh));
 		hashmap_search->setInputFeatureCloud (cloud_model_ppf);
 		hashmap_search_vector.push_back (hashmap_search);
 	}
@@ -209,7 +203,7 @@ Eigen::Affine3d PatternPoseEstimation::detect(pcl::PointCloud<pcl::PointNormal>:
             }
 
 			std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-			PPFRegistration<PointNormal, PointNormal> ppf_registration;
+			pcl::PPFRegistration<pcl::PointNormal, pcl::PointNormal> ppf_registration;
 			ppf_registration.setSceneReferencePointSamplingRate (1);
 			ppf_registration.setPositionClusteringThreshold(cluster_tran_thresh);
 			ppf_registration.setRotationClusteringThreshold(cluster_rot_thresh);
