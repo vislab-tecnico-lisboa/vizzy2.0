@@ -48,6 +48,7 @@ void DockPoseEstimator::declareAndGetParameters()
     this->declare_parameter<double>("distance_threshold", 2.0);
     this->declare_parameter<std::string>("model_file", "file");
     this->declare_parameter<std::string>("rear_laser_topic", "/nav_hokuyo_laser/rear/scan");
+    this->declare_parameter<bool>("publish_dock_point_cloud", false);
 
     // Get the current active parameter values.
     double tran_thresh = this->get_parameter("tran_thresh").as_double();
@@ -57,13 +58,17 @@ void DockPoseEstimator::declareAndGetParameters()
     double distance_threshold = this->get_parameter("distance_threshold").as_double();
     std::string model_file = this->get_parameter("model_file").as_string();
     rear_laser_topic_ = this->get_parameter("rear_laser_topic").as_string();
+    bool publish_dock_point_cloud_ = this->get_parameter("publish_dock_point_cloud").as_bool();
 
     // Log the parameters for debugging.
-    //RCLCPP_INFO(this->get_logger(), "tran_thresh: %f", tran_thresh);
-    //RCLCPP_INFO(this->get_logger(), "rot_thresh: %f", rot_thresh);
-    //RCLCPP_INFO(this->get_logger(), "fitting_score_thresh: %f", fitting_score_thresh);
-    //RCLCPP_INFO(this->get_logger(), "discretization_step: %f", discretization_step);
-    //RCLCPP_INFO(this->get_logger(), "distance_threshold: %f", distance_threshold);
+    RCLCPP_INFO(this->get_logger(), "--- Dock Pose Estimator Parameters ---");
+    RCLCPP_INFO(this->get_logger(), "tran_thresh: %f", tran_thresh);
+    RCLCPP_INFO(this->get_logger(), "rot_thresh: %f", rot_thresh);
+    RCLCPP_INFO(this->get_logger(), "fitting_score_thresh: %f", fitting_score_thresh);
+    RCLCPP_INFO(this->get_logger(), "discretization_step: %f", discretization_step);
+    RCLCPP_INFO(this->get_logger(), "distance_threshold: %f", distance_threshold);
+    RCLCPP_INFO(this->get_logger(), "publish_dock_point_cloud: %s", publish_dock_point_cloud_ ? "true" : "false");
+    RCLCPP_INFO(this->get_logger(), "--- End of Parameters ---");
 
     // Initialize the Point Pair Feature (PPF) registration model with the loaded parameters.
     // Provide the shared pointer to the private member `pattern_pose_estimation_`.
@@ -248,35 +253,28 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     RCLCPP_INFO(this->get_logger(), "Dock pose published: [x: %f, y: %f, z: %f, yaw: %f]", 
     x_filtered, y_filtered, z_filtered, yaw_filtered);
 
-    // TODO: Apply corrective transform for correct visualization of the final model point cloud.
-    // For now, it is commented out for resource sparing purposes.
+    // If there is no need to publish the dock point cloud, we can return now.
+    if (!publish_dock_point_cloud_) return;
 
     // Publish model for visualization.
-    //pattern_pose_estimation_->getOutputCloud()->header.frame_id = scan->header.frame_id;
+    pattern_pose_estimation_->getOutputCloud()->header.frame_id = scan->header.frame_id;
 
     // PCL timestamp conversion.
-    //pcl_conversions::toPCL(scan->header, pattern_pose_estimation_->getOutputCloud()->header);
-
-    //pcl::PointCloud<pcl::PointNormal>::Ptr rotated_output_cloud(new pcl::PointCloud<pcl::PointNormal>);
-    //Eigen::Affine3f visualization_transform = Eigen::Affine3f::Identity();
-    //float theta_viz = M_PI / 2.0; // 90 degrees around the Y-axis
-    //visualization_transform.rotate(Eigen::AngleAxisf(theta_viz, Eigen::Vector3f::UnitY()));
-    
-    //pcl::transformPointCloudWithNormals(*pattern_pose_estimation_->getOutputCloud(), *rotated_output_cloud, visualization_transform);
+    pcl_conversions::toPCL(scan->header, pattern_pose_estimation_->getOutputCloud()->header);
 
     // Create a ROS 2 message object.
-    //sensor_msgs::msg::PointCloud2 output_cloud_msg;
+    sensor_msgs::msg::PointCloud2 output_cloud_msg;
 
     // Convert PCL data into the ROS 2 message.
-    //pcl::toROSMsg(*rotated_output_cloud, output_cloud_msg);
+    pcl::toROSMsg(*pattern_pose_estimation_->getOutputCloud(), output_cloud_msg);
 
     // Make sure the header is set correctly on the ROS message.
-    //output_cloud_msg.header = scan->header;
+    output_cloud_msg.header = scan->header;
 
     // Publish the ROS 2 message with the model point cloud.
-    //model_pub_->publish(output_cloud_msg);
+    model_pub_->publish(output_cloud_msg);
 
-    //RCLCPP_INFO(this->get_logger(), "Laser data processed and dock pose published.");
+    RCLCPP_INFO(this->get_logger(), "Laser data processed and dock pose published.");
 }
 
 // Getter for the dock pose, returns the current estimated docking pose.

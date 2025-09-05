@@ -18,7 +18,6 @@
 
 #include "docking_lifecycle_state_manager.h" 
 
-
 ManageLifecycleNodes::ManageLifecycleNodes(const std::string& name, const BT::NodeConfiguration& config)
   : BT::StatefulActionNode(name, config) 
 {

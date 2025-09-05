@@ -1,3 +1,10 @@
+/* 
+ * Copyright 2025, João Avelino, Rui Figueiredo, João Penha Lopes and João Zenário.
+ * This code was originaly developped by João Avelino and Rui Figueiredo for ROS1 in 2019.
+ * It was later refactored for ROS2 in 2025 by João Penha Lopes and João Zenário.
+ * All rights reserved.
+ */
+
 #ifndef PATTERN_POSE_ESTIMATION_HPP_
 #define PATTERN_POSE_ESTIMATION_HPP_
 
@@ -25,7 +32,6 @@
 class PatternPoseEstimation
 {
 private:
-    
 
     double rot_thresh;
     double tran_thresh;

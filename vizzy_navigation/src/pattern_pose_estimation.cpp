@@ -1,3 +1,10 @@
+/* 
+ * Copyright 2025, João Avelino, Rui Figueiredo, João Penha Lopes and João Zenário.
+ * This code was originaly developped by João Avelino and Rui Figueiredo for ROS1 in 2019.
+ * It was later refactored for ROS2 in 2025 by João Penha Lopes and João Zenário.
+ * All rights reserved.
+ */
+
 #include "pattern_pose_estimation.h"
 
 PatternPoseEstimation::PatternPoseEstimation(double rot_thresh_, double tran_thresh_, double fitting_score_thresh_, double discretization_step_, double distance_threshold_, std::string file_) :

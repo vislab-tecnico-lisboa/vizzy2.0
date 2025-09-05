@@ -134,11 +134,7 @@ BT::NodeStatus CheckPathCost::tick()
   return BT::NodeStatus::FAILURE;
 }
 
-// Ensure this function is exported with default visibility.
-extern "C"
+BT_REGISTER_NODES(factory)
 {
-  void __attribute__((visibility("default"))) BT_RegisterNodesFromPlugin(BT::BehaviorTreeFactory& factory)
-  {
-    factory.registerNodeType<CheckPathCost>("CheckPathCost");
-  }
+  factory.registerNodeType<CheckPathCost>("CheckPathCost");
 }

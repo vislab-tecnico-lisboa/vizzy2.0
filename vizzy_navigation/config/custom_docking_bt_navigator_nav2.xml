@@ -62,12 +62,16 @@
         </RecoveryNode>
 
         <!-- Activate the dock pose estimator node only in the staging pose. This will save unecessary resources. -->
+        <!-- ! behaviortree_cpp v4 -->
         <ManageLifecycleNodes transition="activate" node="{node}"/>
 
         <!-- Once in the staging pose and the dock pose estimator is active, we can dock the robot. -->
+        <!-- ! behaviortree_cpp v3 -->
+        <!-- TODO: Find a way of having an action that does the same but using v4, agnostic to opennav's v3. -->
         <DockRobot dock_id="dock_1" navigate_to_staging_pose="false"/>
 
         <!-- Deactivate the dock pose estimator node after docking is complete. -->
+        <!-- ! behaviortree_cpp v4 -->
         <ManageLifecycleNodes transition="deactivate" node="{node}"/>
 
       </PipelineSequence>

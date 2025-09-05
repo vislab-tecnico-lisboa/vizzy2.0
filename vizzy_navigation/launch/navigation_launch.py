@@ -572,7 +572,16 @@ def generate_launch_description():
         default_value='true',
         description='Whether to use the battery state simulation node.'
     )
-
+    publish_dock_point_cloud_arg = DeclareLaunchArgument(
+        'publish_dock_point_cloud',
+        default_value='false',
+        description='Whether to publish the dock point cloud for visualization.'
+    )
+    activate_dock_pose_detection_arg = DeclareLaunchArgument(
+        'activate_dock_pose_detection',
+        default_value='false',
+        description='Whether to activate the dock pose detection immediately for testing.'
+    )
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -589,6 +598,8 @@ def generate_launch_description():
     use_battery_state_simulation = LaunchConfiguration('use_battery_state_simulation')
     laser_front_topic = LaunchConfiguration('scan_topic_front')
     laser_rear_topic = LaunchConfiguration('scan_topic_rear')
+    publish_dock_point_cloud = LaunchConfiguration('publish_dock_point_cloud')
+    activate_dock_pose_detection = LaunchConfiguration('activate_dock_pose_detection')
 
     package_name = 'vizzy_navigation' 
 
@@ -602,17 +613,25 @@ def generate_launch_description():
     # Get the template file path for the default navigation BT.
     template_file_path = os.path.join(get_package_share_directory(package_name), 'config', 'custom_navigate_to_pose_bt_navigator_nav2.xml')
 
-    # Add this new action to generate the BT XML file for default navigation.
+    # Action to generate the BT XML file for default navigation.
     save_bt_xml_action = OpaqueFunction(function=save_rewritten_bt_xml,
                                         args=[template_file_path, output_bt_path])
     
     # Get the template file path for the docking mission BT.
     template_file_path_docking = os.path.join(get_package_share_directory(package_name), 'config', 'custom_docking_bt_navigator_nav2.xml')
 
-    # Add this new action to generate the BT XML file for the docking mission.
+    # Action to generate the BT XML file for the docking mission.
     output_bt_path_docking = os.path.join(output_bt_dir, 'custom_docking_bt_navigator_nav2.xml')
     save_bt_xml_action_docking = OpaqueFunction(function=save_rewritten_bt_xml,
                                                 args=[template_file_path_docking, output_bt_path_docking])
+
+    # Get the template file path for the dock pose detection activator BT.
+    template_file_path_dock_pose_detection = os.path.join(get_package_share_directory(package_name), 'config', 'custom_docking_bt_activator_nav2.xml')
+
+    # Action to copy the BT XML file for the dock pose detection activator directly to the final location.
+    output_bt_path_dock_pose_detection = os.path.join(output_bt_dir, 'custom_docking_bt_activator_nav2.xml')
+    copy_bt_xml_action_dock_pose_detection = OpaqueFunction(function=save_rewritten_bt_xml,
+                                                           args=[template_file_path_dock_pose_detection, output_bt_path_dock_pose_detection])
 
     # Define the output path within this packages directory.
     output_dir = os.path.join(install_share_path, 'params')
@@ -692,8 +711,9 @@ def generate_launch_description():
                 respawn_delay=2.0,
                 #prefix=['xterm -e gdb -ex run --args'], # Use this line to debug the node.
                 parameters=[configured_params], 
-                arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings),
+                arguments=['--ros-args', '--log-level', 'debug'],
+                remappings=remappings,),
+                ##prefix=['xterm -e gdb -ex run --args']),
             Node(
                 package='nav2_waypoint_follower',
                 executable='waypoint_follower',
@@ -749,6 +769,7 @@ def generate_launch_description():
                     'fitting_score_thresh': fitting_score_threshold,
                     'distance_threshold': distance_threshold,
                     'rear_laser_topic': laser_rear_topic,
+                    'publish_dock_point_cloud': publish_dock_point_cloud,
                 }],),
                 # Uncomment the next line to debug the node with GDB.
                 # prefix=['xterm -e gdb -ex run --args']),
@@ -785,7 +806,8 @@ def generate_launch_description():
                 executable='charging_action_server_node',
                 name='charging_action_server_node',
                 output='screen',
-                parameters=[{'is_simulation': use_battery_state_simulation}],),
+                parameters=[{'is_simulation': use_battery_state_simulation}, 
+                            {'activate_dock_pose_detection': activate_dock_pose_detection}],),
                 # Uncomment the next line to debug the node with GDB.
                 # prefix=['xterm -e gdb -ex run --args']),
 
@@ -860,11 +882,14 @@ def generate_launch_description():
         fitting_score_threshold_arg,
         distance_threshold_arg,
         use_battery_state_simulation_arg,
+        publish_dock_point_cloud_arg,
+        activate_dock_pose_detection_arg,
 
         # Actions
         log_sim_time_action,
         save_params_action,
         save_bt_xml_action,
         save_bt_xml_action_docking,
+        copy_bt_xml_action_dock_pose_detection,
         load_nodes,
     ])

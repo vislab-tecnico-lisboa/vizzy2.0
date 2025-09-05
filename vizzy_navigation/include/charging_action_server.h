@@ -88,6 +88,11 @@ private:
      * @brief TF2 listener for receiving transform updates.
      */
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
+    /**
+     * @brief Boolean flag to indicate if the user wants to activate the dock pose detection immediately.
+     */
+    bool activate_dock_pose_detection_;
     
     /**
      * @brief The goal callback for the action server.

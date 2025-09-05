@@ -252,6 +252,11 @@ private:
      * @brief Topic name for the rear laser scan.
      */
     std::string rear_laser_topic_;
+
+    /**
+     * @brief Flag to determine if the dock point cloud should be published.
+     */
+    bool publish_dock_point_cloud_ = false;
 };
 
 #endif // DOCK_POSE_ESTIMATOR_ROS2_H_

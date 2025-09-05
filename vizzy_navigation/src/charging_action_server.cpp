@@ -52,11 +52,20 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
                 std::string pkg_share_path = ament_index_cpp::get_package_share_directory("vizzy_navigation");
 
                 // Construct the full, absolute path to the BT file.
-                std::string bt_xml_path = pkg_share_path + "/behavior_trees/custom_docking_bt_navigator_nav2.xml";
-                
-                // Use the fully resolved path in the action goal.
-                nav_goal.behavior_tree = bt_xml_path;
-                RCLCPP_INFO(this->get_logger(), "Using BT file: %s", bt_xml_path.c_str());
+                if (activate_dock_pose_detection_)
+                {
+                    RCLCPP_INFO(this->get_logger(), "Activating dock pose detection immediately as per parameter. Robot WILL NOT navigate.");
+                    std::string bt_xml_path = pkg_share_path + "/behavior_trees/custom_docking_bt_activator_nav2.xml";
+                    nav_goal.behavior_tree = bt_xml_path;
+                    RCLCPP_INFO(this->get_logger(), "Using BT file: %s", bt_xml_path.c_str());
+                }
+                else
+                {
+                    RCLCPP_INFO(this->get_logger(), "Dock pose detection will NOT be activated immediately. Robot WILL navigate");
+                    std::string bt_xml_path = pkg_share_path + "/behavior_trees/custom_docking_bt_navigator_nav2.xml";
+                    nav_goal.behavior_tree = bt_xml_path;
+                    RCLCPP_INFO(this->get_logger(), "Using BT file: %s", bt_xml_path.c_str());
+                }
 
                 // Send the goal and handle the result of the entire mission.
 
@@ -222,13 +231,19 @@ ChargingActionServer::ChargingActionServer(const rclcpp::NodeOptions & options) 
         "navigate_to_pose"
     );
 
-    // Declare the parameter with a default value
+    // Declare the parameter with a default value.
     this->declare_parameter<bool>("is_simulation", true);
 
-    // Get the parameter's value and STORE IT in the member variable
+    // Get the parameter's value and STORE IT in the member variable.
     is_simulation_ = this->get_parameter("is_simulation").as_bool();
     
     RCLCPP_INFO(this->get_logger(), "is_simulation set to: %s", is_simulation_ ? "true" : "false");
+
+    // Declare the parameter regarding the immediate activation of the dock pose detection.
+    this->declare_parameter<bool>("activate_dock_pose_detection", false);
+
+    // Get the parameter's value and store it in the member variable.
+    activate_dock_pose_detection_ = this->get_parameter("activate_dock_pose_detection").as_bool();
 }
 
 void ChargingActionServer::init_action_server()

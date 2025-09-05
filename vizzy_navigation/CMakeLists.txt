@@ -43,6 +43,7 @@ find_package(tf2_sensor_msgs REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
 find_package(nav2_map_server REQUIRED)
 find_package(opennav_docking REQUIRED)
+find_package(behaviortree_cpp REQUIRED) 
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(nav2_bt_navigator REQUIRED)
 find_package(nav2_smac_planner REQUIRED)
@@ -50,7 +51,7 @@ find_package(nav2_behavior_tree REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(nav2_navfn_planner REQUIRED)
 find_package(opennav_docking_bt REQUIRED)
-find_package(behaviortree_cpp REQUIRED) 
+find_package(behaviortree_cpp_v3 REQUIRED) 
 find_package(interactive_markers REQUIRED)
 find_package(nav2_dwb_controller REQUIRED)
 find_package(opennav_docking_msgs REQUIRED)
@@ -75,14 +76,14 @@ target_include_directories(nav2_check_path_cost_bt_node PUBLIC
 
 # Link the nav2_check_path_cost_bt_node with the required libraries.
 ament_target_dependencies(nav2_check_path_cost_bt_node PUBLIC
-  "behaviortree_cpp"
-  "nav2_behavior_tree"
-  "nav2_costmap_2d"
-  "vizzy_msgs"
-  "nav2_util"
-  "nav_msgs"
-  "rclcpp"
-  "tf2_ros"
+  behaviortree_cpp
+  nav2_behavior_tree
+  nav2_costmap_2d
+  vizzy_msgs
+  nav2_util
+  nav_msgs
+  rclcpp
+  tf2_ros
 )
 
 # Create a library from the class implementation files.
@@ -104,15 +105,15 @@ target_include_directories(docking_lib PUBLIC
 
 # Link the library against all of its ROS 2 dependencies.
 ament_target_dependencies(docking_lib PUBLIC
-  "rclcpp"
-  "rclcpp_lifecycle"
-  "tf2_ros"
-  "tf2_geometry_msgs"
-  "tf2_eigen"
-  "pcl_conversions"
-  "laser_geometry"
-  "sensor_msgs"
-  "geometry_msgs"
+  rclcpp
+  rclcpp_lifecycle
+  tf2_ros
+  tf2_geometry_msgs
+  tf2_eigen
+  pcl_conversions
+  laser_geometry
+  sensor_msgs
+  geometry_msgs
 )
 
 # Link the library against ALL required libraries.
@@ -167,12 +168,12 @@ target_include_directories(nav2_lifecycle_manager_bt_node PUBLIC
 
 # Link the nav2_lifecycle_manager_bt_node library against its dependencies.
 ament_target_dependencies(nav2_lifecycle_manager_bt_node PUBLIC
-  "rclcpp"
-  "rclcpp_lifecycle"
-  "behaviortree_cpp"
-  "nav2_msgs"
-  "opennav_docking_msgs"
-  "opennav_docking_bt"
+  rclcpp
+  rclcpp_lifecycle
+  behaviortree_cpp
+  nav2_msgs
+  opennav_docking_msgs
+  opennav_docking_bt
 )
 
 # Create the library with the opennav plugin registrations.
@@ -188,11 +189,11 @@ target_include_directories(opennav_docking_bt_plugin PUBLIC
 
 # Link the opennav_docking_bt_plugin against its dependencies.
 ament_target_dependencies(opennav_docking_bt_plugin PUBLIC
-  "rclcpp"
-  "rclcpp_lifecycle"
-  "behaviortree_cpp_v3"
-  "opennav_docking_msgs"
-  "opennav_docking_bt"
+  rclcpp
+  rclcpp_lifecycle
+  behaviortree_cpp_v3 
+  opennav_docking_msgs
+  opennav_docking_bt
 )
 
 # Install the executables and libraries.

@@ -61,6 +61,9 @@
   <arg name="distance_threshold" default="2.0" description="Distance threshold for the dock pose estimation"/>
   <arg name="battery_state" default="0" description="Initial battery state. 0: Not charging, 1: Charging"/>
   <arg name="use_battery_state_simulation" default="true" description="Whether to use the battery state simulation node."/>
+  <arg name="publish_dock_point_cloud" default="false" description="Whether to publish the dock point cloud for visualization."/>
+  <arg name="activate_dock_pose_detection" default="false" description="Whether to activate the dock pose detection immediately for testing."/>
+
 
   <!-- Launch gazebo -->
   <include file="$(find-pkg-share vizzy_gazebo)/launch/gazebo_launch.xml">
@@ -123,6 +126,8 @@
       <arg name="fitting_score_threshold" value="$(var fitting_score_threshold)"/>
       <arg name="distance_threshold" value="$(var distance_threshold)"/>
       <arg name="use_battery_state_simulation" value="$(var use_battery_state_simulation)"/>
+      <arg name="publish_dock_point_cloud" value="$(var publish_dock_point_cloud)"/>
+      <arg name="activate_dock_pose_detection" value="$(var activate_dock_pose_detection)"/>
     </include>
   </group>
   <group unless="$(var use_obstacles)">
@@ -170,6 +175,8 @@
       <arg name="fitting_score_threshold" value="$(var fitting_score_threshold)"/>
       <arg name="distance_threshold" value="$(var distance_threshold)"/>
       <arg name="use_battery_state_simulation" value="$(var use_battery_state_simulation)"/>
+      <arg name="publish_dock_point_cloud" value="$(var publish_dock_point_cloud)"/>
+      <arg name="activate_dock_pose_detection" value="$(var activate_dock_pose_detection)"/>
     </include>
   </group>
 
