@@ -6,6 +6,7 @@
 
   <!-- Load full inertial and collision model or a simplified model -->
   <xacro:arg name="use_full_gazebo_model" default="false"/>
+  <xacro:arg name="base_frame_id" default="base_footprint"/>
 
   <!-- Things that are needed only for Gazebo (not the physical robot).  These include
        sensor and controller plugin specifications -->
@@ -17,14 +18,14 @@
   <xacro:macro name="base" params="name">
 
     <!-- Root link, on the ground just below the robot origin -->
-    <link name="base_footprint">
+    <link name="$(arg base_frame_id)">
     </link>
 
-    <joint name="base_footprint_joint" type="fixed">
+    <joint name="$(arg base_frame_id)_joint" type="fixed">
       <origin
         xyz="0.1934543 0.0 0.04"
         rpy="0.0 0.0 ${M_PI}"/>
-      <parent link="base_footprint"/>
+      <parent link="$(arg base_frame_id)"/>
       <child link="base_link"/>
     </joint>
 

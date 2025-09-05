@@ -6,6 +6,7 @@
   *  - There is no global parameter concept in ROS 2. For that reason, it can only be used nested in a node tag.
   *  and as such, needs to be declared within each node.
   *  - 'optenv' tags have been replaced by the 'env' tag.
+  *  - 'find' is replaced with 'find-pkg-share' in substitutions.
 
   * Main changes from Gazibo Classic to Ignition Gazebo:
   *  -  The package 'gazebo_ros' is now 'ros_gz_sim'.

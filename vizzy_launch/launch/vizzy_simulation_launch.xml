@@ -3,94 +3,153 @@
   *  - 'arg' tags in substitutions are replaced with 'var' tags (not in declarations).
   *  - nested includes now need be declared inside a group. 
   *  - 'type' attribute in node declaration is now 'exec'.
+  *  - 'find' is replaced with 'find-pkg-share' in substitutions.
 -->
 
 <launch>
 
   <!-- Parameters -->
-  <arg name="slam" default="false"/>
-  <!-- Robot name -->
-  <arg name="robot" default="vizzy"/>
-  <!-- Robot namespace -->
-  <arg name="ns" default="vizzy"/>
-  <!-- Robot base frame id -->
-  <arg name="base_frame_id" default="base_footprint"/>
-  <!-- Robot odometry frame id -->
-  <arg name="odom_frame_id" default="odometry"/>
-  <!-- Robot pose relative to the map -->
-  <arg name="pose" default="-x 0.0 -y 0.0 -z 0.0 -R 0.0 -P 0.0 -Y 3.1415"/>
-  <!-- Robot semantic description file -->
-  <arg name="urdf_file" default="vizzy.urdf.xacro"/>
 
-  <arg name="simulation" default="true"/>
-
-  <!-- Load Yarp plugins for real robot execution -->
-  <arg name="use_yarp" default="false"/>
-
-  <!-- Gazebo parameters -->
-  <arg name="gui" default="true"/>
-  <arg name="paused" default="false"/>
-  <!-- Synchronize ROS and simulation time -->
-  <arg name="use_sim_time" default="true"/>
-  <!-- Load full inertial and collision model or a simplified model -->
-  <arg name="use_full_gazebo_model" default="false"/>
-  <!-- Load a fully detailed hand model with properly modeled links and joints -->
-  <arg name="use_full_hand_model" default="false"/>
-
-  <!-- rviz -->
-  <arg name="rviz" default="true"/>
-
-  <!-- Teleop -->
-  <arg name="teleop" default="false"/>
-
-  <!-- Navigation -->
-  <arg name="navigation" default="true"/>
-  <arg name="map_topic" default="/map"/>
-  <arg name="map_file" default="isr_7th_floor_simulation.yaml"/>
-  <!-- Provide a map with previously acquired obstacles -->
-  <arg name="custom_obstacles" default="true"/>
-  <arg name="obstacles_map_file" default="isr_7th_floor_simulation.yaml"/>
-  <!-- Use lighter fake localization for simulation -->
-  <arg name="fake_localization" default="false"/>
-
-  <!-- Map -->
+  <arg name="base_frame_id" default="base_footprint"/> 
+  <arg name="odom_frame_id" default="odometry"/> 
+  <arg name="odom_topic" default="/odom"/> 
+  <arg name="map_frame_id" default="map"/>
+  <arg name="pose" default="-x 0.0 -y 0.0 -z 0.0 -Y 0.0"/>
+  <arg name="urdf_file" default="vizzy.urdf.xacro"/> 
+  <arg name="paused" default="false"/> 
+  <arg name="map_topic" default="/map"/> 
+  <arg name="map_file" default="isr_7th_floor_simulation.yaml"/> 
+  <arg name="obstacles_map_file" default="mapa_piso7_NOVO_AWESOME_obst.yaml"/> 
   <arg name="world" default="isr_7th_floor_world.sdf"/>
   <arg name="world_pkg" default="$(find-pkg-share vizzy_gazebo)"/>
-  <arg name="map_frame" default="map"/>
+  <arg name="map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var map_file)" description="Path to the map YAML file"/> 
+  <arg name="obstacles_map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)" description="Path to the obstacles map YAML file"/> 
+  <arg name="use_obstacles" default="false"/> 
+  <arg name="log_level" default="info"/> 
+  <arg name="scan_topic_front" default="/nav_hokuyo_laser/front/scan" description="The name of the output scan topic"/> 
+  <arg name="scan_topic_rear" default="/nav_hokuyo_laser/rear/scan" description="The name of the rear output scan topic"/>
+  <arg name="params_file" default="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml" description="Path to the Nav2 parameters file"/> 
+  <arg name="controller_frequency" default="20.0" description="Frequency of the controller in Hz"/> 
+  <arg name="path_align_forward_point_distance" default="0.325" description="Forward point distance for PathAlign"/>
+  <arg name="goal_align_forward_point_distance" default="0.325" description="Forward point distance for GoalAlign"/>
+  <arg name="inflation_radius" default="0.50" description="Inflation radius for the costmap"/>
+  <arg name="path_align_scale" default="32.0" description="Scale for PathAlign"/>
+  <arg name="goal_align_scale" default="24.0" description="Scale for GoalAlign"/>
+  <arg name="path_dist_scale" default="32.0" description="Scale for PathDist"/>
+  <arg name="goal_dist_scale" default="24.0" description="Scale for GoalDist"/>
+  <arg name="cost_scaling_factor" default="3.0" description="Cost scaling factor for the inflation layer in the costmap"/>
+  <arg name="base_obstacle_scale" default="0.02" description="Base obstacle scale for the costmap. This is used by the local and global costmaps to scale the cost of obstacles."/>
+  <arg name="controller_plugin_type" default="MPPI" description="Type of controller plugin to use. Options: DWB, RPP, MPPI"/>
+  <arg name="expected_planner_frequency" default="0.1" description="Expected frequency of the planner in Hz"/>
+  <arg name="planner_plugin_type" default="ThetaStar" description="Planner plugin to use for the navigation stack"/>
+  <arg name="robot_radius" default="0.4" description="Robot radius for the navigation stack. This is used by the local and global costmaps to scale the cost of obstacles."/>
+  <arg name="mppi_wide_cost_critic_cost_weight" default="3.82" description="Cost weight for the wide MPPI cost critic"/>
+  <arg name="mppi_narrow_cost_critic_cost_weight" default="10.0" description="Cost weight for the narrow MPPI cost critic"/>
+  <arg name="mppi_wide_path_align_critic_cost_weight" default="14.0" description="Cost weight for the wide MPPI path align critic"/>
+  <arg name="mppi_narrow_path_align_critic_cost_weight" default="32.0" description="Cost weight for the narrow MPPI path align critic"/>
+  <arg name="mppi_obstacles_critic_repulsion_weight" default="1.5" description="Repulsion weight for the MPPI obstacles critic"/>
+  <arg name="mppi_obstacles_critic_critical_weight" default="20.0" description="Critical weight for the MPPI obstacles critic"/>
+  <arg name="mppi_obstacles_critic_collision_margin_distance" default="0.2" description="Collision margin distance for the MPPI obstacles critic"/>
+  <arg name="mppi_wide_wz_std" default="0.2" description="Standard deviation for the wide MPPI controller"/>
+  <arg name="mppi_narrow_wz_std" default="0.13" description="Standard deviation for the narrow MPPI controller"/>
+  <arg name="velocity_smoother_feedback_type" default="OPEN_LOOP" description="Feedback type for the velocity smoother. Options: CLOSED_LOOP, OPEN_LOOP"/>
 
-  <!-- Robot capabilities -->
-  <arg name="disable_3d_sensor" default="true"/>
-
-  <!-- Derived parameters -->
-
-  <!-- Disable laser sensors -->
-  <arg     if="$(var navigation)" name="disable_laser" default="false"/>
-  <arg unless="$(var navigation)" name="disable_laser" default="true"/>
-  <!-- Change default fixed frame for rviz -->
-  <arg     if="$(var navigation)" name="rviz_fixed_frame" default="map"/>
-  <arg unless="$(var navigation)" name="rviz_fixed_frame" default="base_footprint"/>
-  
   <!-- Launch gazebo -->
   <include file="$(find-pkg-share vizzy_gazebo)/launch/gazebo_launch.xml">
-    <arg name="robot" value="$(var robot)"/>
     <arg name="pose" value="$(var pose)"/>
     <arg name="urdf_file" value="$(var urdf_file)"/>
-    <arg name="use_yarp" value="$(var use_yarp)"/>
-    <arg name="gui" value="$(var gui)"/>
     <arg name="paused" value="$(var paused)"/>
-    <arg name="use_sim_time" value="$(var use_sim_time)"/>
+    <arg name="use_sim_time" value="True"/>
     <arg name="world" value="$(var world)"/>
     <arg name="world_pkg" value="$(var world_pkg)"/>
-    <arg name="use_full_gazebo_model" value="$(var use_full_gazebo_model)"/>
-    <arg name="use_full_hand_model" value="$(var use_full_hand_model)"/>
-    <arg name="disable_laser" value="$(var disable_laser)"/>
-    <arg name="disable_3d_sensor" value="$(var disable_3d_sensor)"/>
+    <arg name="base_frame_id" value="$(var base_frame_id)"/>
+    <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
+    <arg name="odom_topic" value="$(var odom_topic)"/>
+    <arg name="scan_front_topic" value="$(var scan_topic_front)"/>
+    <arg name="scan_rear_topic" value="$(var scan_topic_rear)"/>
   </include>
 
-  <!-- Launch navigation -->
-  <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
-    <arg name="params_file" value="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml"/>
-  </include>
+  <!-- Launch navigation stack -->
+  <group if="$(var use_obstacles)">
+    <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
+      <arg name="use_sim_time" value="True"/>
+      <arg name="params_file" value="$(var params_file)"/>
+      <arg name="autostart" value="true"/>
+      <arg name="use_respawn" value="false"/>
+      <arg name="log_level" value="$(var log_level)"/>
+      <arg name="map_topic" value="$(var map_topic)"/>
+      <arg name="scan_topic_front" value="$(var scan_topic_front)"/>
+      <arg name="scan_topic_rear" value="$(var scan_topic_rear)"/>
+      <arg name="map_yaml" value="$(var obstacles_map_yaml)"/>
+      <arg name="base_frame_id" value="$(var base_frame_id)"/>
+      <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
+      <arg name="map_frame_id" value="$(var map_frame_id)"/>
+      <arg name="controller_frequency" value="$(var controller_frequency)"/>
+      <arg name="path_align_forward_point_distance" value="$(var path_align_forward_point_distance)"/>
+      <arg name="goal_align_forward_point_distance" value="$(var goal_align_forward_point_distance)"/>
+      <arg name="inflation_radius" value="$(var inflation_radius)"/>
+      <arg name="path_align_scale" value="$(var path_align_scale)"/>
+      <arg name="goal_align_scale" value="$(var goal_align_scale)"/>
+      <arg name="path_dist_scale" value="$(var path_dist_scale)"/>
+      <arg name="goal_dist_scale" value="$(var goal_dist_scale)"/>
+      <arg name="cost_scaling_factor" value="$(var cost_scaling_factor)"/>
+      <arg name="base_obstacle_scale" value="$(var base_obstacle_scale)"/>
+      <arg name="controller_plugin_type" value="$(var controller_plugin_type)"/>
+      <arg name="expected_planner_frequency" value="$(var expected_planner_frequency)"/>
+      <arg name="planner_plugin_type" value="$(var planner_plugin_type)"/>
+      <arg name="robot_radius" value="$(var robot_radius)"/>
+      <arg name="mppi_wide_ cost_critic_cost_weight" value="$(var mppi_wide_cost_critic_cost_weight)"/>
+      <arg name="mppi_narrow_cost_critic_cost_weight" value="$(var mppi_narrow_cost_critic_cost_weight)"/>
+      <arg name="mppi_wide_path_align_critic_cost_weight" value="$(var mppi_wide_path_align_critic_cost_weight)"/>
+      <arg name="mppi_narrow_path_align_critic_cost_weight" value="$(var mppi_narrow_path_align_critic_cost_weight)"/>
+      <arg name="mppi_obstacles_critic_repulsion_weight" value="$(var mppi_obstacles_critic_repulsion_weight)"/>
+      <arg name="mppi_obstacles_critic_critical_weight" value="$(var mppi_obstacles_critic_critical_weight)"/>
+      <arg name="mppi_obstacles_critic_collision_margin_distance" value="$(var mppi_obstacles_critic_collision_margin_distance)"/>
+      <arg name="mppi_wide_wz_std" value="$(var mppi_wide_wz_std)"/>
+      <arg name="mppi_narrow_wz_std" value="$(var mppi_narrow_wz_std)"/>
+      <arg name="velocity_smoother_feedback_type" value="$(var velocity_smoother_feedback_type)"/>
+    </include>
+  </group>
+  <group unless="$(var use_obstacles)">
+    <include file="$(find-pkg-share vizzy_navigation)/launch/navigation_launch.py">
+      <arg name="use_sim_time" value="True"/>
+      <arg name="params_file" value="$(var params_file)"/>
+      <arg name="autostart" value="true"/>
+      <arg name="use_respawn" value="false"/>
+      <arg name="log_level" value="$(var log_level)"/>
+      <arg name="map_topic" value="$(var map_topic)"/>
+      <arg name="scan_topic_front" value="$(var scan_topic_front)"/>
+      <arg name="scan_topic_rear" value="$(var scan_topic_rear)"/>
+      <arg name="map_yaml" value="$(var map_yaml)"/>
+      <arg name="base_frame_id" value="$(var base_frame_id)"/>
+      <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
+      <arg name="map_frame_id" value="$(var map_frame_id)"/>
+      <arg name="controller_frequency" value="$(var controller_frequency)"/>
+      <arg name="path_align_forward_point_distance" value="$(var path_align_forward_point_distance)"/>
+      <arg name="goal_align_forward_point_distance" value="$(var goal_align_forward_point_distance)"/>
+      <arg name="inflation_radius" value="$(var inflation_radius)"/>
+      <arg name="path_align_scale" value="$(var path_align_scale)"/>
+      <arg name="goal_align_scale" value="$(var goal_align_scale)"/>
+      <arg name="path_dist_scale" value="$(var path_dist_scale)"/>
+      <arg name="goal_dist_scale" value="$(var goal_dist_scale)"/>
+      <arg name="cost_scaling_factor" value="$(var cost_scaling_factor)"/>
+      <arg name="base_obstacle_scale" value="$(var base_obstacle_scale)"/>
+      <arg name="controller_plugin_type" value="$(var controller_plugin_type)"/>
+      <arg name="expected_planner_frequency" value="$(var expected_planner_frequency)"/>
+      <arg name="planner_plugin_type" value="$(var planner_plugin_type)"/>
+      <arg name="robot_radius" value="$(var robot_radius)"/>
+      <arg name="mppi_wide_ cost_critic_cost_weight" value="$(var mppi_wide_cost_critic_cost_weight)"/>
+      <arg name="mppi_narrow_cost_critic_cost_weight" value="$(var mppi_narrow_cost_critic_cost_weight)"/>
+      <arg name="mppi_wide_path_align_critic_cost_weight" value="$(var mppi_wide_path_align_critic_cost_weight)"/>
+      <arg name="mppi_narrow_path_align_critic_cost_weight" value="$(var mppi_narrow_path_align_critic_cost_weight)"/>
+      <arg name="mppi_obstacles_critic_repulsion_weight" value="$(var mppi_obstacles_critic_repulsion_weight)"/>
+      <arg name="mppi_obstacles_critic_critical_weight" value="$(var mppi_obstacles_critic_critical_weight)"/>
+      <arg name="mppi_obstacles_critic_collision_margin_distance" value="$(var mppi_obstacles_critic_collision_margin_distance)"/>
+      <arg name="mppi_wide_wz_std" value="$(var mppi_wide_wz_std)"/>
+      <arg name="mppi_narrow_wz_std" value="$(var mppi_narrow_wz_std)"/>
+      <arg name="velocity_smoother_feedback_type" value="$(var velocity_smoother_feedback_type)"/>
+    </include>
+  </group>
 
   <!-- Start RViz2 using the new python launcher from vizzy_launch -->
   <include file="$(find-pkg-share vizzy_launch)/launch/rviz_launch.py">

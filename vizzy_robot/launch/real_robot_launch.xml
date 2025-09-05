@@ -1,0 +1,53 @@
+<!--
+  * Main changes from ROS1 to ROS2:
+  *  - 'arg' tags in substitutions are replaced with 'var' tags (not in declarations).
+-->
+
+<launch>
+  <arg name="node_name_front" default="nav_hokuyo_node" description="Name for the urg_node instance"/>
+  <arg name="node_name_rear" default="nav_hokuyo_rear_node" description="Name for the rear urg_node instance"/>
+  <arg name="scan_topic_front" default="/nav_hokuyo_laser/front/scan" description="The name of the output scan topic"/>
+  <arg name="scan_topic_rear" default="/nav_hokuyo_laser/rear/scan" description="The name of the rear output scan topic"/>
+  <arg name="serial_port_front" default="/dev/ttyACM1" description="Serial port for the front laser scanner"/>
+  <arg name="serial_port_rear" default="/dev/ttyACM0" description="Serial port for the rear laser scanner"/>
+  <arg name="front_laser_frame" default="nav_hokuyo_laser_link" description="Frame id for front laser link."/>
+  <arg name="rear_laser_frame" default="nav_hokuyo_rear_laser_link" description="Frame id for rear laser link."/>
+  <arg name="urdf_file" default="vizzy.urdf.xacro" description="URDF file for the robot"/>
+  <arg name="odom_frame_id" default="odometry" description="Frame id for the odometry"/>
+  <arg name="base_frame_id" default="base_footprint" description="Frame id for the base footprint"/>
+  <arg name="linear_odom_scale" default="1.6" description="Scale factor for linear odometry"/>
+  <arg name="angular_odom_scale" default="1.8" description="Scale factor for angular odometry"/>
+  
+  <!-- Both lasers have the same angle_min and angle_max specifications. -->
+  <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
+  <arg name="angle_max" default="1.309" description="Maximum angle for the laser scanner"/>
+  
+
+    <!-- Compile the final Robot Model URDF and launch the Robot and Joint State Publishers. -->
+    <include file="$(find-pkg-share vizzy_robot)/launch/auxiliary_vizzy_launch.py">
+        <arg name="urdf_file" value="$(var urdf_file)" />
+    </include>
+
+    <!-- Launch the Segway base -->
+    <include file="$(find-pkg-share vizzy_robot)/launch/segway_base_launch.xml">
+        <arg name="odom_frame_id" value="$(var odom_frame_id)" />
+        <arg name="base_frame_id" value="$(var base_frame_id)" />
+        <arg name="linear_odom_scale" value="$(var linear_odom_scale)" />
+        <arg name="angular_odom_scale" value="$(var angular_odom_scale)" />
+    </include>
+  
+    <!-- Launch the Hokuyo laser scanners -->
+    <include file="$(find-pkg-share vizzy_robot)/launch/hokuyo_launch.xml">
+        <arg name="node_name_front" value="$(var node_name_front)" />
+        <arg name="node_name_rear" value="$(var node_name_rear)" />
+        <arg name="scan_topic_front" value="$(var scan_topic_front)" />
+        <arg name="scan_topic_rear" value="$(var scan_topic_rear)" />
+        <arg name="serial_port_front" value="$(var serial_port_front)" />
+        <arg name="serial_port_rear" value="$(var serial_port_rear)" />
+        <arg name="front_laser_frame" value="$(var front_laser_frame)" />
+        <arg name="rear_laser_frame" value="$(var rear_laser_frame)" />
+        <arg name="angle_min" value="$(var angle_min)" />
+        <arg name="angle_max" value="$(var angle_max)" />
+    </include>
+
+</launch>

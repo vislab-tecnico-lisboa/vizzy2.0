@@ -1,0 +1,5 @@
+<library path="nav2_check_path_cost_bt_node">
+  <class name="CheckPathCost" type="vizzy_navigation::CheckPathCost" base_class_type="BT::ConditionNode">
+    <description>Checks if the path ahead has a high cost.</description>
+  </class>
+</library>

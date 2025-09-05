@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 # Set the project name.
-project(vizzy_launch)
+project(vizzy_robot)
 
 # Default to C++23.
 if(NOT CMAKE_CXX_STANDARD)
@@ -16,21 +16,13 @@ endif()
 find_package(ament_cmake REQUIRED
   vizzy_description REQUIRED
   vizzy_navigation REQUIRED
-  vizzy_gazebo REQUIRED
-  vizzy_robot REQUIRED
 )
 
 # Install the directories to be accessible via the package.
 install(
-  DIRECTORY launch 
-  config
+  DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
 ) 
-
-# Source the environment hooks for this package.
-ament_environment_hooks(
-  "${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/env_loader.sh"
-)
 
 # Install the package.xml and register the package with ament.
 ament_package()

@@ -1,0 +1,16 @@
+<!--
+  * Main changes from ROS1 to ROS2:
+  *  - 'arg' tags in substitutions are replaced with 'var' tags (not in declarations).
+  *  - 'type' attribute in node declaration is now 'exec'.
+  *  - 'find' is replaced with 'find-pkg-share' in substitutions.
+-->
+
+<launch>
+  <arg name="scan_topic_front" default="/nav_hokuyo_laser/front/scan" description="The name of the output scan topic"/> 
+  <arg name="scan_topic_filtered_front" default="/scan_filtered_front" description="The name of the filtered front scan topic"/>  
+
+  <include file="$(find-pkg-share vizzy_sensors)/launch/hokuyo/hokuyo_footprint_filter_launch.py">
+    <arg name="scan_topic" value="$(var scan_topic_front)" />
+    <arg name="scan_topic_filtered" value="$(var scan_topic_filtered_front)" />
+  </include>
+</launch>

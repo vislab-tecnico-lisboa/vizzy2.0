@@ -27,6 +27,8 @@ This repository currently includes the following core ROS 2 packages:
 * **`vizzy_gazebo`**: Provides launch files and configurations required to simulate Vizzy in the Ignition Gazebo Fortress environment.
 * **`vizzy_navigation`**: Contains launch files and configurations for deploying the ROS 2 Navigation Stack (Nav2) with Vizzy.
 * **`vizzy_msgs`**: Defines custom ROS 2 messages, services, and actions specific to Vizzy.
+* **`vizzy_robot`**: Contains launchers for the real Vizzy's hardware.
+* **`vizzy_sensors`**: Contains filters to be applied to the real Vizzy's Hokuyo laser scanners.
 
 ## Prerequisites
 

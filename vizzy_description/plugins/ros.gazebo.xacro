@@ -5,6 +5,11 @@
 -->
 
 <root xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:arg name="odom_topic" default="model/vizzy/odometry"/>
+  <xacro:arg name="odom_frame_id" default="odometry"/>
+  <xacro:arg name="base_frame_id" default="base_footprint"/>
+
   <!-- Joint States Publisher -->
   <xacro:macro name="joint_state_publisher">
     <gazebo>
@@ -32,9 +37,9 @@
           <publish_odom>true</publish_odom>
           <publish_odom_tf>true</publish_odom_tf>
           <publish_wheel_tf>true</publish_wheel_tf>
-          <odom_topic>model/vizzy/odometry</odom_topic>
-          <frame_id>odometry</frame_id>
-          <child_frame_id>base_footprint</child_frame_id>
+          <odom_topic>$(arg odom_topic)</odom_topic>
+          <frame_id>$(arg odom_frame_id)</frame_id>
+          <child_frame_id>$(arg base_frame_id)</child_frame_id>
           <tf_topic>model/vizzy/tf</tf_topic>
       </plugin>
     </gazebo>
