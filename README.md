@@ -27,6 +27,25 @@ This repository currently includes the following core ROS 2 packages:
 * **`vizzy_gazebo`**: Provides launch files and configurations required to simulate Vizzy in the Ignition Gazebo Fortress environment.
 * **`vizzy_navigation`**: Contains launch files and configurations for deploying the ROS 2 Navigation Stack (Nav2) with Vizzy.
 * **`vizzy_msgs`**: Defines custom ROS 2 messages, services, and actions specific to Vizzy.
+* **`vizzy_robot`**: Contains launchers for the real Vizzy's hardware.
+* **`vizzy_sensors`**: Contains filters to be applied to the real Vizzy's Hokuyo laser scanners.
+
+## Architectural Note: Navigation Stack Dependency
+
+A key decision in this project is the use of a specific development branch for the ROS 2 Navigation Stack (Nav2).
+
+* **What we use:** Instead of the standard Nav2 version released with ROS 2 Humble, this project depends on the **`humble_main` branch** from the official [navigation2 repository](https://github.com/ros-navigation/navigation2/tree/humble_main).
+
+* **Why we do this:** Our project is based on **ROS 2 Humble LTS** to ensure long-term stability. However, we also require advanced navigation features that were developed *after* Humble was released. By using the `humble_main` branch, we gain access to significant improvements backported from newer ROS 2 distributions. Key advantages include:
+    * **New Safety Layers:** A dedicated `Collision Monitor` to prevent collisions independently of the controller, providing a last line of defense for safety. 🛡️
+    * **Dedicated Docking Server:** A new `nav2_docking` package integrating the original [`opennav_docking`](https://github.com/open-navigation/opennav_docking) packages, which provide robust and standardized behaviors for docking at charging stations or specific poses.
+    * **State-of-the-Art Controllers:** The MPPI Controller has been significantly optimized for speed (a reported 45% increase!), and its critics have been enhanced for more nuanced control.
+    * **Streamlined Configuration:** The BT Navigator now features automated plugin management, eliminating the configuration of default plugins and simplifying the setup and configuration of custom behavior trees (dozens of configurations lines gone!).
+    * **Modernized Internals:** Key libraries, like `BehaviorTree.CPP` (v4.5+), have been updated, providing better performance and access to new behavioral logic features.
+
+    The `humble_main` branch allows us to leverage these modern capabilities while remaining on a stable ROS 2 distribution.
+
+* **What this means for developers:** This approach provides access to cutting-edge features on a stable ROS 2 base. However, developers must be aware of the trade-offs: humble_main is an active development branch and may have temporary instabilities not present in the official release. Furthermore, our system's dependency on this specific Nav2 version may affect compatibility with external tools that expect a standard Humble installation. If you encounter any issues, please refer to our **Reporting Issues** section.
 
 ## Prerequisites
 
