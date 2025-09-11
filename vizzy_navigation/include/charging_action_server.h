@@ -20,7 +20,7 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include "vizzy_msgs/srv/battery_charging_state.hpp"
-#include <opennav_docking_msgs/action/dock_robot.hpp>
+#include <nav2_msgs/action/dock_robot.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
 /**

@@ -1,6 +1,6 @@
 #include <opennav_docking_bt/dock_robot.hpp>
 #include <opennav_docking_bt/undock_robot.hpp>
-#include <behaviortree_cpp_v3/bt_factory.h>
+#include <behaviortree_cpp/bt_factory.h>
 
 // Ensure this function is exported with default visibility.
 extern "C"

@@ -31,7 +31,6 @@
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
   <buildtool_depend>rosidl_default_runtime</buildtool_depend>
 
-
   <!-- Build dependencies -->
   <build_depend>tf2</build_depend> 
 
@@ -65,6 +64,7 @@
   <depend>tf2_ros</depend>
   <depend>tf2_eigen</depend>
   <depend>nav2_util</depend>
+  <depend>nav2_msgs</depend>
   <depend>pluginlib</depend>
   <depend>vizzy_msgs</depend>
   <depend>sensor_msgs</depend> 
@@ -75,12 +75,11 @@
   <depend>pcl_conversions</depend>
   <depend>opennav_docking</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>behaviortree_cpp</depend>
   <depend>opennav_docking_bt</depend>
   <depend>nav2_behavior_tree</depend>
   <depend>visualization_msgs</depend> 
-  <depend>behaviortree_cpp</depend>
   <depend>interactive_markers</depend> 
-  <depend>opennav_docking_msgs</depend>
   <depend>nav2_lifecycle_manager</depend>
 
   <member_of_group>rosidl_interface_packages</member_of_group>

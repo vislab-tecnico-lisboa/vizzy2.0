@@ -201,23 +201,23 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'controller_server.ros__parameters.dwb_controller.BaseObstacle.scale': float(LaunchConfiguration('base_obstacle_scale').perform(context)),
 
         # Wide MPPI Controller substitutions.
-        'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
-        'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
+        #'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
+        #'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
         'controller_server.ros__parameters.mppi_controller_wide.CostCritic.cost_weight': float(LaunchConfiguration('mppi_wide_cost_critic_cost_weight').perform(context)),
         'controller_server.ros__parameters.mppi_controller_wide.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_wide_path_align_critic_cost_weight').perform(context)),
-        'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.repulsion_weight': float(LaunchConfiguration('mppi_obstacles_critic_repulsion_weight').perform(context)),
-        'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.critical_weight': float(LaunchConfiguration('mppi_obstacles_critic_critical_weight').perform(context)),
-        'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.collision_margin_distance': float(LaunchConfiguration('mppi_obstacles_critic_collision_margin_distance').perform(context)),
+        #'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.repulsion_weight': float(LaunchConfiguration('mppi_obstacles_critic_repulsion_weight').perform(context)),
+        #'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.critical_weight': float(LaunchConfiguration('mppi_obstacles_critic_critical_weight').perform(context)),
+        #'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.collision_margin_distance': float(LaunchConfiguration('mppi_obstacles_critic_collision_margin_distance').perform(context)),
         'controller_server.ros__parameters.mppi_controller_wide.wz_std': float(LaunchConfiguration('mppi_wide_wz_std').perform(context)),
 
         # Narrow MPPI Controller substitutions.
-        'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
-        'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
+        #'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
+        #'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
         'controller_server.ros__parameters.mppi_controller_narrow.CostCritic.cost_weight': float(LaunchConfiguration('mppi_narrow_cost_critic_cost_weight').perform(context)),
         'controller_server.ros__parameters.mppi_controller_narrow.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_narrow_path_align_critic_cost_weight').perform(context)),
-        'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.repulsion_weight': float(LaunchConfiguration('mppi_obstacles_critic_repulsion_weight').perform(context)),
-        'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.critical_weight': float(LaunchConfiguration('mppi_obstacles_critic_critical_weight').perform(context)),
-        'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.collision_margin_distance': float(LaunchConfiguration('mppi_obstacles_critic_collision_margin_distance').perform(context)),
+        #'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.repulsion_weight': float(LaunchConfiguration('mppi_obstacles_critic_repulsion_weight').perform(context)),
+        #'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.critical_weight': float(LaunchConfiguration('mppi_obstacles_critic_critical_weight').perform(context)),
+        #'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.collision_margin_distance': float(LaunchConfiguration('mppi_obstacles_critic_collision_margin_distance').perform(context)),
         'controller_server.ros__parameters.mppi_controller_narrow.wz_std': float(LaunchConfiguration('mppi_narrow_wz_std').perform(context)),
 
         # Map Server substitutions.
@@ -711,7 +711,7 @@ def generate_launch_description():
                 respawn_delay=2.0,
                 #prefix=['xterm -e gdb -ex run --args'], # Use this line to debug the node.
                 parameters=[configured_params], 
-                arguments=['--ros-args', '--log-level', 'debug'],
+                arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings,),
                 ##prefix=['xterm -e gdb -ex run --args']),
             Node(

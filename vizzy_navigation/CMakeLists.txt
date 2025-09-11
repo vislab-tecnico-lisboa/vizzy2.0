@@ -27,6 +27,7 @@ find_package(pluginlib REQUIRED)
 find_package(nav2_amcl REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav2_msgs REQUIRED)
 find_package(vizzy_msgs REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -51,16 +52,20 @@ find_package(nav2_behavior_tree REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(nav2_navfn_planner REQUIRED)
 find_package(opennav_docking_bt REQUIRED)
-find_package(behaviortree_cpp_v3 REQUIRED) 
 find_package(interactive_markers REQUIRED)
 find_package(nav2_dwb_controller REQUIRED)
-find_package(opennav_docking_msgs REQUIRED)
 find_package(nav2_mppi_controller REQUIRED)
 find_package(nav2_velocity_smoother REQUIRED)
 find_package(nav2_waypoint_follower REQUIRED)
 find_package(nav2_lifecycle_manager REQUIRED)
 find_package(nav2_theta_star_planner REQUIRED)
-find_package(nav2_constrained_smoother REQUIRED)
+
+# TODO: Find a way to include this package as a dependency
+# without causing a Ceres dependency issue.
+# Althout it is dependent on the package.xml file (and therefore installed
+# with rosdep, we should fix this). 
+# find_package(nav2_constrained_smoother REQUIRED)
+
 find_package(nav2_regulated_pure_pursuit_controller REQUIRED)
 
 add_library(nav2_check_path_cost_bt_node SHARED
@@ -142,7 +147,6 @@ ament_target_dependencies(charging_action_server_node PUBLIC
   tf2_ros
   tf2_geometry_msgs
   nav2_msgs
-  opennav_docking_msgs
   behaviortree_cpp
   nav2_behavior_tree
 )
@@ -172,7 +176,6 @@ ament_target_dependencies(nav2_lifecycle_manager_bt_node PUBLIC
   rclcpp_lifecycle
   behaviortree_cpp
   nav2_msgs
-  opennav_docking_msgs
   opennav_docking_bt
 )
 
@@ -191,8 +194,6 @@ target_include_directories(opennav_docking_bt_plugin PUBLIC
 ament_target_dependencies(opennav_docking_bt_plugin PUBLIC
   rclcpp
   rclcpp_lifecycle
-  behaviortree_cpp_v3 
-  opennav_docking_msgs
   opennav_docking_bt
 )
 
