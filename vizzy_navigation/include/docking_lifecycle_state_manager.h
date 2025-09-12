@@ -23,6 +23,7 @@
 #include <behaviortree_cpp/bt_factory.h>
 #include <behaviortree_cpp/action_node.h>
 #include <nav2_msgs/srv/manage_lifecycle_nodes.hpp>
+#include <lifecycle_msgs/msg/transition.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
 /**

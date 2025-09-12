@@ -68,29 +68,6 @@ find_package(nav2_theta_star_planner REQUIRED)
 
 find_package(nav2_regulated_pure_pursuit_controller REQUIRED)
 
-add_library(nav2_check_path_cost_bt_node SHARED
-  src/check_path_cost_condition.cpp
-)
-
-# Specify the include directories for the nav2_check_path_cost_bt_node.
-target_include_directories(nav2_check_path_cost_bt_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-  ${nav2_behavior_tree_INCLUDE_DIRS}
-)
-
-# Link the nav2_check_path_cost_bt_node with the required libraries.
-ament_target_dependencies(nav2_check_path_cost_bt_node PUBLIC
-  behaviortree_cpp
-  nav2_behavior_tree
-  nav2_costmap_2d
-  vizzy_msgs
-  nav2_util
-  nav_msgs
-  rclcpp
-  tf2_ros
-)
-
 # Create a library from the class implementation files.
 add_library(docking_lib
   src/dock_pose_estimator.cpp
@@ -199,7 +176,6 @@ ament_target_dependencies(opennav_docking_bt_plugin PUBLIC
 
 # Install the executables and libraries.
 install(TARGETS
-  nav2_check_path_cost_bt_node
   dock_pose_estimator_node
   charging_action_server_node
   docking_lib 
@@ -231,6 +207,9 @@ install(FILES
   config/bt_plugins.xml # This is the main plugin description file that lists all plugins.
   DESTINATION share/${PROJECT_NAME}/
 )
+
+target_compile_definitions(nav2_lifecycle_manager_bt_node PRIVATE BT_PLUGIN_EXPORT)
+target_compile_definitions(opennav_docking_bt_plugin PRIVATE BT_PLUGIN_EXPORT)
 
 # Export the plugin description file so that it is discoverable by Nav2.
 pluginlib_export_plugin_description_file(${PROJECT_NAME} config/bt_plugins.xml)

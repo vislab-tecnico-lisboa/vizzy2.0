@@ -51,10 +51,22 @@ bt_navigator:
     bt_loop_duration: 50
     default_server_timeout: 20
     wait_for_service_timeout: 1000
-      
-bt_navigator_navigate_through_poses_rclcpp_node:
-  ros__parameters:
-    use_sim_time: True # Configurable
+    plugin_lib_names:
+      - nav2_lifecycle_manager_bt_node
+      - opennav_docking_bt_plugin
+    error_code_name_prefixes:
+      - assisted_teleop
+      - backup
+      - compute_path
+      - dock_robot
+      - drive_on_heading
+      - follow_path
+      - nav_thru_poses
+      - nav_to_pose
+      - spin
+      - route
+      - undock_robot
+      - wait
 
 bt_navigator_navigate_to_pose_rclcpp_node:
   ros__parameters:

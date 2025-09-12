@@ -53,11 +53,12 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
 
                 // Construct the full, absolute path to the BT file.
                 if (activate_dock_pose_detection_)
-                {
+                {   
+                    /*
                     RCLCPP_INFO(this->get_logger(), "Activating dock pose detection immediately as per parameter. Robot WILL NOT navigate.");
                     std::string bt_xml_path = pkg_share_path + "/behavior_trees/custom_docking_bt_activator_nav2.xml";
                     nav_goal.behavior_tree = bt_xml_path;
-                    RCLCPP_INFO(this->get_logger(), "Using BT file: %s", bt_xml_path.c_str());
+                    RCLCPP_INFO(this->get_logger(), "Using BT file: %s", bt_xml_path.c_str());*/
                 }
                 else
                 {
@@ -222,7 +223,7 @@ ChargingActionServer::ChargingActionServer(const rclcpp::NodeOptions & options) 
     tf_listener_(std::make_shared<tf2_ros::TransformListener>(*tf_buffer_, this))
 {
     // Create publishers and service clients.
-    this->cmd_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/vizzy/cmd_vel", 1);
+    this->cmd_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("/vizzy/cmd_vel", 1);
     this->charging_state_client_ = this->create_client<vizzy_msgs::srv::BatteryChargingState>("battery_charging_state");
 
     // Initialize the Nav2 action client

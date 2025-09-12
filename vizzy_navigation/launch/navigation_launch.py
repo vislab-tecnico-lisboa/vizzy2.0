@@ -712,8 +712,8 @@ def generate_launch_description():
                 #prefix=['xterm -e gdb -ex run --args'], # Use this line to debug the node.
                 parameters=[configured_params], 
                 arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings,),
-                ##prefix=['xterm -e gdb -ex run --args']),
+                remappings=remappings,#),
+                prefix=['xterm -e gdb -ex run --args']),
             Node(
                 package='nav2_waypoint_follower',
                 executable='waypoint_follower',
@@ -770,9 +770,9 @@ def generate_launch_description():
                     'distance_threshold': distance_threshold,
                     'rear_laser_topic': laser_rear_topic,
                     'publish_dock_point_cloud': publish_dock_point_cloud,
-                }],),
+                }],#),
                 # Uncomment the next line to debug the node with GDB.
-                # prefix=['xterm -e gdb -ex run --args']),
+                prefix=['xterm -e gdb -ex run --args']),
             
             Node(
                 package='opennav_docking',
@@ -823,7 +823,8 @@ def generate_launch_description():
                 parameters=[{'use_sim_time': use_sim_time,
                              'autostart': False,
                              'node_names': ['dock_pose_estimator_node'], 
-                             'bond_timeout': 0.0}]),
+                             'bond_timeout': 0.0}],),
+                #prefix=['xterm -e gdb -ex run --args']),
         ]
     )
 

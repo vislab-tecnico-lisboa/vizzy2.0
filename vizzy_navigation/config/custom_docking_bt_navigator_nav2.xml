@@ -14,12 +14,12 @@
   * The main objective of this BT is to ensure a seamless and efficient docking procedure by using as few
   * resources as possible.
 -->
-<root main_tree_to_execute="DockingMission">
+<root main_tree_to_execute="DockingMission" BTCPP_format="4">
   <BehaviorTree ID="DockingMission">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
 
       <!-- Docking sequence. -->
-      <PipelineSequence name="DockingSequence">
+      <Sequence name="DockingSequence">
         <SetBlackboard output_key="selected_controller" value="mppi_controller_wide" />   
 
         <!-- Compute path and Smooth it. -->
@@ -33,48 +33,19 @@
           </RecoveryNode>
         </RateController>
 
-        <!-- Follow the computed path. -->
-        <!-- The detailed explanation regarding this section is detailed in the
-        custom_navigate_to_pose_bt_navigator_nav2.xml -->
-        <RecoveryNode number_of_retries="1" name="FollowPath">
-          <Parallel success_threshold="1" failure_threshold="2">
-            <GoalReached goal="{goal}" />
-            <FollowPath path="{path}" controller_id="{selected_controller}"/>
-            <Repeat num_cycles="-1">
-              <Sequence>
-                <IfThenElse name="CheckAndSelectController">
-                  <CheckPathCost
-                      path="{path}"
-                      tf_buffer="{tf_buffer}"
-                      global_frame="{global_frame}"
-                      robot_base_frame="{robot_base_frame}"
-                      check_distance="1.0"
-                      cost_threshold="30"
-                      ratio_threshold="0.25" />
-                  <SetBlackboard output_key="selected_controller" value="mppi_controller_narrow" />
-                  <SetBlackboard output_key="selected_controller" value="mppi_controller_wide" />
-                </IfThenElse>
-                <Wait wait_duration="1.0" />
-              </Sequence>
-            </Repeat>
-          </Parallel>
-          <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
-        </RecoveryNode>
+        <!-- Configure the dock pose estimator node. -->
+        <ManageLifecycleNodes transition="configure" node="{node}"/>
 
         <!-- Activate the dock pose estimator node only in the staging pose. This will save unecessary resources. -->
-        <!-- ! behaviortree_cpp v4 -->
         <ManageLifecycleNodes transition="activate" node="{node}"/>
 
         <!-- Once in the staging pose and the dock pose estimator is active, we can dock the robot. -->
-        <!-- ! behaviortree_cpp v3 -->
-        <!-- TODO: Find a way of having an action that does the same but using v4, agnostic to opennav's v3. -->
         <DockRobot dock_id="dock_1" navigate_to_staging_pose="false"/>
 
         <!-- Deactivate the dock pose estimator node after docking is complete. -->
-        <!-- ! behaviortree_cpp v4 -->
         <ManageLifecycleNodes transition="deactivate" node="{node}"/>
 
-      </PipelineSequence>
+      </Sequence>
 
       <!-- Fallback behaviour. -->
       <ReactiveFallback name="RecoveryFallback">

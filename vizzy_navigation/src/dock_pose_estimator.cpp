@@ -97,8 +97,8 @@ DockPoseEstimator::on_configure(const rclcpp_lifecycle::State &)
     
     // Create the publishers. They are inactive until the node is activated.
     docking_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/detected_dock_pose", 10);
-    // scene_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/scene_point_cloud", 10);
-    // model_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/model_point_cloud", 10);
+    scene_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/scene_point_cloud", 10);
+    model_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/model_point_cloud", 10);
 
     ready_ = true;
     RCLCPP_INFO(this->get_logger(), "Configuration successful. Node is now 'inactive'.");

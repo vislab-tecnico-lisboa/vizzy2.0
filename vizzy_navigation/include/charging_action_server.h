@@ -22,6 +22,7 @@
 #include "vizzy_msgs/srv/battery_charging_state.hpp"
 #include <nav2_msgs/action/dock_robot.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
+#include <geometry_msgs/msg/twist_stamped.hpp>
 
 /**
  * @brief A ROS 2 action server for managing charging behavior.
@@ -55,7 +56,7 @@ private:
     /**
      * @brief The publisher for sending velocity commands to the topic.
      */
-    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr cmd_pub_;
     
     /**
      * @brief The client for requesting battery charging state.

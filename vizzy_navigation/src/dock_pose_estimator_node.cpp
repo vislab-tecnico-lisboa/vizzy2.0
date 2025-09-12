@@ -5,12 +5,12 @@
  */
 
 /*********************************************************************************************
-* Dock Pose Estimator Node C++ File for ROS2                            *
-* -                                                 *
+* Dock Pose Estimator Node C++ File for ROS2                                                 *
+* -                                                                                          *
 * This file contains the main entry point for the Dock Pose Estimator Lifecycle Node.        *
 * It initializes the ROS2 client library, creates a DockPoseEstimator object,                *
 * adds it to an executor, and spins the executor to process events.                          *
-* -                                                 *
+* -                                                                                          *
 * As a lifecycle node, its operation (e.g., activating, deactivating) is managed by an       *
 * external entity like the Nav2 Lifecycle Manager, not within this main function.            *
 *********************************************************************************************/

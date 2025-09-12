@@ -69,15 +69,18 @@ BT::NodeStatus ManageLifecycleNodes::onStart()
 
   // Define a variable to hold the command code for the service request.
   uint8_t command;
-  // Map the string "activate" to the numerical command 1.
-  if (transition_str.value() == "activate") {
-      command = 1;
-  // Map the string "deactivate" to the numerical command 2.
-  } else if (transition_str.value() == "deactivate") {
-      command = 2;
+  std::string transition = transition_str.value();
+  if (transition == "configure") {
+    RCLCPP_INFO(node_->get_logger(), "COMMAND RECEIVED: Configuring the node.");
+    command = lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE;
+  } else if (transition == "activate") {
+    RCLCPP_INFO(node_->get_logger(), "COMMAND RECEIVED: Activating the node.");
+    command = lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE;
+  } else if (transition == "deactivate") {
+    RCLCPP_INFO(node_->get_logger(), "COMMAND RECEIVED: Deactivating the node.");
+    command = lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE;
   } else {
-    // If an invalid transition string is provided, log an error and fail.
-    RCLCPP_ERROR(node_->get_logger(), "Invalid transition string: %s", transition_str.value().c_str());
+    RCLCPP_ERROR(node_->get_logger(), "Invalid transition string: %s", transition.c_str());
     return BT::NodeStatus::FAILURE;
   }
 
@@ -91,6 +94,8 @@ BT::NodeStatus ManageLifecycleNodes::onStart()
   auto request = std::make_shared<nav2_msgs::srv::ManageLifecycleNodes::Request>();
   // Set the command field of the request message.
   request->command = command;
+
+  RCLCPP_INFO(node_->get_logger(), "Sending request to change node state to: %s", transition.c_str());
 
   // This is the implementation of the asynchronous call.
   future_result_ = client_->async_send_request(request).share();
