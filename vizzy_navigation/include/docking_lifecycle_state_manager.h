@@ -17,14 +17,14 @@
 
 #include <string>
 #include <memory>
-#include <thread>
 #include <future>
 #include <rclcpp/rclcpp.hpp>
 #include <behaviortree_cpp/bt_factory.h>
 #include <behaviortree_cpp/action_node.h>
-#include <nav2_msgs/srv/manage_lifecycle_nodes.hpp>
 #include <lifecycle_msgs/msg/transition.hpp>
-#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <rclcpp_lifecycle/lifecycle_node.hpp>
+#include <rclcpp_lifecycle/lifecycle_publisher.hpp>
+#include <nav2_msgs/srv/manage_lifecycle_nodes.hpp>
 
 /**
  * @brief Manages the state of ROS2 lifecycle nodes from a Behavior Tree.

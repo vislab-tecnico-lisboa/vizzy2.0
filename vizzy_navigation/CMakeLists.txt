@@ -18,10 +18,12 @@ find_package(tf2 REQUIRED)
 find_package(PCL REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(rviz2 REQUIRED)
+find_package(OpenMP REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(teaserpp REQUIRED)
 find_package(tf2_eigen REQUIRED)
 find_package(pluginlib REQUIRED) 
 find_package(nav2_amcl REQUIRED)
@@ -71,7 +73,6 @@ find_package(nav2_regulated_pure_pursuit_controller REQUIRED)
 # Create a library from the class implementation files.
 add_library(docking_lib
   src/dock_pose_estimator.cpp
-  src/pattern_pose_estimation.cpp
 )
 
 # Tell the library where to find ALL header files.
@@ -96,6 +97,8 @@ ament_target_dependencies(docking_lib PUBLIC
   laser_geometry
   sensor_msgs
   geometry_msgs
+  teaserpp
+  OpenMP
 )
 
 # Link the library against ALL required libraries.
@@ -103,6 +106,10 @@ target_link_libraries(docking_lib PUBLIC
   # These link against the actual PCL and VTK library files.
   ${PCL_LIBRARIES}
   ${VTK_LIBRARIES}
+
+  Eigen3::Eigen 
+  teaserpp::teaser_registration 
+  teaserpp::teaser_io
 )
 
 # Create the executable from ONLY the main() file.

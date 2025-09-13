@@ -8,9 +8,9 @@
     stack on Vizzy.
 
     Acknowledgements:
-    - Miguel Aragão for the implementation of all the
-      navigation stack and the integration of the
-      navigation stack with Vizzy for ROS 1.
+    - Miguel Aragão and others (mentioned in each specified file) 
+      for the implementation of all the navigation stack and the 
+      integration of the navigation stack with Vizzy for ROS 1.
 
   </description>
 

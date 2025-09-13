@@ -1,3 +1,8 @@
+ /**
+  * Copyright 2025, João Penha Lopes and João Zenário.
+  * All rights reserved.
+  */
+
 #include "opennav_docking_bt/dock_robot.hpp"
 #include "opennav_docking_bt/undock_robot.hpp"
 #include <behaviortree_cpp/bt_factory.h>

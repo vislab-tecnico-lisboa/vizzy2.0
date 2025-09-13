@@ -14,15 +14,15 @@
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/transform_listener.h>
 #include "vizzy_msgs/action/charge.hpp"
+#include "nav2_msgs/action/dock_robot.hpp"
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
-#include <nav2_msgs/action/navigate_to_pose.hpp>
+#include <geometry_msgs/msg/twist_stamped.hpp>
+#include "nav2_msgs/action/navigate_to_pose.hpp"
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include "vizzy_msgs/srv/battery_charging_state.hpp"
-#include <nav2_msgs/action/dock_robot.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
-#include <geometry_msgs/msg/twist_stamped.hpp>
 
 /**
  * @brief A ROS 2 action server for managing charging behavior.

@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 
   // Create an executor to manage the lifecycle node.
   // A MultiThreadedExecutor is a robust choice that can handle multiple callbacks.
-  rclcpp::executors::MultiThreadedExecutor executor;
+  rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(), 4); // 4 threads.
   executor.add_node(dock_pose_estimator_node->get_node_base_interface());
 
   // Spin the executor to process callbacks and state transitions for the node.

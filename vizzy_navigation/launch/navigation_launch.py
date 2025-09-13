@@ -547,21 +547,6 @@ def generate_launch_description():
         default_value='0.01',
         description='Discretization step for the dock pose estimation.'
     )
-    tran_threshold_arg = DeclareLaunchArgument(
-        'tran_threshold',
-        default_value='0.015',
-        description='Translation threshold for the dock pose estimation.'
-    )
-    rot_threshold_arg = DeclareLaunchArgument(
-        'rot_threshold',
-        default_value='30',
-        description='Rotation threshold for the dock pose estimation.'
-    )
-    fitting_score_threshold_arg = DeclareLaunchArgument(
-        'fitting_score_threshold',
-        default_value='0.03',
-        description='Fitting score threshold for the dock pose estimation.'
-    )
     distance_threshold_arg = DeclareLaunchArgument(
         'distance_threshold',
         default_value='2.0',
@@ -591,9 +576,6 @@ def generate_launch_description():
     log_level = LaunchConfiguration('log_level')
     dock_pose_stl_model_path = LaunchConfiguration('dock_pose_stl_model_path')
     discretization_step = LaunchConfiguration('discretization_step')
-    tran_threshold = LaunchConfiguration('tran_threshold')
-    rot_threshold = LaunchConfiguration('rot_threshold')
-    fitting_score_threshold = LaunchConfiguration('fitting_score_threshold')
     distance_threshold = LaunchConfiguration('distance_threshold')
     use_battery_state_simulation = LaunchConfiguration('use_battery_state_simulation')
     laser_front_topic = LaunchConfiguration('scan_topic_front')
@@ -712,8 +694,8 @@ def generate_launch_description():
                 #prefix=['xterm -e gdb -ex run --args'], # Use this line to debug the node.
                 parameters=[configured_params], 
                 arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings,#),
-                prefix=['xterm -e gdb -ex run --args']),
+                remappings=remappings,),
+                #prefix=['xterm -e gdb -ex run --args']),
             Node(
                 package='nav2_waypoint_follower',
                 executable='waypoint_follower',
@@ -764,15 +746,12 @@ def generate_launch_description():
                 parameters=[{
                     'model_file': dock_pose_stl_model_path,
                     'discretization_step': discretization_step,
-                    'tran_thresh': tran_threshold,
-                    'rot_thresh': rot_threshold,
-                    'fitting_score_thresh': fitting_score_threshold,
                     'distance_threshold': distance_threshold,
                     'rear_laser_topic': laser_rear_topic,
                     'publish_dock_point_cloud': publish_dock_point_cloud,
-                }],#),
+                }],),
                 # Uncomment the next line to debug the node with GDB.
-                prefix=['xterm -e gdb -ex run --args']),
+                #prefix=['xterm -e gdb -ex run --args']),
             
             Node(
                 package='opennav_docking',
@@ -822,7 +801,7 @@ def generate_launch_description():
                 arguments=['--ros-args', '--log-level', log_level],
                 parameters=[{'use_sim_time': use_sim_time,
                              'autostart': False,
-                             'node_names': ['dock_pose_estimator_node'], 
+                             'node_names': ['dock_pose_estimator_node'],
                              'bond_timeout': 0.0}],),
                 #prefix=['xterm -e gdb -ex run --args']),
         ]
@@ -878,9 +857,6 @@ def generate_launch_description():
         velocity_smoother_feedback_type_arg,
         dock_pose_stl_model_path_arg,
         discretization_step_arg,
-        tran_threshold_arg,
-        rot_threshold_arg,
-        fitting_score_threshold_arg,
         distance_threshold_arg,
         use_battery_state_simulation_arg,
         publish_dock_point_cloud_arg,

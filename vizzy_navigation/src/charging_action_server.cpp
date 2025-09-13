@@ -92,7 +92,7 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
                     charging_state_client_->async_send_request(final_request,
                         [this, goal_handle, result](rclcpp::Client<vizzy_msgs::srv::BatteryChargingState>::SharedFuture final_response)
                         {
-                            if (final_response.get()->battery_charging_state)
+                            if (final_response.get()->battery_charging_state || is_simulation_)
                             {
                                 RCLCPP_INFO(this->get_logger(), "SUCCESS! Robot is now charging!");
                                 result->result = result->CHARGE_SUCCESS;

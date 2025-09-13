@@ -16,20 +16,25 @@
 * -                                                                                          *
 * This docking estimation procedure was redesigned to work with Nav2's Docking Server.       *
 * More details can be found in the documentation:                                            * 
-* https://github.com/open-navigation/opennav_docking/tree/humble                             *
+* https://github.com/ros-navigation/navigation2/tree/humble_main/nav2_docking                *
 *********************************************************************************************/
 
 #ifndef DOCK_POSE_ESTIMATOR_ROS2_H_
 #define DOCK_POSE_ESTIMATOR_ROS2_H_
 
 #include <deque>
-#include <memory>
 #include <string>
-#include <functional>   
+#include <memory>
+#include <thread>
 #include <yaml-cpp/yaml.h>
-#include <tf2_ros/buffer.h>        
+#include <tf2_ros/buffer.h>
+#include <pcl/io/vtk_lib_io.h>
+#include <pcl/search/kdtree.h>
+#include <pcl/PCLPointCloud2.h>
+#include "teaser/registration.h"
+#include <pcl/registration/icp.h>
 #include <tf2_eigen/tf2_eigen.hpp>
-#include "pattern_pose_estimation.h" 
+#include <pcl/filters/voxel_grid.h>
 #include <tf2_ros/transform_listener.h>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <laser_geometry/laser_geometry.hpp>
@@ -102,9 +107,10 @@ private:
      * Based on the received laser scan, the method performs the following steps:
      * 1. Converts the laser scan to a point cloud.
      * 2. Transforms the point cloud to the "base_link" frame.
-     * 3. Estimates the pose of the docking pattern using the PatternPoseEstimation class.
+     * 3. Estimates the pose of the docking pattern using teaser++.
      * 4. Applies a median filter to the estimated pose to smooth out noise and outliers.
-     * 5. Publishes the filtered pose as a PoseStamped message.
+     * 5. Transforms the estimated pose to the "odometry" frame.
+     * 6. Publishes the filtered pose as a PoseStamped message.
      *
      * Median Filter:
      *   The median filter is a non-linear digital filtering technique, often used to remove noise from signals.
@@ -174,14 +180,9 @@ private:
     std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseStamped>> docking_pub_;
 
     /**
-     * @brief Publisher for the model point cloud.
-     */
-    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>> model_pub_;
-
-    /**
      * @brief Publisher for the scene point cloud.
      */
-    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>> scene_cloud_pub_;
+    //std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>> scene_cloud_pub_;
 
     /**
      * @brief Buffer for storing TF2 transforms.
@@ -234,19 +235,9 @@ private:
     unsigned int filter_buffer_size_;
 
     /**
-     * @brief Pointer to the PatternPoseEstimation object for pose estimation.
-     */
-    std::shared_ptr<PatternPoseEstimation> pattern_pose_estimation_;
-
-    /**
      * @brief Point cloud for the laser scan.
      */
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_pcl_;
-
-    /**
-     * @brief Point cloud with normals for the laser scan.
-     */
-    pcl::PointCloud<pcl::PointNormal>::Ptr cloud_normals_;
 
     /**
      * @brief Topic name for the rear laser scan.
@@ -254,9 +245,19 @@ private:
     std::string rear_laser_topic_;
 
     /**
-     * @brief Flag to determine if the dock point cloud should be published.
+     * @brief Point Cloud to hold the dock model (loaded from a SFD file).
      */
-    bool publish_dock_point_cloud_ = false;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr model_cloud_; 
+
+    /**
+     * @brief Teaser solver parameters (to be set from ROS2 parameters).
+     */
+    teaser::RobustRegistrationSolver::Params teaser_params_;
+
+    /**
+     * @brief K-D Tree for nearest neighbor search.
+     */
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr kdtree_;
 };
 
 #endif // DOCK_POSE_ESTIMATOR_ROS2_H_

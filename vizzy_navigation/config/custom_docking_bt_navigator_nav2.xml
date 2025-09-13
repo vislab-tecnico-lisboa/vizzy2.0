@@ -17,34 +17,53 @@
 <root main_tree_to_execute="DockingMission" BTCPP_format="4">
   <BehaviorTree ID="DockingMission">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+      <Sequence name="CompleteProcedure">
+        <RecoveryNode number_of_retries="1" name="NavigateToStagingPose">
+          <Sequence name="ConfiguringAndNavigating">
+            <!-- Configure the dock pose estimator node. -->
+            <!-- ? We configure the dock pose estimator here and not immediatly before the activation 
+                ? because the lifecycle manager entered a deadlock state when receiving the success
+                ? messages from the dock_pose_estimator_node. Maybe understand why this happens?... -->
+            <ManageLifecycleNodes transition="configure" node="{node}"/> 
 
-      <!-- Docking sequence. -->
-      <Sequence name="DockingSequence">
-        <SetBlackboard output_key="selected_controller" value="mppi_controller_wide" />   
+            <!-- Pipeline Sequence ticks all of its children in order repeatedly if
+            any of them return RUNNING, therefore, we have to separate the staging part
+            of the docking with the rest as to deactivate the path planning after successfully
+            reaching the staging pose. -->
+            <PipelineSequence name="NavigateAndReplan">
+              <!-- Compute path and Smooth it. -->
+              <RateController hz="GLOBAL_PLANNER_FREQUENCY">
+                <Sequence name="ComputeAndSmoothPath">
+                  <ComputePathToPose goal="{goal}" path="{path}" planner_id="PLANNER_PLACEHOLDER"/>
+                  <SmoothPath unsmoothed_path="{path}" smoothed_path="{path}"/>
+                </Sequence>
+              </RateController>
+              <!-- Follow the computed path to the staging pose. -->
+              <!-- Comment this section to test the docking procedure from the staging pose. -->
+              <!-- 
+              <RecoveryNode number_of_retries="1" name="FollowPath">
+                <FollowPath path="{path}" controller_id="mppi_controller_wide"/>
+                <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+              </RecoveryNode> 
+              -->
+            </PipelineSequence>
+          </Sequence>
+          <ClearEntireCostmap name="ClearCostmaps-Nav" service_name="global_costmap/clear_entirely_global_costmap"/>
+        </RecoveryNode>
 
-        <!-- Compute path and Smooth it. -->
-        <RateController hz="GLOBAL_PLANNER_FREQUENCY">
-          <RecoveryNode number_of_retries="1" name="ComputePathToPose">
-            <Sequence name="ComputeAndSmoothPath">
-              <ComputePathToPose goal="{goal}" path="{path}" planner_id="PLANNER_PLACEHOLDER"/>
-              <SmoothPath unsmoothed_path="{path}" smoothed_path="{path}"/>
-            </Sequence>
-            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
-          </RecoveryNode>
-        </RateController>
+        <Sequence name="DockingBackwards">
+          <!-- Activate the dock pose estimator node only in the staging pose. This will save unecessary resources. -->
+          <ManageLifecycleNodes transition="activate" node="{node}"/>
 
-        <!-- Configure the dock pose estimator node. -->
-        <ManageLifecycleNodes transition="configure" node="{node}"/>
+          <!-- Wait for 2 seconds to allow the dock pose estimator to start publishing the dock pose. -->
+          <Wait wait_duration="2"/>
 
-        <!-- Activate the dock pose estimator node only in the staging pose. This will save unecessary resources. -->
-        <ManageLifecycleNodes transition="activate" node="{node}"/>
+          <!-- Once in the staging pose and the dock pose estimator is active, we can dock the robot. -->
+          <DockRobot dock_id="dock_1" navigate_to_staging_pose="false"/>
 
-        <!-- Once in the staging pose and the dock pose estimator is active, we can dock the robot. -->
-        <DockRobot dock_id="dock_1" navigate_to_staging_pose="false"/>
-
-        <!-- Deactivate the dock pose estimator node after docking is complete. -->
-        <ManageLifecycleNodes transition="deactivate" node="{node}"/>
-
+          <!-- Deactivate the dock pose estimator node after the docking is complete. -->
+          <ManageLifecycleNodes transition="deactivate" node="{node}"/>
+        </Sequence>
       </Sequence>
 
       <!-- Fallback behaviour. -->
