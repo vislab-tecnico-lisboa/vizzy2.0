@@ -53,19 +53,14 @@ void DockPoseEstimator::declareAndGetParameters()
     // Declare parameters with default values.
     // Attention: The parameters may not be set with these default values,
     // they are just declared here. That is why we retrieve them later.
-    this->declare_parameter<double>("teaser_noise_bound", 0.05);
-    this->declare_parameter<double>("discretization_step", 0.01);
-    this->declare_parameter<double>("distance_threshold", 2.0);
     this->declare_parameter<std::string>("model_file", "file");
     this->declare_parameter<std::string>("rear_laser_topic", "/nav_hokuyo_laser/rear/scan");
 
     // Get the current active parameter values.
-    double noise_bound = this->get_parameter("teaser_noise_bound").as_double();
     std::string model_file = this->get_parameter("model_file").as_string();
     rear_laser_topic_ = this->get_parameter("rear_laser_topic").as_string();
     
     RCLCPP_INFO(this->get_logger(), "--- Dock Pose Estimator Parameters ---");
-    RCLCPP_INFO(this->get_logger(), "teaser_noise_bound: %f", noise_bound);
     RCLCPP_INFO(this->get_logger(), "model_file: %s", model_file.c_str());
     RCLCPP_INFO(this->get_logger(), "--- End of Parameters ---");
 
@@ -111,7 +106,7 @@ void DockPoseEstimator::declareAndGetParameters()
     RCLCPP_INFO(this->get_logger(), "Successfully loaded and centered model with %zu points.", model_cloud_->size());
 
     // Configure the teaser++ solver parameters.
-    teaser_params_.noise_bound = noise_bound;
+    teaser_params_.noise_bound = 0.05;
     teaser_params_.cbar2 = 1;
     teaser_params_.estimate_scaling = false;
     teaser_params_.rotation_max_iterations = 100;
@@ -336,7 +331,7 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     }
 
     // Correct the y value just a tiny bit (the dock model is not perfect).
-    pose_in_odom_frame.pose.position.y -= 0.10;
+    pose_in_odom_frame.pose.position.y -= 0.11;
 
     // Publish the estimated dock pose.
     docking_pub_->publish(pose_in_odom_frame);

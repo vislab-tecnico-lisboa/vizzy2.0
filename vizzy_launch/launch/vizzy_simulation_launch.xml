@@ -54,13 +54,13 @@
   <arg name="mppi_narrow_wz_std" default="0.13" description="Standard deviation for the narrow MPPI controller"/>
   <arg name="velocity_smoother_feedback_type" default="OPEN_LOOP" description="Feedback type for the velocity smoother. Options: CLOSED_LOOP, OPEN_LOOP"/>
   <arg name="dock_pose_stl_model_path" default="$(find-pkg-share vizzy_navigation)/models/docking_pattern.stl" description="Path to the STL model for the dock pose estimation"/>
-  <arg name="discretization_step" default="0.01" description="Discretization step for the dock pose estimation"/>
-  <arg name="distance_threshold" default="2.0" description="Distance threshold for the dock pose estimation"/>
   <arg name="battery_state" default="0" description="Initial battery state. 0: Not charging, 1: Charging"/>
   <arg name="use_battery_state_simulation" default="true" description="Whether to use the battery state simulation node."/>
   <arg name="publish_dock_point_cloud" default="false" description="Whether to publish the dock point cloud for visualization."/>
   <arg name="activate_dock_pose_detection" default="false" description="Whether to activate the dock pose detection immediately for testing."/>
-
+  <arg name="mppi_cost_critic_cost_weight" default="3.82" description="Cost weight for the general MPPI cost critic"/>
+  <arg name="mppi_path_align_critic_cost_weight" default="14.0" description="Cost weight for the general MPPI path align critic"/>
+  <arg name="mppi_wz_std" default="0.2" description="Standard deviation for the general MPPI controller"/>
 
   <!-- Launch gazebo -->
   <include file="$(find-pkg-share vizzy_gazebo)/launch/gazebo_launch.xml">
@@ -117,11 +117,12 @@
       <arg name="mppi_narrow_wz_std" value="$(var mppi_narrow_wz_std)"/>
       <arg name="velocity_smoother_feedback_type" value="$(var velocity_smoother_feedback_type)"/>
       <arg name="dock_pose_stl_model_path" value="$(var dock_pose_stl_model_path)"/>
-      <arg name="discretization_step" value="$(var discretization_step)"/>
-      <arg name="distance_threshold" value="$(var distance_threshold)"/>
       <arg name="use_battery_state_simulation" value="$(var use_battery_state_simulation)"/>
       <arg name="publish_dock_point_cloud" value="$(var publish_dock_point_cloud)"/>
       <arg name="activate_dock_pose_detection" value="$(var activate_dock_pose_detection)"/>
+      <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
+      <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
+      <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
     </include>
   </group>
   <group unless="$(var use_obstacles)">
@@ -163,11 +164,12 @@
       <arg name="mppi_narrow_wz_std" value="$(var mppi_narrow_wz_std)"/>
       <arg name="velocity_smoother_feedback_type" value="$(var velocity_smoother_feedback_type)"/>
       <arg name="dock_pose_stl_model_path" value="$(var dock_pose_stl_model_path)"/>
-      <arg name="discretization_step" value="$(var discretization_step)"/>
-      <arg name="distance_threshold" value="$(var distance_threshold)"/>
       <arg name="use_battery_state_simulation" value="$(var use_battery_state_simulation)"/>
       <arg name="publish_dock_point_cloud" value="$(var publish_dock_point_cloud)"/>
       <arg name="activate_dock_pose_detection" value="$(var activate_dock_pose_detection)"/>
+      <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
+      <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
+      <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
     </include>
   </group>
 

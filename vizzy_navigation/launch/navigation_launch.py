@@ -134,8 +134,8 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         original_params['controller_server']['ros__parameters']['controller_plugins'] = ["rpp_controller"]
     elif controller_plugin_type == "MPPI":
         # Load BOTH profiles for dynamic switching.
-        print("[Launch Info] MPPI selected. Loading 'wide' and 'narrow' controller profiles.")
-        original_params['controller_server']['ros__parameters']['controller_plugins'] = ["mppi_controller_wide", "mppi_controller_narrow"]
+        print("[Launch Info] MPPI selected. Loading 'wide', 'narrow' and 'general' controller profiles.")
+        original_params['controller_server']['ros__parameters']['controller_plugins'] = ["mppi_controller_wide", "mppi_controller_narrow", "mppi_controller"]
     else:
         # Fallback or error if an unknown plugin is specified.
         print(f"[Launch Error] Unknown controller_plugin_type: {controller_plugin_type}. Using default or raising error.")
@@ -219,6 +219,11 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         #'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.critical_weight': float(LaunchConfiguration('mppi_obstacles_critic_critical_weight').perform(context)),
         #'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.collision_margin_distance': float(LaunchConfiguration('mppi_obstacles_critic_collision_margin_distance').perform(context)),
         'controller_server.ros__parameters.mppi_controller_narrow.wz_std': float(LaunchConfiguration('mppi_narrow_wz_std').perform(context)),
+
+        # General MPPI Controller substitutions.
+        'controller_server.ros__parameters.mppi_controller.CostCritic.cost_weight': float(LaunchConfiguration('mppi_cost_critic_cost_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_path_align_critic_cost_weight').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.wz_std': float(LaunchConfiguration('mppi_wz_std').perform(context)),
 
         # Map Server substitutions.
         'map_server.ros__parameters.topic_name': LaunchConfiguration('map_topic').perform(context),
@@ -542,16 +547,6 @@ def generate_launch_description():
         default_value=os.path.join(pkg_dir, 'models', 'docking_pattern.stl'),
         description='Path to the STL model for the dock pose estimation.'
     )
-    discretization_step_arg = DeclareLaunchArgument(
-        'discretization_step',
-        default_value='0.01',
-        description='Discretization step for the dock pose estimation.'
-    )
-    distance_threshold_arg = DeclareLaunchArgument(
-        'distance_threshold',
-        default_value='2.0',
-        description='Distance threshold for the dock pose estimation.'
-    )
     use_battery_state_simulation_arg = DeclareLaunchArgument(
         'use_battery_state_simulation',
         default_value='true',
@@ -567,6 +562,21 @@ def generate_launch_description():
         default_value='false',
         description='Whether to activate the dock pose detection immediately for testing.'
     )
+    mppi_cost_critic_cost_weight_arg = DeclareLaunchArgument(
+        'mppi_cost_critic_cost_weight',
+        default_value='3.82',
+        description='Cost weight for the general MPPI cost critic.'
+    )
+    mppi_path_align_critic_cost_weight_arg = DeclareLaunchArgument(
+        'mppi_path_align_critic_cost_weight',
+        default_value='14.0',
+        description='Cost weight for the general MPPI path align critic.'
+    )
+    mppi_wz_std_arg = DeclareLaunchArgument(
+        'mppi_wz_std',
+        default_value='0.2',
+        description='Standard deviation for the general MPPI controller.'
+    )
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -575,10 +585,7 @@ def generate_launch_description():
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
     dock_pose_stl_model_path = LaunchConfiguration('dock_pose_stl_model_path')
-    discretization_step = LaunchConfiguration('discretization_step')
-    distance_threshold = LaunchConfiguration('distance_threshold')
     use_battery_state_simulation = LaunchConfiguration('use_battery_state_simulation')
-    laser_front_topic = LaunchConfiguration('scan_topic_front')
     laser_rear_topic = LaunchConfiguration('scan_topic_rear')
     publish_dock_point_cloud = LaunchConfiguration('publish_dock_point_cloud')
     activate_dock_pose_detection = LaunchConfiguration('activate_dock_pose_detection')
@@ -745,8 +752,6 @@ def generate_launch_description():
                 output='screen',
                 parameters=[{
                     'model_file': dock_pose_stl_model_path,
-                    'discretization_step': discretization_step,
-                    'distance_threshold': distance_threshold,
                     'rear_laser_topic': laser_rear_topic,
                     'publish_dock_point_cloud': publish_dock_point_cloud,
                 }],),
@@ -856,11 +861,12 @@ def generate_launch_description():
         mppi_narrow_wz_std_arg,
         velocity_smoother_feedback_type_arg,
         dock_pose_stl_model_path_arg,
-        discretization_step_arg,
-        distance_threshold_arg,
         use_battery_state_simulation_arg,
         publish_dock_point_cloud_arg,
         activate_dock_pose_detection_arg,
+        mppi_cost_critic_cost_weight_arg,
+        mppi_path_align_critic_cost_weight_arg,
+        mppi_wz_std_arg,
 
         # Actions
         log_sim_time_action,

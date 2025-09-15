@@ -40,12 +40,10 @@
               </RateController>
               <!-- Follow the computed path to the staging pose. -->
               <!-- Comment this section to test the docking procedure from the staging pose. -->
-              <!-- 
               <RecoveryNode number_of_retries="1" name="FollowPath">
-                <FollowPath path="{path}" controller_id="mppi_controller_wide"/>
+                <FollowPath path="{path}" controller_id="mppi_controller"/>
                 <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
               </RecoveryNode> 
-              -->
             </PipelineSequence>
           </Sequence>
           <ClearEntireCostmap name="ClearCostmaps-Nav" service_name="global_costmap/clear_entirely_global_costmap"/>
