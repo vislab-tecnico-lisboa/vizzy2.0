@@ -614,14 +614,6 @@ def generate_launch_description():
     save_bt_xml_action_docking = OpaqueFunction(function=save_rewritten_bt_xml,
                                                 args=[template_file_path_docking, output_bt_path_docking])
 
-    # Get the template file path for the dock pose detection activator BT.
-    template_file_path_dock_pose_detection = os.path.join(get_package_share_directory(package_name), 'config', 'custom_docking_bt_activator_nav2.xml')
-
-    # Action to copy the BT XML file for the dock pose detection activator directly to the final location.
-    output_bt_path_dock_pose_detection = os.path.join(output_bt_dir, 'custom_docking_bt_activator_nav2.xml')
-    copy_bt_xml_action_dock_pose_detection = OpaqueFunction(function=save_rewritten_bt_xml,
-                                                           args=[template_file_path_dock_pose_detection, output_bt_path_dock_pose_detection])
-
     # Define the output path within this packages directory.
     output_dir = os.path.join(install_share_path, 'params')
     os.makedirs(output_dir, exist_ok=True) 
@@ -873,6 +865,5 @@ def generate_launch_description():
         save_params_action,
         save_bt_xml_action,
         save_bt_xml_action_docking,
-        copy_bt_xml_action_dock_pose_detection,
         load_nodes,
     ])
