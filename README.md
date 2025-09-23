@@ -221,7 +221,7 @@ For those to whom this may concern, we leave here a setup tutorial for the real 
     sudo apt upgrade -y
     ```
 
-2.  **Install Necessary Segway Drivers**
+2.  **Clone Necessary Segway Driver Packages**
     * Clone the serial folder in parallel to Vizzy's workspace source folder.
     ```bash
     cd ~/vizzy2_ws/src
@@ -231,11 +231,6 @@ For those to whom this may concern, we leave here a setup tutorial for the real 
     * Clone the libsegwayrmp_ros2 library as well.
     ```bash
     git clone https://github.com/utexas-bwi/libsegwayrmp_ros2.git
-    ```
-
-    * Build everything.
-    ```bash
-    colcon build --cmake-clean-cache
     ```
     
 3.  **Clone the Navigation2 humble_main branch**
@@ -271,10 +266,12 @@ For those to whom this may concern, we leave here a setup tutorial for the real 
     colcon build --symlink-install
     ```
 8.  **Final Details**
-    Once (and if) everything is correctly built, we can safely ignore the nav2 packages in future builds and remove the ignore command on our main vizzy2 folder.
+    Once (and if) everything is correctly built, we can safely ignore the nav2 and segway drivers packages in future builds and remove the ignore command on our main vizzy2 folder.
     ```bash
     rm src/vizzy2/COLCON_IGNORE
     touch src/navigation2/COLCON_IGNORE
+    ouch src/libsegwayrmp_ros2/COLCON_IGNORE
+    ouch src/segway_rmp_ros2/COLCON_IGNORE
     ```
 
 For more information regarding this version of nav2, please refer to [their official repository](https://github.com/ros-navigation/navigation2/tree/humble_main).
