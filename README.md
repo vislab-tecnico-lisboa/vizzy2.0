@@ -239,6 +239,17 @@ For those to whom this may concern, we leave here a setup tutorial for the real 
     cd ~/vizzy2/vizzy2_ws/src/
     git clone https://github.com/ros-navigation/navigation2.git --branch humble_main
     ```
+4.  **Clone and Build the TEASER++ Repository**
+      ```bash
+      git clone https://github.com/MIT-SPARK/TEASER-plusplus.git
+      cd TEASER-plusplus
+      mkdir build
+      cd build
+      cmake ..
+      make -j$(nproc)
+      sudo make install
+      ```
+
 4.  **Install the ROS2 Dependencies**
     Use rosdep to install the necessary dependencies while disregarding dev packages.
     ```bash
@@ -275,6 +286,10 @@ For those to whom this may concern, we leave here a setup tutorial for the real 
     ```
 
 For more information regarding this version of nav2, please refer to [their official repository](https://github.com/ros-navigation/navigation2/tree/humble_main).
+
+At the end of the setup, you should have something that looks exactly like this:
+
+<img width="615" height="172" alt="Screenshot from 2025-09-23 07-01-26" src="https://github.com/user-attachments/assets/fa38f9b9-2063-4d99-8bc8-8692d848b928" />
 
 ## Documentation & Citation
 
