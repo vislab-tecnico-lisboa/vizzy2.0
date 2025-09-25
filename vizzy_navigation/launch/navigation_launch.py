@@ -58,7 +58,9 @@ def save_rewritten_bt_xml(context: LaunchContext, template_file_path: str, outpu
     controller_mapping = {
         "DWB": "dwb_controller",
         "RPP": "rpp_controller",
-        "MPPI": "mppi_controller"
+        "MPPI_WIDE": "mppi_controller_wide",
+        "MPPI_NARROW": "mppi_controller_narrow",
+        "MPPI_GENERAL": "mppi_controller",
     }
     
     # Get the specific controller name, e.g., "dwb_controller".
@@ -132,9 +134,9 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         original_params['controller_server']['ros__parameters']['controller_plugins'] = ["dwb_controller"] 
     elif controller_plugin_type == "RPP":
         original_params['controller_server']['ros__parameters']['controller_plugins'] = ["rpp_controller"]
-    elif controller_plugin_type == "MPPI":
+    elif (controller_plugin_type == "MPPI" or controller_plugin_type == "MPPI_GENERAL" or controller_plugin_type == "MPPI_WIDE"):
         # Load BOTH profiles for dynamic switching.
-        print("[Launch Info] MPPI selected. Loading 'wide', 'narrow' and 'general' controller profiles.")
+        print("[Launch Info] MPPI-type selected. Loading 'wide', 'narrow' and 'general' controller profiles.")
         original_params['controller_server']['ros__parameters']['controller_plugins'] = ["mppi_controller_wide", "mppi_controller_narrow", "mppi_controller"]
     else:
         # Fallback or error if an unknown plugin is specified.
@@ -188,6 +190,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         # Behavior Server substitutions.
         'behavior_server.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
         'behavior_server.ros__parameters.robot_base_frame': LaunchConfiguration('base_frame_id').perform(context),
+        'behavior_server.ros__parameters.local_frame': LaunchConfiguration('odom_frame_id').perform(context),
 
         # Controller Server substitutions.
         'controller_server.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),

@@ -624,7 +624,7 @@ behavior_server:
       plugin: "nav2_behaviors::Wait"
     assisted_teleop:
       plugin: "nav2_behaviors::AssistedTeleop"
-    global_frame: odometry # Configurable
+    global_frame: map # Configurable
     robot_base_frame: base_footprint # Configurable
     transform_tolerance: 0.5
     use_sim_time: True
@@ -632,7 +632,7 @@ behavior_server:
     max_rotational_vel: 0.6
     min_rotational_vel: 0.3
     rotational_acc_lim: 3.2
-    local_frame: odometry # TODO: Make configurable
+    local_frame: odometry # Configurable
 
 robot_state_publisher:
   ros__parameters:
