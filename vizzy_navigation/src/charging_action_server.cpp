@@ -34,7 +34,8 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
             {
                 RCLCPP_INFO(this->get_logger(), "Robot is not charging. Delegating to Docking Mission BT...");
 
-                // Define the staging pose for the mission.
+                // Define the staging pose for the mission. 
+                // * (-2.430 -1.849 1.535 usefull for VISLAB) 
                 // The BT's NavigateToPose action will use this as its 'goal'.
                 geometry_msgs::msg::PoseStamped staging_pose;
                 staging_pose.header.frame_id = "map";
