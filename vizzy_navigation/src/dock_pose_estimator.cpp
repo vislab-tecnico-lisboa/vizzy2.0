@@ -323,10 +323,13 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
 
     geometry_msgs::msg::PoseStamped pose_in_odom_frame;
     try {
-      pose_in_odom_frame = tf_buffer_->transform(pose_in_laser_frame, "odometry");
+      // 0.2 second timeout to the transform request (so the transform is available).
+      pose_in_odom_frame = tf_buffer_->transform(
+        pose_in_laser_frame, "odometry", tf2::durationFromSec(0.2));
     }
     catch (const tf2::TransformException & ex) {
-      RCLCPP_WARN(this->get_logger(), "Could not transform dock pose: %s", ex.what());
+      RCLCPP_WARN(
+        this->get_logger(), "Could not transform dock pose to 'odometry' frame: %s", ex.what());
       return;
     }
 
