@@ -137,6 +137,12 @@ private:
      * @return void.
      */
     void handle_accepted(const std::shared_ptr<rclcpp_action::ServerGoalHandle<vizzy_msgs::action::Charge>> goal_handle);
+
+    /**
+     * @brief Double vector to store the staging pose [x, y, Yaw].
+     * This pose is used as the goal for the NavigateToPose action in the BT.
+     */
+    std::vector<double> staging_pose_;
 };
 
 #endif // CHARGING_ACTION_SERVER_H_

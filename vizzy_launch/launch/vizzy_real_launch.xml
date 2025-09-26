@@ -74,6 +74,7 @@
   <arg name="mppi_cost_critic_cost_weight" default="3.82" description="Cost weight for the general MPPI cost critic"/>
   <arg name="mppi_path_align_critic_cost_weight" default="14.0" description="Cost weight for the general MPPI path align critic"/>
   <arg name="mppi_wz_std" default="0.2" description="Standard deviation for the general MPPI controller"/>
+  <arg name="staging_pose" default="-x -1.0 -y 0.0 -Y 0.0" description="Staging pose of the robot in the map frame for docking. Format: 'x y Yaw'"/>
   
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
@@ -158,6 +159,7 @@
           <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
           <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
           <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
+          <arg name="staging_pose" value="$(var staging_pose)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -212,6 +214,7 @@
           <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
           <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
           <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
+          <arg name="staging_pose" value="$(var staging_pose)"/>
         </include>
       </group>
     </group>
@@ -290,6 +293,7 @@
           <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
           <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
           <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
+          <arg name="staging_pose" value="$(var staging_pose)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -344,6 +348,7 @@
           <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
           <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
           <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
+          <arg name="staging_pose" value="$(var staging_pose)"/>
         </include>
       </group>
     </group>

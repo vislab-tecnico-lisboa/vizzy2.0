@@ -39,10 +39,15 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
                 geometry_msgs::msg::PoseStamped staging_pose;
                 staging_pose.header.frame_id = "map";
                 staging_pose.header.stamp = this->get_clock()->now();
-                // TODO: For now we just assume the staging pose is at (-1, 0) in the map frame, 
-                // TODO: and the dock is at (0,0). This should be made a parameter.
-                staging_pose.pose.position.x = -1.0;
-                staging_pose.pose.orientation.w = 1.0;
+
+                staging_pose.pose.position.x = staging_pose_[0];
+                staging_pose.pose.position.y = staging_pose_[1];
+
+                // Conversion from yaw to quaternion.
+                staging_pose.pose.orientation.x = 0.0;
+                staging_pose.pose.orientation.y = 0.0;
+                staging_pose.pose.orientation.z = sin(staging_pose_[2] / 2.0);
+                staging_pose.pose.orientation.w = cos(staging_pose_[2] / 2.0);
 
                 // Create a NavigateToPose goal.
                 auto nav_goal = nav2_msgs::action::NavigateToPose::Goal();
@@ -245,6 +250,35 @@ ChargingActionServer::ChargingActionServer(const rclcpp::NodeOptions & options) 
 
     // Get the parameter's value and store it in the member variable.
     activate_dock_pose_detection_ = this->get_parameter("activate_dock_pose_detection").as_bool();
+
+    // Retrieve and set "staging_pose" parameter.
+    this->declare_parameter<std::string>("staging_pose", "-x -1.0 -y 0.0 -Y 0.0");
+    std::string staging_pose_str = this->get_parameter("staging_pose").as_string();
+
+    // Parse the string to extract the three double values.
+    std::istringstream iss(staging_pose_str);
+    std::vector<double> values;
+    std::string token;
+    while (iss >> token)
+    {
+        try
+        {
+            values.push_back(std::stod(token));
+        }
+        catch (const std::invalid_argument &)
+        {
+            // Ignore non-numeric tokens.
+        }
+    }
+
+    staging_pose_ = values;
+
+    if (staging_pose_.size() != 3)
+    {
+        RCLCPP_ERROR(this->get_logger(), "staging_pose parameter must have exactly 3 elements: [x, y, Yaw]. Using default values instead.");
+        staging_pose_ = {-1.0, 0.0, 0.0};
+    }
+    RCLCPP_INFO(this->get_logger(), "Staging pose set to: [x=%.2f, y=%.2f, Yaw=%.2f]", staging_pose_[0], staging_pose_[1], staging_pose_[2]);
 }
 
 void ChargingActionServer::init_action_server()

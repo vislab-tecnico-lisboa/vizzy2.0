@@ -38,10 +38,11 @@ from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import RewrittenYaml
 
 # This function is used to parse the pose string from the launch configuration.
-def Parse_Pose_Str(context):
-    pose_str = LaunchConfiguration('pose').perform(context)
-    # The string is e.g., "-x 0.0 -y 0.0 ...", so we just split it by spaces.
+def Parse_Pose_Str(context, parameter_name: str = 'pose'):
+    pose_str = LaunchConfiguration(parameter_name).perform(context)
+    # The string is e.g., "-x 0.0 -y 0.0 ...", so we just split it by spaces and only keep the double values.
     pose_args = pose_str.split()
+    pose_args = [float(arg) for arg in pose_args if arg.replace('.', '', 1).replace('-', '', 1).isdigit()]
     return pose_args
 
 # --- Opaque Function to save rewritten BT XML ---
@@ -580,6 +581,11 @@ def generate_launch_description():
         default_value='0.2',
         description='Standard deviation for the general MPPI controller.'
     )
+    staging_pose_arg = DeclareLaunchArgument(
+        'staging_pose',
+        default_value='-x 0.0 -y 0.0 -Y 0.0',
+        description='Staging pose of the robot in the map frame for docking.'
+    )
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -591,7 +597,8 @@ def generate_launch_description():
     use_battery_state_simulation = LaunchConfiguration('use_battery_state_simulation')
     laser_rear_topic = LaunchConfiguration('scan_topic_rear')
     publish_dock_point_cloud = LaunchConfiguration('publish_dock_point_cloud')
-    activate_dock_pose_detection = LaunchConfiguration('activate_dock_pose_detection')
+    activate_dock_pose_detection = LaunchConfiguration('activate_dock_pose_detection') 
+    staging_pose_str = LaunchConfiguration('staging_pose')
 
     package_name = 'vizzy_navigation' 
 
@@ -786,7 +793,9 @@ def generate_launch_description():
                 name='charging_action_server_node',
                 output='screen',
                 parameters=[{'is_simulation': use_battery_state_simulation}, 
-                            {'activate_dock_pose_detection': activate_dock_pose_detection}],),
+                            {'activate_dock_pose_detection': activate_dock_pose_detection},
+                            {'staging_pose': staging_pose_str},
+                            ],),
                 # Uncomment the next line to debug the node with GDB.
                 # prefix=['xterm -e gdb -ex run --args']),
 
@@ -862,6 +871,7 @@ def generate_launch_description():
         mppi_cost_critic_cost_weight_arg,
         mppi_path_align_critic_cost_weight_arg,
         mppi_wz_std_arg,
+        staging_pose_arg,
 
         # Actions
         log_sim_time_action,
