@@ -629,6 +629,14 @@ def generate_launch_description():
     output_bt_path_docking = os.path.join(output_bt_dir, 'custom_docking_bt_navigator_nav2.xml')
     save_bt_xml_action_docking = OpaqueFunction(function=save_rewritten_bt_xml,
                                                 args=[template_file_path_docking, output_bt_path_docking])
+    
+    # Get the template file for the estimator-only docking mission BT.
+    template_file_path_docking_estimator = os.path.join(get_package_share_directory(package_name), 'config', 'custom_docking_bt_navigator_nav2_estimator_only.xml')
+
+    # Action to generate the BT XML file for the estimator-only docking mission.
+    output_bt_path_docking_estimator = os.path.join(output_bt_dir, 'custom_docking_bt_navigator_nav2_estimator_only.xml')
+    save_bt_xml_action_docking_estimator = OpaqueFunction(function=save_rewritten_bt_xml,
+                                                        args=[template_file_path_docking_estimator, output_bt_path_docking_estimator])
 
     # Define the output path within this packages directory.
     output_dir = os.path.join(install_share_path, 'params')
@@ -885,5 +893,6 @@ def generate_launch_description():
         save_params_action,
         save_bt_xml_action,
         save_bt_xml_action_docking,
+        save_bt_xml_action_docking_estimator,
         load_nodes,
     ])

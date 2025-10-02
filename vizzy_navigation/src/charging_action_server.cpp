@@ -60,11 +60,10 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
                 // Construct the full, absolute path to the BT file.
                 if (activate_dock_pose_detection_)
                 {   
-                    /*
                     RCLCPP_INFO(this->get_logger(), "Activating dock pose detection immediately as per parameter. Robot WILL NOT navigate.");
-                    std::string bt_xml_path = pkg_share_path + "/behavior_trees/custom_docking_bt_activator_nav2.xml";
+                    std::string bt_xml_path = pkg_share_path + "/behavior_trees/custom_docking_bt_navigator_nav2_estimator_only.xml";
                     nav_goal.behavior_tree = bt_xml_path;
-                    RCLCPP_INFO(this->get_logger(), "Using BT file: %s", bt_xml_path.c_str());*/
+                    RCLCPP_INFO(this->get_logger(), "Using BT file: %s", bt_xml_path.c_str());
                 }
                 else
                 {
