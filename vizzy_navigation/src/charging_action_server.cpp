@@ -104,7 +104,7 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
                                 result->result = result->CHARGE_SUCCESS;
                                 goal_handle->succeed(result);
                             }
-                            else
+                            else 
                             {
                                 RCLCPP_ERROR(this->get_logger(), "FAILURE! Docking Mission succeeded, but robot is not charging.");
                                 result->result = result->CHARGE_FAILED;

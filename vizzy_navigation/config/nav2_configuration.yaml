@@ -373,7 +373,7 @@ controller_server:
       gamma: 0.015
       motion_model: "DiffDrive"
       visualize: false
-      reset_period: 1.0 # (only in Humble)
+      reset_period: 1.0
       regenerate_noises: false
       TrajectoryVisualizer:
         trajectory_step: 5
@@ -420,7 +420,7 @@ controller_server:
         cost_power: 1
         cost_weight: 3.81
         critical_cost: 300.0
-        consider_footprint: true
+        consider_footprint: false
         collision_cost: 1000000.0
         near_goal_distance: 1.0
         trajectory_point_step: 2
@@ -460,6 +460,7 @@ controller_server:
 local_costmap:
   local_costmap:
     ros__parameters:
+      always_send_full_costmap: true # Configurable
       update_frequency: 5.0
       publish_frequency: 5.0
       global_frame: map # Configurable

@@ -61,7 +61,7 @@ def save_rewritten_bt_xml(context: LaunchContext, template_file_path: str, outpu
         "RPP": "rpp_controller",
         "MPPI_WIDE": "mppi_controller_wide",
         "MPPI_NARROW": "mppi_controller_narrow",
-        "MPPI_GENERAL": "mppi_controller",
+        "MPPI": "mppi_controller",
     }
     
     # Get the specific controller name, e.g., "dwb_controller".
@@ -135,7 +135,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         original_params['controller_server']['ros__parameters']['controller_plugins'] = ["dwb_controller"] 
     elif controller_plugin_type == "RPP":
         original_params['controller_server']['ros__parameters']['controller_plugins'] = ["rpp_controller"]
-    elif (controller_plugin_type == "MPPI" or controller_plugin_type == "MPPI_GENERAL" or controller_plugin_type == "MPPI_WIDE"):
+    elif (controller_plugin_type == "MPPI" or controller_plugin_type == "MPPI_NARROW" or controller_plugin_type == "MPPI_WIDE"):
         # Load BOTH profiles for dynamic switching.
         print("[Launch Info] MPPI-type selected. Loading 'wide', 'narrow' and 'general' controller profiles.")
         original_params['controller_server']['ros__parameters']['controller_plugins'] = ["mppi_controller_wide", "mppi_controller_narrow", "mppi_controller"]
@@ -252,6 +252,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'local_costmap.local_costmap.ros__parameters.inflation_layer.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
         'local_costmap.local_costmap.ros__parameters.inflation_layer.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
         'local_costmap.local_costmap.ros__parameters.robot_radius': float(LaunchConfiguration('robot_radius').perform(context)),
+        'local_costmap.local_costmap.ros__parameters.always_send_full_costmap': LaunchConfiguration('always_send_full_costmap').perform(context),
 
         # Velocity Smoother substitutions.
         'velocity_smoother.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),
@@ -266,7 +267,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         # The 'use_sim_time' and 'autostart' keys are special cases at the top level.
         # of each node's 'ros__parameters' block, but they are not targeted with.
         # dot notation in the RewrittenYaml class in the same way. We will apply them manually.
-        if key_path == 'use_sim_time' or key_path == 'autostart' or key_path == 'do_beamskip':
+        if key_path == 'use_sim_time' or key_path == 'autostart' or key_path == 'do_beamskip' or key_path == "local_costmap.local_costmap.ros__parameters.always_send_full_costmap":
              for node_name in original_params:
                  if 'ros__parameters' in original_params[node_name]:
                      # Special handling for boolean strings.
@@ -586,6 +587,11 @@ def generate_launch_description():
         default_value='-x 0.0 -y 0.0 -Y 0.0',
         description='Staging pose of the robot in the map frame for docking.'
     )
+    always_send_full_costmap_arg = DeclareLaunchArgument(
+        'always_send_full_costmap',
+        default_value='false',
+        description='Whether to always send the full costmap to the controller.'
+    )
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -872,6 +878,7 @@ def generate_launch_description():
         mppi_path_align_critic_cost_weight_arg,
         mppi_wz_std_arg,
         staging_pose_arg,
+        always_send_full_costmap_arg,
 
         # Actions
         log_sim_time_action,
