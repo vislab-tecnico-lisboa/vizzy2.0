@@ -20,7 +20,7 @@ amcl:
     recovery_alpha_slow: 0.005
     resample_interval: 1
     sigma_hit: 0.2
-    transform_tolerance: 0.7
+    transform_tolerance: 0.7 # Configurable
     update_min_a: 0.05 # Configurable
     update_min_d: 0.05 # Configurable
     z_hit: 0.95
@@ -121,7 +121,7 @@ controller_server:
       sim_time: 2.5
       linear_granularity: 0.05
       angular_granularity: 0.025
-      transform_tolerance: 0.5
+      transform_tolerance: 0.5 # Configurable
       xy_goal_tolerance: 0.25
       trans_stopped_velocity: 0.25
       short_circuit_trajectory_evaluation: True
@@ -196,7 +196,7 @@ controller_server:
       az_max: 1.5
       iteration_count: 1
       prune_distance: 1.7
-      transform_tolerance: 0.1
+      transform_tolerance: 0.1 # Configurable
       temperature: 0.3
       gamma: 0.015
       motion_model: "DiffDrive"
@@ -282,7 +282,7 @@ controller_server:
       az_max: 1.5
       iteration_count: 1
       prune_distance: 1.7
-      transform_tolerance: 0.1
+      transform_tolerance: 0.1 # Configurable
       temperature: 0.3
       gamma: 0.015
       motion_model: "DiffDrive"
@@ -368,7 +368,7 @@ controller_server:
       az_max: 3.5
       iteration_count: 1
       prune_distance: 1.7
-      transform_tolerance: 0.1
+      transform_tolerance: 0.1 # Configurable
       temperature: 0.3
       gamma: 0.015
       motion_model: "DiffDrive"
@@ -647,7 +647,7 @@ behavior_server:
       plugin: "nav2_behaviors::AssistedTeleop"
     global_frame: map # Configurable
     robot_base_frame: base_footprint # Configurable
-    transform_tolerance: 0.5
+    transform_tolerance: 0.5 # Configurable
     use_sim_time: True
     simulate_ahead_time: 2.0
     max_rotational_vel: 0.6
@@ -753,7 +753,7 @@ docking_server:
       use_collision_detection: false
       costmap_topic: "local_costmap/costmap_raw"
       footprint_topic: "local_costmap/published_footprint" # Configurable
-      transform_tolerance: 0.1
+      transform_tolerance: 0.1 # Configurable
       projection_time: 1.0
       simulation_time_step: 0.1
       dock_collision_threshold: 0.3

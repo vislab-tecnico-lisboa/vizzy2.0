@@ -181,6 +181,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'amcl.ros__parameters.beam_skip_error_threshold': float(LaunchConfiguration('beam_skip_error_threshold').perform(context)),
         'amcl.ros__parameters.beam_skip_threshold': float(LaunchConfiguration('beam_skip_threshold').perform(context)),
         'amcl.ros__parameters.do_beamskip': LaunchConfiguration('do_beamskip').perform(context),
+        'amcl.ros__parameters.transform_tolerance': float(LaunchConfiguration('transform_tolerance').perform(context)),
 
         # BT Navigator substitutions.
         'bt_navigator.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
@@ -192,6 +193,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'behavior_server.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
         'behavior_server.ros__parameters.robot_base_frame': LaunchConfiguration('base_frame_id').perform(context),
         'behavior_server.ros__parameters.local_frame': LaunchConfiguration('odom_frame_id').perform(context),
+        'behavior_server.ros__parameters.transform_tolerance': float(LaunchConfiguration('transform_tolerance').perform(context)),
 
         # Controller Server substitutions.
         'controller_server.ros__parameters.odom_topic': LaunchConfiguration('odom_topic').perform(context),
@@ -203,6 +205,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'controller_server.ros__parameters.dwb_controller.PathDist.scale': float(LaunchConfiguration('path_dist_scale').perform(context)),
         'controller_server.ros__parameters.dwb_controller.GoalDist.scale': float(LaunchConfiguration('goal_dist_scale').perform(context)),
         'controller_server.ros__parameters.dwb_controller.BaseObstacle.scale': float(LaunchConfiguration('base_obstacle_scale').perform(context)),
+        'controller_server.ros__parameters.dwb_controller.transform_tolerance': float(LaunchConfiguration('transform_tolerance').perform(context)),
 
         # Wide MPPI Controller substitutions.
         #'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
@@ -213,6 +216,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         #'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.critical_weight': float(LaunchConfiguration('mppi_obstacles_critic_critical_weight').perform(context)),
         #'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.collision_margin_distance': float(LaunchConfiguration('mppi_obstacles_critic_collision_margin_distance').perform(context)),
         'controller_server.ros__parameters.mppi_controller_wide.wz_std': float(LaunchConfiguration('mppi_wide_wz_std').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_wide.transform_tolerance': float(LaunchConfiguration('transform_tolerance').perform(context)),
 
         # Narrow MPPI Controller substitutions.
         #'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
@@ -223,11 +227,13 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         #'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.critical_weight': float(LaunchConfiguration('mppi_obstacles_critic_critical_weight').perform(context)),
         #'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.collision_margin_distance': float(LaunchConfiguration('mppi_obstacles_critic_collision_margin_distance').perform(context)),
         'controller_server.ros__parameters.mppi_controller_narrow.wz_std': float(LaunchConfiguration('mppi_narrow_wz_std').perform(context)),
+        'controller_server.ros__parameters.mppi_controller_narrow.transform_tolerance': float(LaunchConfiguration('transform_tolerance').perform(context)),
 
         # General MPPI Controller substitutions.
         'controller_server.ros__parameters.mppi_controller.CostCritic.cost_weight': float(LaunchConfiguration('mppi_cost_critic_cost_weight').perform(context)),
         'controller_server.ros__parameters.mppi_controller.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_path_align_critic_cost_weight').perform(context)),
         'controller_server.ros__parameters.mppi_controller.wz_std': float(LaunchConfiguration('mppi_wz_std').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.transform_tolerance': float(LaunchConfiguration('transform_tolerance').perform(context)),
 
         # Map Server substitutions.
         'map_server.ros__parameters.topic_name': LaunchConfiguration('map_topic').perform(context),
@@ -260,6 +266,9 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
 
         # Planner Server substitutions.
         'planner_server.ros__parameters.expected_planner_frequency': float(LaunchConfiguration('expected_planner_frequency').perform(context)),
+
+        # Docking Server substitutions.
+        'docking_server.ros__parameters.controller.transform_tolerance': float(LaunchConfiguration('transform_tolerance').perform(context)),
     }
 
     # Apply substitutions to the loaded params.
@@ -592,6 +601,11 @@ def generate_launch_description():
         default_value='false',
         description='Whether to always send the full costmap to the controller.'
     )
+    transform_tolerance_arg = DeclareLaunchArgument(
+        'transform_tolerance',
+        default_value='0.1',
+        description='Transform tolerance for the navigation stack.'
+    )
 
     # --- Launch Configurations ---
     namespace = LaunchConfiguration('namespace')
@@ -887,6 +901,7 @@ def generate_launch_description():
         mppi_wz_std_arg,
         staging_pose_arg,
         always_send_full_costmap_arg,
+        transform_tolerance_arg,
 
         # Actions
         log_sim_time_action,

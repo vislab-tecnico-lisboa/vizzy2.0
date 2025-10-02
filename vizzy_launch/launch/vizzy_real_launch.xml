@@ -76,6 +76,7 @@
   <arg name="mppi_wz_std" default="0.2" description="Standard deviation for the general MPPI controller"/>
   <arg name="staging_pose" default="-x -1.0 -y 0.0 -Y 0.0" description="Staging pose of the robot in the map frame for docking. Format: 'x y Yaw'"/>
   <arg name="always_send_full_costmap" default="false" description="Whether to always send the full costmap to the controller."/>
+  <arg name="transform_tolerance" default="0.1" description="Transform tolerance for the navigation stack."/>
   
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
@@ -162,6 +163,7 @@
           <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
           <arg name="staging_pose" value="$(var staging_pose)"/>
           <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
+          <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -218,6 +220,7 @@
           <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
           <arg name="staging_pose" value="$(var staging_pose)"/>
           <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
+          <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
         </include>
       </group>
     </group>
@@ -298,6 +301,7 @@
           <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
           <arg name="staging_pose" value="$(var staging_pose)"/>
           <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
+          <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -354,6 +358,7 @@
           <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
           <arg name="staging_pose" value="$(var staging_pose)"/>
           <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
+          <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
         </include>
       </group>
     </group>
