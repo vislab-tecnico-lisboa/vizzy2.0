@@ -23,12 +23,12 @@
           <param name="invert_angular_vel_cmds" value="false" />
           <param name="broadcast_tf" value="true" />
           <param name="rmp_type" value="200/400" />
-          <param name="linear_pos_accel_limit" value="1.0" />
-          <param name="linear_neg_accel_limit" value="1.0" />
-          <param name="angular_pos_accel_limit" value="45.0" />
-          <param name="angular_neg_accel_limit" value="45.0" />
-          <param name="max_linear_vel" value="0.75" />
-          <param name="max_angular_vel" value="0.5" />
+          <!-- param name="linear_pos_accel_limit" value="1.0" /> -->
+          <!-- param name="linear_neg_accel_limit" value="1.0" /> -->
+          <!-- param name="angular_pos_accel_limit" value="45.0" /> -->
+          <!-- param name="angular_neg_accel_limit" value="45.0" /> -->
+          <!-- param name="max_linear_vel" value="0.75" /> -->
+          <!-- param name="max_angular_vel" value="0.5" /> -->
           <param name="odom_frame_id" value="$(var odom_frame_id)" />
           <param name="linear_odom_scale" value="$(var linear_odom_scale)" />
           <param name="angular_odom_scale" value="$(var angular_odom_scale)" />
