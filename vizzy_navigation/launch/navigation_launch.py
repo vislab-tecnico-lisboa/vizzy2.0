@@ -208,24 +208,14 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'controller_server.ros__parameters.dwb_controller.transform_tolerance': float(LaunchConfiguration('transform_tolerance').perform(context)),
 
         # Wide MPPI Controller substitutions.
-        #'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
-        #'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
         'controller_server.ros__parameters.mppi_controller_wide.CostCritic.cost_weight': float(LaunchConfiguration('mppi_wide_cost_critic_cost_weight').perform(context)),
         'controller_server.ros__parameters.mppi_controller_wide.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_wide_path_align_critic_cost_weight').perform(context)),
-        #'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.repulsion_weight': float(LaunchConfiguration('mppi_obstacles_critic_repulsion_weight').perform(context)),
-        #'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.critical_weight': float(LaunchConfiguration('mppi_obstacles_critic_critical_weight').perform(context)),
-        #'controller_server.ros__parameters.mppi_controller_wide.ObstaclesCritic.collision_margin_distance': float(LaunchConfiguration('mppi_obstacles_critic_collision_margin_distance').perform(context)),
         'controller_server.ros__parameters.mppi_controller_wide.wz_std': float(LaunchConfiguration('mppi_wide_wz_std').perform(context)),
         'controller_server.ros__parameters.mppi_controller_wide.transform_tolerance': float(LaunchConfiguration('transform_tolerance').perform(context)),
 
         # Narrow MPPI Controller substitutions.
-        #'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
-        #'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
         'controller_server.ros__parameters.mppi_controller_narrow.CostCritic.cost_weight': float(LaunchConfiguration('mppi_narrow_cost_critic_cost_weight').perform(context)),
         'controller_server.ros__parameters.mppi_controller_narrow.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_narrow_path_align_critic_cost_weight').perform(context)),
-        #'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.repulsion_weight': float(LaunchConfiguration('mppi_obstacles_critic_repulsion_weight').perform(context)),
-        #'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.critical_weight': float(LaunchConfiguration('mppi_obstacles_critic_critical_weight').perform(context)),
-        #'controller_server.ros__parameters.mppi_controller_narrow.ObstaclesCritic.collision_margin_distance': float(LaunchConfiguration('mppi_obstacles_critic_collision_margin_distance').perform(context)),
         'controller_server.ros__parameters.mppi_controller_narrow.wz_std': float(LaunchConfiguration('mppi_narrow_wz_std').perform(context)),
         'controller_server.ros__parameters.mppi_controller_narrow.transform_tolerance': float(LaunchConfiguration('transform_tolerance').perform(context)),
 
@@ -234,6 +224,13 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'controller_server.ros__parameters.mppi_controller.PathAlignCritic.cost_weight': float(LaunchConfiguration('mppi_path_align_critic_cost_weight').perform(context)),
         'controller_server.ros__parameters.mppi_controller.wz_std': float(LaunchConfiguration('mppi_wz_std').perform(context)),
         'controller_server.ros__parameters.mppi_controller.transform_tolerance': float(LaunchConfiguration('transform_tolerance').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.temperature': float(LaunchConfiguration('mppi_temperature').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.iteration_count': int(LaunchConfiguration('mppi_iteration_count').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.batch_size': int(LaunchConfiguration('mppi_batch_size').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.time_steps': int(LaunchConfiguration('mppi_time_steps').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.vx_std': float(LaunchConfiguration('mppi_vx_std').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.vx_max': float(LaunchConfiguration('mppi_vx_max').perform(context)),
+        'controller_server.ros__parameters.mppi_controller.ConstraintCritic.cost_weight': float(LaunchConfiguration('mppi_constraint_critic_cost_weight').perform(context)),
 
         # Map Server substitutions.
         'map_server.ros__parameters.topic_name': LaunchConfiguration('map_topic').perform(context),
@@ -576,6 +573,10 @@ def generate_launch_description():
         default_value='false',
         description='Whether to activate the dock pose detection immediately for testing.'
     )
+
+
+    # ------------- GENERAL MPPI PARAMETERS -------------
+
     mppi_cost_critic_cost_weight_arg = DeclareLaunchArgument(
         'mppi_cost_critic_cost_weight',
         default_value='3.82',
@@ -586,11 +587,49 @@ def generate_launch_description():
         default_value='14.0',
         description='Cost weight for the general MPPI path align critic.'
     )
+    mppi_time_steps_arg = DeclareLaunchArgument(
+        'mppi_time_steps',
+        default_value='64',
+        description='Number of time steps (points) in candidate trajectories.'
+    )
+    mppi_batch_size_arg = DeclareLaunchArgument(
+        'mppi_batch_size',
+        default_value='2000',
+        description='Count of randomly sampled candidate trajectories from current optimal control sequence in a given iteration.'
+    )
+    mppi_vx_std_arg = DeclareLaunchArgument(
+        'mppi_vx_std',
+        default_value='0.05',
+        description='Sampling standard deviation for Vx.'
+    )
     mppi_wz_std_arg = DeclareLaunchArgument(
         'mppi_wz_std',
         default_value='0.2',
-        description='Standard deviation for the general MPPI controller.'
+        description='Sampling standard deviation for Wz (angular velocity).'
     )
+    mppi_vx_max_arg = DeclareLaunchArgument(
+        'mppi_vx_max',
+        default_value='0.6',
+        description='Target maximum forward velocity (m/s).'
+    )
+    mppi_temperature_arg = DeclareLaunchArgument(
+        'mppi_temperature',
+        default_value='1.0',
+        description='Selectiveness of trajectories by their costs.'
+    )
+    mppi_iteration_count_arg = DeclareLaunchArgument(
+        'mppi_iteration_count',
+        default_value='2',
+        description='Iteration count in the MPPI algorithm. Recommended to remain as 1 and instead prefer larger batch sizes.'
+    )
+    mppi_constraint_critic_cost_weight_arg = DeclareLaunchArgument(
+        'mppi_constraint_critic_cost_weight',
+        default_value='4.0',
+        description='Cost weight for the MPPI constraint critic.'
+    )
+
+    # -------------------------------------------
+    
     staging_pose_arg = DeclareLaunchArgument(
         'staging_pose',
         default_value='-x 0.0 -y 0.0 -Y 0.0',
@@ -902,6 +941,13 @@ def generate_launch_description():
         staging_pose_arg,
         always_send_full_costmap_arg,
         transform_tolerance_arg,
+        mppi_batch_size_arg,
+        mppi_time_steps_arg,
+        mppi_vx_std_arg,
+        mppi_vx_max_arg,
+        mppi_temperature_arg,
+        mppi_iteration_count_arg,
+        mppi_constraint_critic_cost_weight_arg,
 
         # Actions
         log_sim_time_action,
