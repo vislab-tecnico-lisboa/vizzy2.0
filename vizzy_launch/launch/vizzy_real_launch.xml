@@ -92,6 +92,9 @@
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
   <arg name="angle_max" default="1.309" description="Maximum angle for the laser scanner"/>
 
+  <arg name="linear_vel_scale" default="1.0" description="Scale factor for linear velocity commands"/>
+  <arg name="angular_vel_scale" default="1.0" description="Scale factor for angular velocity commands"/>
+
   <!-- Launch the laser filters -->
   <group if="$(var use_laser_filters)">
     <include file="$(find-pkg-share vizzy_sensors)/launch/hokuyo/hokuyo-filters_launch.xml">
@@ -115,7 +118,9 @@
       <arg name="angle_max" value="$(var angle_max)" />
       <arg name="linear_odom_scale" value="$(var linear_odom_scale)" />
       <arg name="angular_odom_scale" value="$(var angular_odom_scale)" />
-    </include> 
+      <arg name="linear_vel_scale" value="$(var linear_vel_scale)" />
+      <arg name="angular_vel_scale" value="$(var angular_vel_scale)" />
+    </include>
 
 
     <group if="$(var use_navigation)">
