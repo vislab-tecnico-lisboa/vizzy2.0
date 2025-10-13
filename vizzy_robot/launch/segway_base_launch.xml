@@ -22,7 +22,7 @@
           <param name="invert_linear_vel_cmds" value="false" />
           <param name="invert_angular_vel_cmds" value="false" />
           <param name="broadcast_tf" value="true" />
-          <param name="rmp_type" value="200/400" />
+          <param name="rmp_type" value="50/100" />
           <!-- param name="linear_pos_accel_limit" value="1.0" /> -->
           <!-- param name="linear_neg_accel_limit" value="1.0" /> -->
           <!-- param name="angular_pos_accel_limit" value="45.0" /> -->
