@@ -16,8 +16,9 @@
           exec="segway_rmp_node_ros2"
           name="segway_rmp_node_ros2"
           output="screen"
-          on_exit="shutdown">
-          
+          on_exit="shutdown"
+          args="--ros-args --log-level $(var log_level)">
+
           <!-- Parameters -->
           <param name="interface_type" value="serial" />
           <param name="serial_port" value="/dev/ttyUSB0" />
@@ -38,8 +39,5 @@
           <param name="linear_vel_scale" value="$(var linear_vel_scale)" />
           <param name="angular_vel_scale" value="$(var angular_vel_scale)" />
           <param name="log_level" value="$(var log_level)" />
-
-          <!-- Set log level -->
-          <env name="RCUTILS_LOGGING_SEVERITY" value="$(var log_level)" />
     </node>
 </launch>
