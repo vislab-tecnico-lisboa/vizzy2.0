@@ -122,7 +122,7 @@
       <arg name="angular_odom_scale" value="$(var angular_odom_scale)" />
       <arg name="linear_vel_scale" value="$(var linear_vel_scale)" />
       <arg name="angular_vel_scale" value="$(var angular_vel_scale)" />
-      <arg name="log_level" value="$(var log_level_segway)" />
+      <arg name="log_level_segway" value="$(var log_level_segway)" />
     </include>
 
 
