@@ -16,8 +16,7 @@
           exec="segway_rmp_node_ros2"
           name="segway_rmp_node_ros2"
           output="screen"
-          on_exit="shutdown"
-          args="--ros-args --log-level $(var log_level)">
+          on_exit="shutdown">
 
           <!-- Parameters -->
           <param name="interface_type" value="serial" />
