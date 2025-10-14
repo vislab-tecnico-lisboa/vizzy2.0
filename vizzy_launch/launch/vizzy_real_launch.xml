@@ -92,8 +92,10 @@
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
   <arg name="angle_max" default="1.309" description="Maximum angle for the laser scanner"/>
 
-  <arg name="linear_vel_scale" default="1.0" description="Scale factor for linear velocity commands"/>
-  <arg name="angular_vel_scale" default="1.0" description="Scale factor for angular velocity commands"/>
+  <arg name="linear_vel_scale" default="false" description="Apply scale factor for linear velocity commands"/>
+  <arg name="angular_vel_scale" default="false" description="Apply scale factor for angular velocity commands"/>
+
+  <arg name="log_level_segway" default="info" description="Log level for segway_rmp_ros2"/>
 
   <!-- Launch the laser filters -->
   <group if="$(var use_laser_filters)">
@@ -120,6 +122,7 @@
       <arg name="angular_odom_scale" value="$(var angular_odom_scale)" />
       <arg name="linear_vel_scale" value="$(var linear_vel_scale)" />
       <arg name="angular_vel_scale" value="$(var angular_vel_scale)" />
+      <arg name="log_level" value="$(var log_level_segway)" />
     </include>
 
 

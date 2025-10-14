@@ -8,8 +8,9 @@
     <arg name="base_frame_id" default="base_footprint" description="Frame id for the base footprint"/>
     <arg name="linear_odom_scale" default="1.6" description="Scale factor for linear odometry"/>
     <arg name="angular_odom_scale" default="1.8" description="Scale factor for angular odometry"/>
-    <arg name="linear_vel_scale" default="1.0" description="Scale factor for linear velocity commands"/>
-    <arg name="angular_vel_scale" default="1.0" description="Scale factor for angular velocity commands"/>
+    <arg name="linear_vel_scale" default="false" description="Apply scale factor for linear velocity commands"/>
+    <arg name="angular_vel_scale" default="false" description="Apply scale factor for angular velocity commands"/>
+    <arg name="log_level" default="info" description="Log level for segway_rmp_ros2"/>
 
     <node pkg="segway_rmp_ros2"
           exec="segway_rmp_node_ros2"
@@ -36,5 +37,9 @@
           <param name="angular_odom_scale" value="$(var angular_odom_scale)" />
           <param name="linear_vel_scale" value="$(var linear_vel_scale)" />
           <param name="angular_vel_scale" value="$(var angular_vel_scale)" />
+          <param name="log_level" value="$(var log_level)" />
+
+          <!-- Set log level -->
+          <env name="RCUTILS_LOGGING_SEVERITY" value="$(var log_level)" />
     </node>
 </launch>
