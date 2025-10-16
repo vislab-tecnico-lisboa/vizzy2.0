@@ -40,8 +40,8 @@
   <arg name="beam_skip_error_threshold" default="0.9" description="Error threshold for beam skipping"/>
   <arg name="beam_skip_threshold" default="0.3" description="Threshold for beam skipping"/>
   <arg name="do_beamskip" default="true" description="Enable or disable beam skipping in the laser scanner"/>
-  <arg name="linear_odom_scale" default="1.6" description="Scale factor for linear odometry"/>
-  <arg name="angular_odom_scale" default="1.8" description="Scale factor for angular odometry"/>
+  <arg name="linear_odom_scale" default="1.0" description="Scale factor for linear odometry"/>
+  <arg name="angular_odom_scale" default="1.0" description="Scale factor for angular odometry"/>
   <arg name="controller_frequency" default="20.0" description="Frequency of the controller in Hz"/>
   <arg name="path_align_forward_point_distance" default="0.325" description="Forward point distance for PathAlign"/>
   <arg name="goal_align_forward_point_distance" default="0.325" description="Forward point distance for GoalAlign"/>
