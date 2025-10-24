@@ -272,8 +272,16 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
         return;
     }
 
-    // Publish the resulting point cloud for visualization.
-    scene_cloud_pub_->publish(cloud_msg);
+    // Convert cloud_filtered_xy to a publishable point cloud message.
+    sensor_msgs::msg::PointCloud2 filtered_cloud_msg;
+    pcl::toROSMsg(*cloud_filtered_xy, filtered_cloud_msg);
+
+    // Set the header information.
+    // Use the same timestamp and frame_id as the original scan.
+    filtered_cloud_msg.header = scan->header;
+
+    // Now you can publish it for visualization.
+    scene_cloud_pub_->publish(filtered_cloud_msg);
 
     // Instead of using the raw cloud_pcl_, use the filtered cloud.
     kdtree_->setInputCloud(cloud_filtered_xy);
