@@ -279,12 +279,10 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     try {
         // Convert PCL clouds to Eigen matrices.
         Eigen::Matrix<double, 3, Eigen::Dynamic> eigen_model = convertPCLToEigen(model_cloud_);
-        Eigen::Matrix<double, 3, Eigen::Dynamic> eigen_scene = convertPCLToEigen(cloud_pcl_);
+        Eigen::Matrix<double, 3, Eigen::Dynamic> eigen_scene = convertPCLToEigen(cloud_filtered_xy);
 
         // Find correspondences using a simple nearest-neighbor search.
         std::vector<std::pair<int, int>> correspondences;
-        // Just update the input cloud (saves resources compared to creating one every iteration).
-        kdtree_->setInputCloud(cloud_pcl_);
 
         for (int i = 0; i < eigen_model.cols(); ++i) {
             std::vector<int> a(1);
