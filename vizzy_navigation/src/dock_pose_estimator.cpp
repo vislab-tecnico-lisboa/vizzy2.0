@@ -81,9 +81,10 @@ void DockPoseEstimator::declareAndGetParameters()
     pcl::VoxelGrid<pcl::PointXYZ> sor;
     sor.setInputCloud(model_cloud_);
 
-    // Set the voxel size (in this case 2cm). 
+    // Set the voxel size (in this case 1cm). 
     // This value controls the density of points in the simplified model.
-    sor.setLeafSize(0.02f, 0.02f, 0.02f); 
+    // Reduced this from 2cm to 1cm to try and improve model matching.
+    sor.setLeafSize(0.01f, 0.01f, 0.01f); 
     sor.filter(*simplified_model);
 
     // Update the model cloud to the simplified version.
@@ -106,13 +107,22 @@ void DockPoseEstimator::declareAndGetParameters()
     RCLCPP_INFO(this->get_logger(), "Successfully loaded and centered model with %zu points.", model_cloud_->size());
 
     // Configure the teaser++ solver parameters.
-    teaser_params_.noise_bound = 0.05;
+
+    // Increased noise_bound from 0.05 to 0.1 as to try and increase performance in different scenarios.
+    teaser_params_.noise_bound = 0.1;
     teaser_params_.cbar2 = 1;
     teaser_params_.estimate_scaling = false;
     teaser_params_.rotation_max_iterations = 100;
     teaser_params_.rotation_gnc_factor = 1.4;
     teaser_params_.rotation_estimation_algorithm = teaser::RobustRegistrationSolver::ROTATION_ESTIMATION_ALGORITHM::GNC_TLS;
     teaser_params_.inlier_selection_mode = teaser::RobustRegistrationSolver::INLIER_SELECTION_MODE::PMC_EXACT;
+    
+    // Maximum distance (in meters) between a model point and its nearest neighbor
+    // in the scene cloud to be considered a potential correspondence.
+    // This threshold helps reject obvious outliers before sending data to TEASER++.
+    // It should be chosen based on expected sensor noise and initial alignment error.
+    // It also makes sense that this value should be greater than the VoxelGrid leaf size
+    distance_threshold_ = 0.05;
 }
 
 // --- LIFECYCLE CALLBACKS ---
@@ -226,8 +236,46 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
         RCLCPP_INFO(this->get_logger(), "Received an empty point cloud from laser scan.");
         return;
     }
-
+    
     Eigen::Affine3d transformNN;
+
+    // Create temporary clouds to store filtered results
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_x(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_xy(new pcl::PointCloud<pcl::PointXYZ>()); // Final filtered cloud
+
+    // Create the PassThrough filter object for X axis.
+    pcl::PassThrough<pcl::PointXYZ> pass_x;
+    pass_x.setInputCloud(cloud_pcl_);         // Input is the raw cloud from laser.
+    pass_x.setFilterFieldName("x");           // We want to filter along the X axis.
+    // Set the ROI limits along X (relative to rear_laser_frame).
+    // Keep points between -2.0m and -0.1m (behind the robot, but not too close).
+    pass_x.setFilterLimits(-2.0, -0.1);       
+    pass_x.filter(*cloud_filtered_x);         // Output is stored in cloud_filtered_x.
+
+    // Check if any points remain after X filtering.
+    if (cloud_filtered_x->empty()) {
+        RCLCPP_INFO(this->get_logger(), "Point cloud empty after X-axis ROI filtering.");
+        return;
+    }
+
+    // Create the PassThrough filter object for Y axis.
+    pcl::PassThrough<pcl::PointXYZ> pass_y;
+    pass_y.setInputCloud(cloud_filtered_x);   // Input is the cloud already filtered by X.
+    pass_y.setFilterFieldName("y");           // We want to filter along the Y axis.
+    // Set the ROI limits along Y (relative to rear_laser_frame).
+    // Keep points within +/- 0.5m (sideways from the center).
+    pass_y.setFilterLimits(-0.5, 0.5);        
+    pass_y.filter(*cloud_filtered_xy);        // Final output stored in cloud_filtered_xy.
+
+    // Check if any points remain after Y filtering
+    if (cloud_filtered_xy->empty()) {
+        RCLCPP_INFO(this->get_logger(), "Point cloud empty after Y-axis ROI filtering.");
+        return;
+    }
+
+    // Instead of using the raw cloud_pcl_, use the filtered cloud.
+    kdtree_->setInputCloud(cloud_filtered_xy);
+
     try {
         // Convert PCL clouds to Eigen matrices.
         Eigen::Matrix<double, 3, Eigen::Dynamic> eigen_model = convertPCLToEigen(model_cloud_);
@@ -247,7 +295,11 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
             search_point.z = eigen_model(2, i);
 
             if (kdtree_->nearestKSearch(search_point, 1, a, d) > 0) {
-                correspondences.push_back({i, a[0]}); // Match model point i to scene point a[0].
+                // Check squared distance threshold.
+                // Only add the correspondence pair{i, a[0]} to the correspondences vector if d[0] is below the threshold.
+                if (d[0] < this->distance_threshold_ * this->distance_threshold_) {
+                    correspondences.push_back({i, a[0]});
+                }
             }
         }
         

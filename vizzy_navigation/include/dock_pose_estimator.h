@@ -35,6 +35,7 @@
 #include <pcl/registration/icp.h>
 #include <tf2_eigen/tf2_eigen.hpp>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/passthrough.h>
 #include <tf2_ros/transform_listener.h>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <laser_geometry/laser_geometry.hpp>
@@ -258,6 +259,11 @@ private:
      * @brief K-D Tree for nearest neighbor search.
      */
     pcl::search::KdTree<pcl::PointXYZ>::Ptr kdtree_;
+
+    /**
+     * @brief Distance threshold for model points correspondence.
+     */
+    unsigned short distance_threshold_;
 };
 
 #endif // DOCK_POSE_ESTIMATOR_ROS2_H_
