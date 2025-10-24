@@ -248,8 +248,8 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     pass_x.setInputCloud(cloud_pcl_);         // Input is the raw cloud from laser.
     pass_x.setFilterFieldName("x");           // We want to filter along the X axis.
     // Set the ROI limits along X (relative to rear_laser_frame).
-    // Keep points between -2.0m and -0.1m (behind the robot, but not too close).
-    pass_x.setFilterLimits(-2.0, -0.1);       
+    // Keep points between 0.1m and 2.0m (positive from the reference point of the laser).
+    pass_x.setFilterLimits(0.1, 2.0);       
     pass_x.filter(*cloud_filtered_x);         // Output is stored in cloud_filtered_x.
 
     // Check if any points remain after X filtering.
