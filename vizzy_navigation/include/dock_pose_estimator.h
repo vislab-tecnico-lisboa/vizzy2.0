@@ -183,7 +183,7 @@ private:
     /**
      * @brief Publisher for the scene point cloud.
      */
-    //std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>> scene_cloud_pub_;
+    std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::PointCloud2>> scene_cloud_pub_;
 
     /**
      * @brief Buffer for storing TF2 transforms.

@@ -145,7 +145,7 @@ DockPoseEstimator::on_configure(const rclcpp_lifecycle::State &)
     
     // Create the publishers. They are inactive until the node is activated.
     docking_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/detected_dock_pose", 10);
-    //scene_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/scene_point_cloud", 10);
+    scene_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/filtered_scene_point_cloud", 10);
 
     // Initialize the KD-Tree for nearest neighbor search.
     kdtree_ = std::make_shared<pcl::search::KdTree<pcl::PointXYZ>>();
@@ -162,7 +162,7 @@ DockPoseEstimator::on_activate(const rclcpp_lifecycle::State &)
 
     // Activate the publishers to allow them to publish messages.
     docking_pub_->on_activate();
-    //scene_cloud_pub_->on_activate();
+    scene_cloud_pub_->on_activate();
 
     // Create the subscription ONLY to the rear laser. This starts the flow of data.
     laser_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
@@ -186,7 +186,7 @@ DockPoseEstimator::on_deactivate(const rclcpp_lifecycle::State &)
 
     // Deactivate publishers to prevent them from publishing.
     docking_pub_->on_deactivate();
-    //scene_cloud_pub_->on_deactivate();
+    scene_cloud_pub_->on_deactivate();
 
     RCLCPP_INFO(this->get_logger(), "Deactivation successful. Node is now 'inactive'.");
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -201,7 +201,7 @@ DockPoseEstimator::on_cleanup(const rclcpp_lifecycle::State &)
     tf_listener_.reset();
     tf_buffer_.reset();
     docking_pub_.reset();
-    //scene_cloud_pub_.reset();
+    scene_cloud_pub_.reset();
     laser_sub_.reset();
 
     ready_ = false;
@@ -230,7 +230,6 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     sensor_msgs::msg::PointCloud2 cloud_msg;
     projector_.projectLaser(*scan, cloud_msg);
     pcl::fromROSMsg(cloud_msg, *cloud_pcl_);
-    //scene_cloud_pub_->publish(cloud_msg);
 
     if (cloud_pcl_->empty()) {
         RCLCPP_INFO(this->get_logger(), "Received an empty point cloud from laser scan.");
@@ -263,15 +262,18 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     pass_y.setInputCloud(cloud_filtered_x);   // Input is the cloud already filtered by X.
     pass_y.setFilterFieldName("y");           // We want to filter along the Y axis.
     // Set the ROI limits along Y (relative to rear_laser_frame).
-    // Keep points within +/- 0.5m (sideways from the center).
-    pass_y.setFilterLimits(-0.5, 0.5);        
+    // Keep points within +/- 1m (sideways from the center).
+    pass_y.setFilterLimits(-1.0, 1.0);        
     pass_y.filter(*cloud_filtered_xy);        // Final output stored in cloud_filtered_xy.
 
-    // Check if any points remain after Y filtering
+    // Check if any points remain after Y filtering.
     if (cloud_filtered_xy->empty()) {
         RCLCPP_INFO(this->get_logger(), "Point cloud empty after Y-axis ROI filtering.");
         return;
     }
+
+    // Publish the resulting point cloud for visualization.
+    scene_cloud_pub_->publish(cloud_msg);
 
     // Instead of using the raw cloud_pcl_, use the filtered cloud.
     kdtree_->setInputCloud(cloud_filtered_xy);
