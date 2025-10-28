@@ -108,12 +108,27 @@ void DockPoseEstimator::declareAndGetParameters()
 
     // Configure the teaser++ solver parameters.
 
-    // Increased noise_bound from 0.05 to 0.1 as to try and increase performance in different scenarios.
-    teaser_params_.noise_bound = 0.1;
+    // noise_bound defines the bound on the noise of each provided measurement.
+    teaser_params_.noise_bound = 0.01;
+
+    // cbar2 defines the maximal allowed residual^2 to noise bound^2 ratio, usually set to 1.
     teaser_params_.cbar2 = 1;
+
+    // estimate_scaling defines wether or not the solver should estimate a scale factor
+    // between the two point clouds (the model cloud and the scene cloud).
+    // In this case we set it to false because they are at the same scale.
     teaser_params_.estimate_scaling = false;
+
+    // rotation_max_iterations defines the maximum number of iterations the internal algorithm will 
+    // run when trying to find the best rotation between the model and scene point clouds.
+    // A higher value does not necessarily mean a higher accuracy, because the algorithm is dependent
+    // on the correspondences to the model, for instance, which could be poor.
     teaser_params_.rotation_max_iterations = 100;
+
+    // rotation_gnc_factor defines the the aggressiveness of the Graduated Non-Convexity (GNC) algorithm 
+    // when estimating rotation.
     teaser_params_.rotation_gnc_factor = 1.4;
+
     teaser_params_.rotation_estimation_algorithm = teaser::RobustRegistrationSolver::ROTATION_ESTIMATION_ALGORITHM::GNC_TLS;
     teaser_params_.inlier_selection_mode = teaser::RobustRegistrationSolver::INLIER_SELECTION_MODE::PMC_EXACT;
     
@@ -122,7 +137,7 @@ void DockPoseEstimator::declareAndGetParameters()
     // This threshold helps reject obvious outliers before sending data to TEASER++.
     // It should be chosen based on expected sensor noise and initial alignment error.
     // It also makes sense that this value should be greater than the VoxelGrid leaf size
-    distance_threshold_ = 0.05;
+    distance_threshold_ = 2;
 }
 
 // --- LIFECYCLE CALLBACKS ---
@@ -294,6 +309,9 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
         // Find correspondences using a simple nearest-neighbor search.
         std::vector<std::pair<int, int>> correspondences;
 
+        // Define the vector to store the distances of each point.
+        std::vector<double> distances;
+
         for (int i = 0; i < eigen_model.cols(); ++i) {
             std::vector<int> a(1);
             std::vector<float> d(1);
@@ -302,7 +320,12 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
             search_point.y = eigen_model(1, i);
             search_point.z = eigen_model(2, i);
 
-            if (kdtree_->nearestKSearch(search_point, 1, a, d) > 0) {
+            int neighbors = kdtree_->nearestKSearch(search_point, 1, a, d);
+
+            // Store the distance.
+            distances.push_back(static_cast<double>(d[0]));
+
+            if (neighbors > 0) {
                 // Check squared distance threshold.
                 // Only add the correspondence pair{i, a[0]} to the correspondences vector if d[0] is below the threshold.
                 if (d[0] < this->distance_threshold_ * this->distance_threshold_) {
@@ -310,6 +333,19 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
                 }
             }
         }
+
+        // Define the average value of the distances.
+        double average_sq_dist = 0.0;
+
+        if (!distances.empty()) {
+            double sum_sq_dist = 0.0;
+            for (double sq_dist : distances) {
+                sum_sq_dist += sq_dist;
+            }
+            average_sq_dist = sum_sq_dist / distances.size();
+        }
+
+        RCLCPP_INFO(this->get_logger(), "Average distance between the points in the model cloud and their neighbors in the scene cloud: %f", average_sq_dist);
         
         if (correspondences.empty()) {
              throw std::runtime_error("Could not find any correspondences.");
