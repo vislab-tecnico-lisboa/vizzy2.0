@@ -62,6 +62,7 @@
   <depend>xterm</depend> 
   <depend>rclcpp</depend> 
   <depend>tf2_ros</depend>
+  <depend>ndt_omp</depend>
   <depend>tf2_eigen</depend>
   <depend>nav2_util</depend>
   <depend>nav2_msgs</depend>

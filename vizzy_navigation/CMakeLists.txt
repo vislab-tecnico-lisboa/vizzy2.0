@@ -21,6 +21,7 @@ find_package(rviz2 REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(ndt_omp REQUIRED)
 find_package(tf2_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(teaserpp REQUIRED)
@@ -99,6 +100,7 @@ ament_target_dependencies(docking_lib PUBLIC
   geometry_msgs
   teaserpp
   OpenMP
+  ndt_omp
 )
 
 # Link the library against ALL required libraries.

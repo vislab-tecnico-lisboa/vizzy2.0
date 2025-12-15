@@ -57,17 +57,27 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
                 // Get the absolute path to the package's installed share directory.
                 std::string pkg_share_path = ament_index_cpp::get_package_share_directory("vizzy_navigation");
 
+                // Log the docking_bt_selection_ parameter value.
+                RCLCPP_INFO(this->get_logger(), "docking_bt_selection_ parameter value: %d", docking_bt_selection_);
+
                 // Construct the full, absolute path to the BT file.
-                if (activate_dock_pose_detection_)
+                if (docking_bt_selection_ == 2)
                 {   
                     RCLCPP_INFO(this->get_logger(), "Activating dock pose detection immediately as per parameter. Robot WILL NOT navigate.");
                     std::string bt_xml_path = pkg_share_path + "/behavior_trees/custom_docking_bt_navigator_nav2_estimator_only.xml";
                     nav_goal.behavior_tree = bt_xml_path;
                     RCLCPP_INFO(this->get_logger(), "Using BT file: %s", bt_xml_path.c_str());
                 }
+                if (docking_bt_selection_ == 1)
+                {
+                    RCLCPP_INFO(this->get_logger(), "Dock pose detection will be activated immediately. Robot WILL NOT navigate TO STAGING POSE.");
+                    std::string bt_xml_path = pkg_share_path + "/behavior_trees/custom_docking_bt_navigator_without_staging_nav2.xml";
+                    nav_goal.behavior_tree = bt_xml_path;
+                    RCLCPP_INFO(this->get_logger(), "Using BT file: %s", bt_xml_path.c_str());
+                }
                 else
                 {
-                    RCLCPP_INFO(this->get_logger(), "Dock pose detection will NOT be activated immediately. Robot WILL navigate");
+                    RCLCPP_INFO(this->get_logger(), "Dock pose detection will NOT be activated immediately. Robot WILL navigate & execute full docking protocol.");
                     std::string bt_xml_path = pkg_share_path + "/behavior_trees/custom_docking_bt_navigator_nav2.xml";
                     nav_goal.behavior_tree = bt_xml_path;
                     RCLCPP_INFO(this->get_logger(), "Using BT file: %s", bt_xml_path.c_str());
@@ -246,10 +256,10 @@ ChargingActionServer::ChargingActionServer(const rclcpp::NodeOptions & options) 
     RCLCPP_INFO(this->get_logger(), "is_simulation set to: %s", is_simulation_ ? "true" : "false");
 
     // Declare the parameter regarding the immediate activation of the dock pose detection.
-    this->declare_parameter<bool>("activate_dock_pose_detection", false);
+    this->declare_parameter<int>("docking_bt_selection", 0);
 
     // Get the parameter's value and store it in the member variable.
-    activate_dock_pose_detection_ = this->get_parameter("activate_dock_pose_detection").as_bool();
+    docking_bt_selection_ = this->get_parameter("docking_bt_selection").as_int();
 
     // Retrieve and set "staging_pose" parameter.
     this->declare_parameter<std::string>("staging_pose", "-x -1.0 -y 0.0 -Y 0.0");

@@ -1,18 +1,17 @@
-/* 
- * Copyright 2025, Joao Avelino, João Penha Lopes and João Zenário.
+/* * Copyright 2025, Joao Avelino, João Penha Lopes and João Zenário.
  * This code was originaly developped by João Avelino for ROS1 in 2019.
  * It was later refactored for ROS2 in 2025 by João Penha Lopes and João Zenário.
  * All rights reserved.
  */
 
 /*********************************************************************************************
-*                         Dock Pose Estimator C++ File for ROS2                              *
-*                                          -                                                 *
+* Dock Pose Estimator C++ File for ROS2                                                      *
+* -                                                                                          *
 * This file contains the implementation of every method defined in the                       *
 * DockPoseEstimator class header file.                                                       *
 * It includes the constructor, parameter loading, laser scan processing,                     *
-* median filtering, and publishing of the estimated docking pose.                            *   
-*                                          -                                                 *
+* median filtering, and publishing of the estimated docking pose.                            * 
+* -                                                                                          *
 * To simplify execution of the code and to integrate with the Nav2 ecoystem, the following   *
 * approach was used to detect the dock pose:                                                 *
 * 1. The dock_pose_estimator_node is implemented as a Lifecycle node, which allows for better*
@@ -21,29 +20,22 @@
 * the dock_pose_estimator_node is activated by the lifecycle manager.                        *
 * 3. The node then subscribes to the rear laser scan topic and starts processing the data to *
 * estimate and publish the dock pose.                                                        *
-*                                          -                                                 *
+* -                                                                                          *
 * This docking estimation procedure was redesigned to work with Nav2's Docking Server.       *
-* More details can be found in the documentation:                                            *   
-* https://github.com/ros-navigation/navigation2/tree/humble_main/nav2_docking                *    
-*********************************************************************************************/
+* More details can be found in the documentation:                                            * 
+* https://github.com/ros-navigation/navigation2/tree/humble_main/nav2_docking                *
+* *******************************************************************************************/
 
 #include "dock_pose_estimator.h" 
-
-// Helper function to convert PCL point clouds to the Eigen::Matrix format TEASER++ needs.
-Eigen::Matrix<double, 3, Eigen::Dynamic> convertPCLToEigen(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
-{
-    Eigen::Matrix<double, 3, Eigen::Dynamic> matrix(3, cloud->points.size());
-    for (size_t i = 0; i < cloud->points.size(); ++i) {
-        matrix(0, i) = cloud->points[i].x;
-        matrix(1, i) = cloud->points[i].y;
-        matrix(2, i) = cloud->points[i].z;
-    }
-    return matrix;
-}
+#include <pcl/common/centroid.h> // Added for robust initial guessing.
 
 DockPoseEstimator::DockPoseEstimator(const rclcpp::NodeOptions & options)
     : rclcpp_lifecycle::LifecycleNode("dock_pose_estimator_node", options),
-      filter_buffer_size_(10)
+      filter_buffer_size_(10),
+      consecutive_failures_(0),       // Initialize failure counter to zero.
+      last_dock_pose_saved_(false),   // Explicitly init boolean flags.
+      ema_initialized_(false),
+      force_centroid_guess_(false)    // Initialize the debug flag to false by default.
 {
     RCLCPP_INFO(this->get_logger(), "Dock Pose Estimator node has been created and is in an 'unconfigured' state.");
 }
@@ -51,17 +43,39 @@ DockPoseEstimator::DockPoseEstimator(const rclcpp::NodeOptions & options)
 void DockPoseEstimator::declareAndGetParameters()
 {
     // Declare parameters with default values.
-    // Attention: The parameters may not be set with these default values,
-    // they are just declared here. That is why we retrieve them later.
     this->declare_parameter<std::string>("model_file", "file");
     this->declare_parameter<std::string>("rear_laser_topic", "/nav_hokuyo_laser/rear/scan");
+
+    // ROI Parameters: Defining the Region of Interest as parameters allows tuning.
+    // without recompilation, preventing blind spots if the robot stages further away.
+    this->declare_parameter<double>("roi_min_x", 0.1);
+    this->declare_parameter<double>("roi_max_x", 2.0);
+    this->declare_parameter<double>("roi_min_y", -1.0);
+    this->declare_parameter<double>("roi_max_y", 1.0);
+
+    // NDT Parameters: Exposing resolution and step size allows us to balance.
+    // speed vs. accuracy. For docking, a finer resolution (5cm) is often required.
+    this->declare_parameter<double>("ndt_resolution", 0.05);
+    this->declare_parameter<double>("ndt_step_size", 0.1);
+    this->declare_parameter<bool>("force_centroid_guess", false);
 
     // Get the current active parameter values.
     std::string model_file = this->get_parameter("model_file").as_string();
     rear_laser_topic_ = this->get_parameter("rear_laser_topic").as_string();
     
+    // Retrieve the numerical tuning parameters.
+    roi_min_x_ = this->get_parameter("roi_min_x").as_double();
+    roi_max_x_ = this->get_parameter("roi_max_x").as_double();
+    roi_min_y_ = this->get_parameter("roi_min_y").as_double();
+    roi_max_y_ = this->get_parameter("roi_max_y").as_double();
+    ndt_resolution_ = this->get_parameter("ndt_resolution").as_double();
+    ndt_step_size_ = this->get_parameter("ndt_step_size").as_double();
+    force_centroid_guess_ = this->get_parameter("force_centroid_guess").as_bool();
+
     RCLCPP_INFO(this->get_logger(), "--- Dock Pose Estimator Parameters ---");
     RCLCPP_INFO(this->get_logger(), "model_file: %s", model_file.c_str());
+    RCLCPP_INFO(this->get_logger(), "ROI X: [%.2f, %.2f] Y: [%.2f, %.2f]", roi_min_x_, roi_max_x_, roi_min_y_, roi_max_y_);
+    RCLCPP_INFO(this->get_logger(), "NDT: Res=%.3f Step=%.3f", ndt_resolution_, ndt_step_size_);
     RCLCPP_INFO(this->get_logger(), "--- End of Parameters ---");
 
     // Load the dock model from the STL file.
@@ -72,75 +86,79 @@ void DockPoseEstimator::declareAndGetParameters()
         return;
     }
     pcl::fromPCLPointCloud2(mesh.cloud, *model_cloud_);
+
     RCLCPP_INFO(this->get_logger(), "Successfully loaded model with %zu points.", model_cloud_->size());
 
-    RCLCPP_INFO(this->get_logger(), "Simplifying the model point cloud...");
+    // ------------------------ MODEL SLICING BLOCK -----------------------------------------------
 
-    // Downsample the model using a VoxelGrid filter.
-    pcl::PointCloud<pcl::PointXYZ>::Ptr simplified_model(new pcl::PointCloud<pcl::PointXYZ>());
-    pcl::VoxelGrid<pcl::PointXYZ> sor;
-    sor.setInputCloud(model_cloud_);
+    // Create a 2D slice of the model for matching with the laser scan.
+    // Since the model is 3D but vertically symmetric, there is no information regarding pitch and there will never be any roll value.
+    // Due to this, we create a 2D slice of the model to match against the 2D laser scan without losing information.
 
-    // Set the voxel size (in this case 1cm). 
-    // This value controls the density of points in the simplified model.
-    // Reduced this from 2cm to 1cm to try and improve model matching.
-    sor.setLeafSize(0.01f, 0.01f, 0.01f); 
-    sor.filter(*simplified_model);
+    const float slice_thick = 0.05f;   // 5 cm thick band.
+    if (model_cloud_->empty()) {
+    RCLCPP_ERROR(this->get_logger(), "Model cloud empty before 2D slicing.");
+    return;
+    }
 
-    // Update the model cloud to the simplified version.
-    *model_cloud_ = *simplified_model;
+    // Find z min/max.
+    float zmin = std::numeric_limits<float>::max();
+    float zmax = std::numeric_limits<float>::lowest();
+    for (const auto& p : model_cloud_->points) {
+    zmin = std::min(zmin, p.z);
+    zmax = std::max(zmax, p.z);
+    }
 
-    RCLCPP_INFO(this->get_logger(), "Applying centering transformation to the model...");
+    // Slide a window to find the densest band.
+    const float step = slice_thick * 0.25f;  // 75% overlap.
+    float best_z_center = 0.0f;
+    size_t best_count = 0;
 
-    // Define the centering transform using the negative of the barycenter values from MeshLab.
-    // (The SDF model is not centered at the origin).
-    Eigen::Affine3d centering_transform = Eigen::Affine3d::Identity();
-    double center_x = 0.079505;
-    double center_y = 0.005601;
-    double center_z = 0.136650;
-    centering_transform.translation() << -center_x, -center_y, -center_z;
-    centering_transform.rotate(Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitZ()));
+    for (float zc = zmin; zc <= zmax; zc += step) {
+    const float z_lo = zc - slice_thick * 0.5f;
+    const float z_hi = zc + slice_thick * 0.5f;
+    size_t count = 0;
+    for (const auto& p : model_cloud_->points) {
+        if (p.z >= z_lo && p.z <= z_hi) ++count;
+    }
+    if (count > best_count) {
+        best_count = count;
+        best_z_center = zc;
+    }
+    }
 
-    // Apply the transformation to the model point cloud.
-    pcl::transformPointCloud(*model_cloud_, *model_cloud_, centering_transform);
+    if (best_count == 0) {
+    RCLCPP_ERROR(this->get_logger(), "Could not find a non-empty z-band for 2D slicing.");
+    return;
+    }
 
-    RCLCPP_INFO(this->get_logger(), "Successfully loaded and centered model with %zu points.", model_cloud_->size());
+    // Collect points in the best band and project to z=0.
+    pcl::PointCloud<pcl::PointXYZ>::Ptr model2d(new pcl::PointCloud<pcl::PointXYZ>());
+    model2d->reserve(best_count);
+    const float z_lo = best_z_center - slice_thick * 0.5f;
+    const float z_hi = best_z_center + slice_thick * 0.5f;
+    for (const auto& p : model_cloud_->points) {
+    if (p.z >= z_lo && p.z <= z_hi) {
+        model2d->push_back(pcl::PointXYZ{p.x, p.y, 0.0f});
+    }
+    }
 
-    // Configure the teaser++ solver parameters.
+    // Downsample for faster processing.
+    pcl::VoxelGrid<pcl::PointXYZ> v;
+    v.setInputCloud(model2d);
+    v.setLeafSize(0.02f, 0.02f, 0.02f);
 
-    // noise_bound defines the bound on the noise of each provided measurement.
-    teaser_params_.noise_bound = 0.01;
+    model_cloud_.reset(new pcl::PointCloud<pcl::PointXYZ>());
+    v.filter(*model_cloud_);
 
-    // cbar2 defines the maximal allowed residual^2 to noise bound^2 ratio, usually set to 1.
-    teaser_params_.cbar2 = 1;
+    // ----------------------------------------------------------------------------------------------------
 
-    // estimate_scaling defines wether or not the solver should estimate a scale factor
-    // between the two point clouds (the model cloud and the scene cloud).
-    // In this case we set it to false because they are at the same scale.
-    teaser_params_.estimate_scaling = false;
-
-    // rotation_max_iterations defines the maximum number of iterations the internal algorithm will 
-    // run when trying to find the best rotation between the model and scene point clouds.
-    // A higher value does not necessarily mean a higher accuracy, because the algorithm is dependent
-    // on the correspondences to the model, for instance, which could be poor.
-    teaser_params_.rotation_max_iterations = 100;
-
-    // rotation_gnc_factor defines the the aggressiveness of the Graduated Non-Convexity (GNC) algorithm 
-    // when estimating rotation.
-    teaser_params_.rotation_gnc_factor = 1.4;
-
-    teaser_params_.rotation_estimation_algorithm = teaser::RobustRegistrationSolver::ROTATION_ESTIMATION_ALGORITHM::GNC_TLS;
-    teaser_params_.inlier_selection_mode = teaser::RobustRegistrationSolver::INLIER_SELECTION_MODE::PMC_EXACT;
-    
-    // Maximum distance (in meters) between a model point and its nearest neighbor
-    // in the scene cloud to be considered a potential correspondence.
-    // This threshold helps reject obvious outliers before sending data to TEASER++.
-    // It should be chosen based on expected sensor noise and initial alignment error.
-    // It also makes sense that this value should be greater than the VoxelGrid leaf size
-    distance_threshold_ = 2;
+    RCLCPP_INFO(this->get_logger(),
+                "Auto 2D dock template: z∈[%.3f, %.3f], %zu points.",
+                z_lo, z_hi, model_cloud_->size());
 }
 
-// --- LIFECYCLE CALLBACKS ---
+// LIFECYCLE CALLBACKS
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 DockPoseEstimator::on_configure(const rclcpp_lifecycle::State &)
@@ -161,6 +179,7 @@ DockPoseEstimator::on_configure(const rclcpp_lifecycle::State &)
     // Create the publishers. They are inactive until the node is activated.
     docking_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/detected_dock_pose", 10);
     scene_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/filtered_scene_point_cloud", 10);
+    model_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/dock_model_point_cloud", 10);
 
     // Initialize the KD-Tree for nearest neighbor search.
     kdtree_ = std::make_shared<pcl::search::KdTree<pcl::PointXYZ>>();
@@ -178,12 +197,18 @@ DockPoseEstimator::on_activate(const rclcpp_lifecycle::State &)
     // Activate the publishers to allow them to publish messages.
     docking_pub_->on_activate();
     scene_cloud_pub_->on_activate();
+    model_cloud_pub_->on_activate();
 
     // Create the subscription ONLY to the rear laser. This starts the flow of data.
     laser_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
         rear_laser_topic_, 10, std::bind(&DockPoseEstimator::laserCallback, this, std::placeholders::_1));
     
     enabled_ = true;
+
+    // Reset filtering state on activation to prevent stale data from influencing the initial output.
+    consecutive_failures_ = 0;
+    last_dock_pose_saved_ = false;
+    ema_initialized_ = false;
 
     RCLCPP_INFO(this->get_logger(), "Activation successful. Subscribed to '%s'. Node is now 'active'.", rear_laser_topic_.c_str());
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -202,6 +227,7 @@ DockPoseEstimator::on_deactivate(const rclcpp_lifecycle::State &)
     // Deactivate publishers to prevent them from publishing.
     docking_pub_->on_deactivate();
     scene_cloud_pub_->on_deactivate();
+    model_cloud_pub_->on_deactivate();
 
     RCLCPP_INFO(this->get_logger(), "Deactivation successful. Node is now 'inactive'.");
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -217,6 +243,7 @@ DockPoseEstimator::on_cleanup(const rclcpp_lifecycle::State &)
     tf_buffer_.reset();
     docking_pub_.reset();
     scene_cloud_pub_.reset();
+    model_cloud_pub_.reset();
     laser_sub_.reset();
 
     ready_ = false;
@@ -236,218 +263,342 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     if (!enabled_) return;
 
     if (!model_cloud_ || model_cloud_->empty()) {
-        RCLCPP_ERROR(this->get_logger(), "ERROR: Dock model is not loaded!");
+        RCLCPP_ERROR(get_logger(), "ERROR: Dock model is not loaded!");
         return;
     }
 
-    // Convert incoming LaserScan to PCL PointCloud.
+    RCLCPP_INFO(get_logger(), "---------------------");
+    RCLCPP_INFO(get_logger(), "PROCESSING LASER SCAN");
+    RCLCPP_INFO(get_logger(), "---------------------");
+
+    // LaserScan -> PCL (laser frame).
     laser_geometry::LaserProjection projector_;
     sensor_msgs::msg::PointCloud2 cloud_msg;
     projector_.projectLaser(*scan, cloud_msg);
     pcl::fromROSMsg(cloud_msg, *cloud_pcl_);
-
     if (cloud_pcl_->empty()) {
-        RCLCPP_INFO(this->get_logger(), "Received an empty point cloud from laser scan.");
+        RCLCPP_INFO(get_logger(), "Received an empty point cloud from laser scan.");
         return;
     }
-    
-    Eigen::Affine3d transformNN;
 
-    // Create temporary clouds to store filtered results
+    // ------------------------ ROI FILTERING BLOCK -----------------------------------------------
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_x(new pcl::PointCloud<pcl::PointXYZ>());
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_xy(new pcl::PointCloud<pcl::PointXYZ>()); // Final filtered cloud
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_xy(new pcl::PointCloud<pcl::PointXYZ>());
+    {
+        pcl::PassThrough<pcl::PointXYZ> pass;
+        pass.setInputCloud(cloud_pcl_);
+        pass.setFilterFieldName("x");
 
-    // Create the PassThrough filter object for X axis.
-    pcl::PassThrough<pcl::PointXYZ> pass_x;
-    pass_x.setInputCloud(cloud_pcl_);         // Input is the raw cloud from laser.
-    pass_x.setFilterFieldName("x");           // We want to filter along the X axis.
-    // Set the ROI limits along X (relative to rear_laser_frame).
-    // Keep points between 0.1m and 2.0m (positive from the reference point of the laser).
-    pass_x.setFilterLimits(0.1, 2.0);       
-    pass_x.filter(*cloud_filtered_x);         // Output is stored in cloud_filtered_x.
-
-    // Check if any points remain after X filtering.
+        // Using the parameterized ROI values instead of hardcoded numbers to support different staging distances.
+        pass.setFilterLimits(roi_min_x_, roi_max_x_);
+        pass.filter(*cloud_filtered_x);
+    }
     if (cloud_filtered_x->empty()) {
-        RCLCPP_INFO(this->get_logger(), "Point cloud empty after X-axis ROI filtering.");
+        RCLCPP_INFO(get_logger(), "Point cloud empty after X-axis ROI filtering.");
+        return;
+    }
+    {
+        pcl::PassThrough<pcl::PointXYZ> pass;
+        pass.setInputCloud(cloud_filtered_x);
+        pass.setFilterFieldName("y");
+
+        // Using the parameterized ROI values here as well.
+        pass.setFilterLimits(roi_min_y_, roi_max_y_);
+        pass.filter(*cloud_filtered_xy);
+    }
+
+    // Check if the ROI contains enough points to form a valid geometric shape.
+    // If there are too few points (e.g., < 20 out of the 87), NDT will likely produce garbage results.
+    if (cloud_filtered_xy->size() < 20) {
+        RCLCPP_INFO(get_logger(), "Point cloud has too few points (%zu) after Y-axis ROI filtering. Skipping.", cloud_filtered_xy->size());
         return;
     }
 
-    // Create the PassThrough filter object for Y axis.
-    pcl::PassThrough<pcl::PointXYZ> pass_y;
-    pass_y.setInputCloud(cloud_filtered_x);   // Input is the cloud already filtered by X.
-    pass_y.setFilterFieldName("y");           // We want to filter along the Y axis.
-    // Set the ROI limits along Y (relative to rear_laser_frame).
-    // Keep points within +/- 1m (sideways from the center).
-    pass_y.setFilterLimits(-1.0, 1.0);        
-    pass_y.filter(*cloud_filtered_xy);        // Final output stored in cloud_filtered_xy.
+    // Publish filtered scene cloud.
+    {
+        sensor_msgs::msg::PointCloud2 filtered_cloud_msg;
+        pcl::toROSMsg(*cloud_filtered_xy, filtered_cloud_msg);
+        filtered_cloud_msg.header = scan->header;
+        scene_cloud_pub_->publish(filtered_cloud_msg);
+    }
 
-    // Check if any points remain after Y filtering.
-    if (cloud_filtered_xy->empty()) {
-        RCLCPP_INFO(this->get_logger(), "Point cloud empty after Y-axis ROI filtering.");
+    RCLCPP_INFO(get_logger(), "scene points: %zu first=[%.3f %.3f %.3f] header.frame=%s",
+        cloud_filtered_xy->points.size(),
+        cloud_filtered_xy->points[0].x,
+        cloud_filtered_xy->points[0].y,
+        cloud_filtered_xy->points[0].z,
+        scan->header.frame_id.c_str());
+
+    // ----------------------------------------------------------------------------------------------------
+
+    // ------------------------ ESTIMATION FUNCTION CALL  -------------------------------------------------
+
+    auto [aligned_model, T_model_in_laser] = estimateDockPose(cloud_filtered_xy, model_cloud_, scan);
+
+    // ----------------------------------------------------------------------------------------------------
+
+    // ------------------------ FAILURE HANDLING & TRACKING RESET -----------------------------------------
+
+    // Validate the estimator output. If the estimator returns a null pointer, it means
+    // convergence failed or the fitness score was too high.
+    if (!aligned_model) {
+        consecutive_failures_++;
+        RCLCPP_WARN(get_logger(), "Dock pose estimation failed. Failure count: %d", consecutive_failures_);
+
+        // If we lose tracking for too many consecutive frames, the previous 'last_dock_pose_' 
+        // is likely too stale to be a valid initial guess. We reset the tracking state 
+        // to force a fresh global initialization (using the centroid) on the next successful scan.
+        const int MAX_FAILURES_BEFORE_RESET = 10;
+        if (consecutive_failures_ > MAX_FAILURES_BEFORE_RESET) {
+            RCLCPP_WARN(get_logger(), "Lost tracking for >%d frames. Resetting initial guess logic.", MAX_FAILURES_BEFORE_RESET);
+            last_dock_pose_saved_ = false; 
+            consecutive_failures_ = 0;
+
+            // We also reset EMA to avoid dragging old filter values into the new detection.
+            ema_initialized_ = false;
+        }
         return;
     }
 
-    // Convert cloud_filtered_xy to a publishable point cloud message.
-    sensor_msgs::msg::PointCloud2 filtered_cloud_msg;
-    pcl::toROSMsg(*cloud_filtered_xy, filtered_cloud_msg);
+    // If estimation was successful, we reset the failure counter.
+    consecutive_failures_ = 0;
 
-    // Set the header information.
-    // Use the same timestamp and frame_id as the original scan.
-    filtered_cloud_msg.header = scan->header;
+    if (aligned_model->points.size() < 2) {
+        RCLCPP_WARN(get_logger(), "Dock pose estimation returned insufficient points (%zu). Skipping this scan.", aligned_model->points.size());
+        return;
+    }
 
-    // Now you can publish it for visualization.
-    scene_cloud_pub_->publish(filtered_cloud_msg);
+    // ------------------------ EMA ESTIMATION FILTERING BLOCK  -------------------------------------------
 
-    // Instead of using the raw cloud_pcl_, use the filtered cloud.
-    kdtree_->setInputCloud(cloud_filtered_xy);
+    // Raw pose from NDT result.
+    double raw_x = static_cast<double>(T_model_in_laser(0,3));
+    double raw_y = static_cast<double>(T_model_in_laser(1,3));
+    double raw_z = 0.0;
+    double raw_yaw = std::atan2(static_cast<double>(T_model_in_laser(1,0)),
+                                static_cast<double>(T_model_in_laser(0,0)));
 
+    // EMA initialization on first valid estimate.
+    if (!ema_initialized_) {
+        filtered_x_ = raw_x;
+        filtered_y_ = raw_y;
+        filtered_z_ = raw_z;
+        filtered_cos_yaw_ = std::cos(raw_yaw);
+        filtered_sin_yaw_ = std::sin(raw_yaw);
+        ema_initialized_ = true;
+    } else {
+        // Larger alpha -> more weight to new sample -> more responsive.
+        const double a = ema_alpha_;
+
+        // Linear EMA for position.
+        filtered_x_ = a * raw_x + (1.0 - a) * filtered_x_;
+        filtered_y_ = a * raw_y + (1.0 - a) * filtered_y_;
+        filtered_z_ = a * raw_z + (1.0 - a) * filtered_z_;
+
+        // Circular EMA for yaw.
+        filtered_cos_yaw_ = a * std::cos(raw_yaw) + (1.0 - a) * filtered_cos_yaw_;
+        filtered_sin_yaw_ = a * std::sin(raw_yaw) + (1.0 - a) * filtered_sin_yaw_;
+
+        // Renormalize occasionally to avoid drift.
+        const double norm = std::hypot(filtered_cos_yaw_, filtered_sin_yaw_);
+        if (norm > 1e-9) {
+            filtered_cos_yaw_ /= norm;
+            filtered_sin_yaw_ /= norm;
+        }
+    }
+
+    // Compose the filtered pose to publish.
+    double fyaw = std::atan2(filtered_sin_yaw_, filtered_cos_yaw_);
+    geometry_msgs::msg::PoseStamped inst_laser;
+    inst_laser.header = scan->header;  // laser frame.
+    inst_laser.pose.position.x = static_cast<float>(filtered_x_);
+    inst_laser.pose.position.y = static_cast<float>(filtered_y_);
+    inst_laser.pose.position.z = static_cast<float>(filtered_z_);
+
+    tf2::Quaternion q; q.setRPY(0.0, 0.0, fyaw);
+    inst_laser.pose.orientation = tf2::toMsg(q);
+
+    // Log difference between raw and filtered (position in meters, yaw in degrees).
+    double yaw_diff = std::atan2(std::sin(fyaw - raw_yaw), std::cos(fyaw - raw_yaw));
+    RCLCPP_INFO(get_logger(), "Filter delta: Δx=%.4f m Δy=%.4f m Δyaw=%.2f°",
+                 filtered_x_ - raw_x, filtered_y_ - raw_y, yaw_diff * 180.0 / M_PI);
+
+    // ----------------------------------------------------------------------------------------------------
+
+    // Transform to odom at scan time.
+    geometry_msgs::msg::PoseStamped inst_odom;
+    if (!tf_buffer_->canTransform("odometry", inst_laser.header.frame_id, inst_laser.header.stamp,
+                                tf2::durationFromSec(0.2))) {
+        RCLCPP_WARN(get_logger(), "TF not available at scan time; skipping this measurement.");
+        return;
+    }
     try {
-        // Convert PCL clouds to Eigen matrices.
-        Eigen::Matrix<double, 3, Eigen::Dynamic> eigen_model = convertPCLToEigen(model_cloud_);
-        Eigen::Matrix<double, 3, Eigen::Dynamic> eigen_scene = convertPCLToEigen(cloud_filtered_xy);
-
-        // Find correspondences using a simple nearest-neighbor search.
-        std::vector<std::pair<int, int>> correspondences;
-
-        // Define the vector to store the distances of each point.
-        std::vector<double> distances;
-
-        for (int i = 0; i < eigen_model.cols(); ++i) {
-            std::vector<int> a(1);
-            std::vector<float> d(1);
-            pcl::PointXYZ search_point;
-            search_point.x = eigen_model(0, i);
-            search_point.y = eigen_model(1, i);
-            search_point.z = eigen_model(2, i);
-
-            int neighbors = kdtree_->nearestKSearch(search_point, 1, a, d);
-
-            // Store the distance.
-            distances.push_back(static_cast<double>(d[0]));
-
-            if (neighbors > 0) {
-                // Check squared distance threshold.
-                // Only add the correspondence pair{i, a[0]} to the correspondences vector if d[0] is below the threshold.
-                if (d[0] < this->distance_threshold_ * this->distance_threshold_) {
-                    correspondences.push_back({i, a[0]});
-                }
-            }
-        }
-
-        // Define the average value of the distances.
-        double average_sq_dist = 0.0;
-
-        if (!distances.empty()) {
-            double sum_sq_dist = 0.0;
-            for (double sq_dist : distances) {
-                sum_sq_dist += sq_dist;
-            }
-            average_sq_dist = sum_sq_dist / distances.size();
-        }
-
-        RCLCPP_INFO(this->get_logger(), "Average distance between the points in the model cloud and their neighbors in the scene cloud: %f", average_sq_dist);
-        
-        if (correspondences.empty()) {
-             throw std::runtime_error("Could not find any correspondences.");
-        }
-
-        // Create new matrices with only the matched points.
-        // teaser++ expects two 3xN matrices where the columns are correctly ordered.
-        Eigen::Matrix<double, 3, Eigen::Dynamic> matched_model(3, correspondences.size());
-        Eigen::Matrix<double, 3, Eigen::Dynamic> matched_scene(3, correspondences.size());
-
-        for (size_t i = 0; i < correspondences.size(); ++i) {
-            int model_idx = correspondences[i].first;
-            int scene_idx = correspondences[i].second;
-            matched_model.col(i) = eigen_model.col(model_idx);
-            matched_scene.col(i) = eigen_scene.col(scene_idx);
-        }
-
-        // Solve with teaser++.
-        teaser::RobustRegistrationSolver solver(teaser_params_);
-        solver.solve(matched_model, matched_scene);
-        auto solution = solver.getSolution();
-        
-        // Reconstruct the final transform.
-        transformNN = Eigen::Affine3d::Identity();
-        transformNN.rotate(solution.rotation);
-        transformNN.translate(solution.translation);
-
-    } catch (const std::exception &e) {
-        RCLCPP_INFO(this->get_logger(), "teaser++ failed: %s", e.what());
+        inst_odom = tf_buffer_->transform(inst_laser, "odometry", tf2::durationFromSec(0.2));
+    } catch (const tf2::TransformException &ex) {
+        RCLCPP_WARN(get_logger(), "Could not transform to 'odometry': %s", ex.what());
         return;
     }
 
-    // Extract pose from transform.
-    Eigen::Matrix3d rotation = transformNN.rotation();
-    Eigen::Vector3d translation = transformNN.translation();
-    Eigen::Vector3d ea = rotation.eulerAngles(2, 1, 0);
+    // Save last pose for next initial guess.
+    last_dock_pose_ = inst_odom;       // store in odom frame.
+    last_dock_pose_saved_ = true;
 
-    if (-M_PI * 0.5 > ea[0]) { ea[0] += M_PI; } 
-    else if (M_PI * 0.5 < ea[0]) { ea[0] -= M_PI; }
+    // Publish in ODOM.
+    docking_pub_->publish(inst_odom);
 
-    // Apply Median Filter.
-    x_filter_.push_back(translation[0]);
-    y_filter_.push_back(translation[1]);
-    z_filter_.push_back(translation[2]);
-    yaw_filter_.push_back(ea[0]);
+    // ----------------------------------------------------------------------------------------------------
 
-    if (yaw_filter_.size() >= filter_buffer_size_) {
-        x_filter_.pop_front(); y_filter_.pop_front(); z_filter_.pop_front(); yaw_filter_.pop_front();
+    // ------------------------ MODEL VISUALIZATION BLOCK ------------------------------------------
+
+    // Model cloud viz at estimated pose (laser frame).
+    if (model_cloud_pub_->is_activated()) {
+        sensor_msgs::msg::PointCloud2 model_viz_msg;
+        pcl::toROSMsg(*aligned_model, model_viz_msg);
+        model_viz_msg.header = scan->header;
+        model_cloud_pub_->publish(model_viz_msg);
     }
 
-    double x_filtered = findMedian(x_filter_);
-    double y_filtered = findMedian(y_filter_);
-    double z_filtered = findMedian(z_filter_);
-    double yaw_filtered = findMedian(yaw_filter_);
+    // ---------------------------------------------------------------------------------------------
+}
 
-    double distance_to_dock = std::sqrt(x_filtered * x_filtered + y_filtered * y_filtered);
-    RCLCPP_INFO(this->get_logger(), "Distance to dock: %f meters", distance_to_dock);
+std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimator::estimateDockPose(pcl::PointCloud<pcl::PointXYZ>::Ptr target_cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr source_cloud, std::shared_ptr<sensor_msgs::msg::LaserScan> scan)
+{
+    // NDT parameters.
+    const float resolution = static_cast<float>(ndt_resolution_); 
+    const int max_iter = 35;
+    const double epsilon = 0.0005;
+    const double step = ndt_step_size_;
 
-    // Reconstruct filtered transform.
-    Eigen::Matrix3d m = Eigen::AngleAxisd(yaw_filtered, Eigen::Vector3d::UnitZ()).toRotationMatrix();
-    Eigen::Affine3d transformNNfiltered = Eigen::Affine3d::Identity();
-    transformNNfiltered.translate(Eigen::Vector3d(x_filtered, y_filtered, z_filtered));
-    transformNNfiltered.rotate(m);
+    Eigen::Matrix4f guess = Eigen::Matrix4f::Identity();
 
-    // Transform the pose to the odometry frame.
-    // (nav2_docking expects the dock pose in the "odometry" frame).
+    // Log the force_centroid_guess_ parameter state.
+    RCLCPP_INFO(get_logger(), "force_centroid_guess_ parameter is set to: %s", force_centroid_guess_ ? "TRUE" : "FALSE");
+
+    // We only attempt to use the previous pose for tracking if two conditions are met:
+    // 1. A valid previous pose exists (last_dock_pose_saved_ is true).
+    // 2. The 'force_centroid_guess_' debugging parameter is FALSE. 
+    // If 'force_centroid_guess_' is true, we intentionally skip this block to test the fallback logic.
+    if (last_dock_pose_saved_ && !force_centroid_guess_) {
+        // Transform last odom pose into current laser frame (scan->header.frame_id) at scan time.
+        // This will allow the initial guess to account for robot movement since last estimate.
+        try {
+            // Get predicted last dock pose in laser frame.
+            auto pred_in_laser = tf_buffer_->transform(last_dock_pose_, scan->header.frame_id,
+                                                    tf2::durationFromSec(0.1));
+
+            RCLCPP_INFO(get_logger(), "pred_in_laser header: frame=%s sec=%u nsec=%u",
+                         pred_in_laser.header.frame_id.c_str(),
+                         pred_in_laser.header.stamp.sec,
+                         pred_in_laser.header.stamp.nanosec);
+            RCLCPP_INFO(get_logger(), "pred_in_laser pose: x=%.3f y=%.3f z=%.3f",
+                         pred_in_laser.pose.position.x,
+                         pred_in_laser.pose.position.y,
+                         pred_in_laser.pose.position.z);
+
+            // Build initial guess from predicted pose.
+            double rr, rp, ry;
+            tf2::Quaternion q(pred_in_laser.pose.orientation.x,
+                            pred_in_laser.pose.orientation.y,
+                            pred_in_laser.pose.orientation.z,
+                            pred_in_laser.pose.orientation.w);
+            tf2::Matrix3x3(q).getRPY(rr, rp, ry);
+            guess = Eigen::Matrix4f::Identity();
+            guess(0,3) = static_cast<float>(pred_in_laser.pose.position.x);
+            guess(1,3) = static_cast<float>(pred_in_laser.pose.position.y);
+            Eigen::Matrix3f R;
+            R << std::cos(ry), -std::sin(ry), 0,
+                std::sin(ry),  std::cos(ry), 0,
+                            0,              0, 1;
+            guess.block<3,3>(0,0) = R;
+
+            RCLCPP_INFO(get_logger(), "Using TF-based initial guess: x=%.2f y=%.2f yaw=%.1f°",
+                        guess(0,3), guess(1,3), ry * 180.0f/M_PI);
+        } catch (const tf2::TransformException &ex) {
+            RCLCPP_WARN(get_logger(), "TF transform for guess failed: %s — using fallback guess.", ex.what());
+            // If the TF lookup fails, we invalidate the saved pose so the code falls through 
+            // to the centroid-based guess logic below.
+            last_dock_pose_saved_ = false;
+        }
+    } 
     
-    geometry_msgs::msg::PoseStamped pose_in_laser_frame;
-    pose_in_laser_frame.header = scan->header;
-    pose_in_laser_frame.pose = tf2::toMsg(transformNNfiltered);
-
-    geometry_msgs::msg::PoseStamped pose_in_odom_frame;
-    try {
-      // 0.2 second timeout to the transform request (so the transform is available).
-      pose_in_odom_frame = tf_buffer_->transform(
-        pose_in_laser_frame, "odometry", tf2::durationFromSec(0.2));
+    // Logic Update: We calculate the centroid-based guess if:
+    // 1. No previous tracking data exists (!last_dock_pose_saved_).
+    // OR
+    // 2. The 'force_centroid_guess_' parameter is set to TRUE, specifically overriding history.
+    if (!last_dock_pose_saved_ || force_centroid_guess_) {
+        // Instead of hardcoding an initial guess, we calculate the centroid of the 
+        // currently filtered cloud. This provides a much more robust starting point 
+        // regardless of whether the dock is at 0.5m or 2.0m.
+        Eigen::Vector4f centroid;
+        pcl::compute3DCentroid(*target_cloud, centroid);
+        
+        guess(0,3) = centroid[0]; 
+        guess(1,3) = centroid[1];
+        
+        // We keep rotation as identity (0 degrees) since we lack orientation info without tracking.
+        RCLCPP_INFO(get_logger(), "Initializing guess at cloud centroid (Tracking: %s): x=%.2f y=%.2f", 
+                    last_dock_pose_saved_ ? "FORCED OFF" : "UNAVAILABLE",
+                    guess(0,3), guess(1,3));
     }
-    catch (const tf2::TransformException & ex) {
-      RCLCPP_WARN(
-        this->get_logger(), "Could not transform dock pose to 'odometry' frame: %s", ex.what());
-      return;
+
+    // Use OMP NDT for speed (multi-threaded).
+    const int threads = std::max<int>(1, static_cast<int>(std::thread::hardware_concurrency()) - 1);
+    
+    // Build NDT object and set parameters.
+    pclomp::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt;
+    ndt.setNumThreads(threads);
+    ndt.setTransformationEpsilon(epsilon);
+    ndt.setStepSize(step);
+    ndt.setResolution(resolution);
+    ndt.setMaximumIterations(max_iter);
+    ndt.setInputTarget(target_cloud);
+    ndt.setInputSource(source_cloud);
+
+    // Align point clouds.
+    pcl::PointCloud<pcl::PointXYZ> aligned_fine;
+    ndt.align(aligned_fine, guess);
+
+    // Check for convergence.
+    if (!ndt.hasConverged()) {
+        RCLCPP_INFO(get_logger(), "NDT did not converge this scan.");
+        return std::pair(nullptr, Eigen::Matrix4f::Identity());
     }
 
-    // Correct the y value just a tiny bit (the dock model is not perfect).
-    pose_in_odom_frame.pose.position.y -= 0.11;
+    // Get final transformation matrix.
+    Eigen::Matrix4f T_model_in_laser = ndt.getFinalTransformation();
 
-    // Publish the estimated dock pose.
-    docking_pub_->publish(pose_in_odom_frame);
+    // Transform source model with final transform.
+    pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_model(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::transformPointCloud(*source_cloud, *transformed_model, T_model_in_laser);
 
-    RCLCPP_INFO(this->get_logger(), "Dock pose published in odometry frame.");
-}
+    // Extract 2D yaw and translation for logging.
+    Eigen::Matrix3f R = T_model_in_laser.block<3,3>(0,0);
+    float yaw_laser = std::atan2(R(1,0), R(0,0));
+    Eigen::Vector3f t = T_model_in_laser.block<3,1>(0,3);
 
-// Getter for the dock pose, returns the current estimated docking pose.
-geometry_msgs::msg::PoseStamped DockPoseEstimator::getPatternPose()
-{
-    return dock_pose_;
-}
+    RCLCPP_INFO(get_logger(), "NDT fitness=%.6f  t=[%.3f %.3f] yaw=%.1f°  (threads=%d)",
+                ndt.getFitnessScore(), t.x(), t.y(), yaw_laser * 180.0f/M_PI, threads);
 
-// This method computes the median of a deque of doubles.
-double DockPoseEstimator::findMedian(std::deque<double> a)
-{
-    if (a.empty()) return 0.0;
-    std::sort(a.begin(), a.end());
-    return a.at(a.size() / 2);
+    // Threshold the fitness score to reject bad alignments.
+    // I have tightened this threshold from 0.5 to 0.15. A score > 0.15 in NDT usually indicates 
+    // the shapes do not match well (e.g. matching a corner to a flat wall).
+    const double fitness_threshold = 0.15;
+    if (ndt.getFitnessScore() > fitness_threshold) {
+        RCLCPP_WARN(get_logger(), "NDT fitness score %.6f exceeds threshold %.2f; rejecting estimate.", ndt.getFitnessScore(), fitness_threshold);
+        return std::pair(nullptr, Eigen::Matrix4f::Identity());
+    }
+
+    // Sanity check on Z-axis: Since we are performing 2D docking, a valid transformation
+    // should not have a significant Z component.
+    if (std::abs(T_model_in_laser(2,3)) > 0.1) {
+        RCLCPP_WARN(get_logger(), "Estimated pose has abnormal Z-offset (%.2fm). Rejecting.", T_model_in_laser(2,3));
+        return std::pair(nullptr, Eigen::Matrix4f::Identity());
+    }
+
+    Eigen::Matrix3f Rdbg = T_model_in_laser.block<3,3>(0,0);
+    double raw_yaw_dbg = std::atan2(Rdbg(1,0), Rdbg(0,0));
+    RCLCPP_INFO(get_logger(), "NDT raw transform: tx=%.3f ty=%.3f yaw=%.3fdeg fitness=%.6f",
+                T_model_in_laser(0,3), T_model_in_laser(1,3), raw_yaw_dbg * 180.0/M_PI, ndt.getFitnessScore());
+
+    return std::pair(transformed_model, T_model_in_laser);
 }

@@ -568,12 +568,16 @@ def generate_launch_description():
         default_value='false',
         description='Whether to publish the dock point cloud for visualization.'
     )
-    activate_dock_pose_detection_arg = DeclareLaunchArgument(
-        'activate_dock_pose_detection',
-        default_value='false',
-        description='Whether to activate the dock pose detection immediately for testing.'
+    docking_bt_selection_arg = DeclareLaunchArgument(
+        'docking_bt_selection',
+        default_value='0',
+        description='Integer flag to indicate the BT to use for the docking procedure. If set to 0, the docking procedure with staging pose navigation is activated, if set to 1, the docking procedure without staging pose navigation is activated, if set to 2, the estimator-only docking procedure is activated.'
     )
-
+    force_centroid_guess_arg = DeclareLaunchArgument(
+        'force_centroid_guess',
+        default_value='false',
+        description='Whether to force the centroid guess in the docking procedure.'
+    )
 
     # ------------- GENERAL MPPI PARAMETERS -------------
 
@@ -656,8 +660,9 @@ def generate_launch_description():
     use_battery_state_simulation = LaunchConfiguration('use_battery_state_simulation')
     laser_rear_topic = LaunchConfiguration('scan_topic_rear')
     publish_dock_point_cloud = LaunchConfiguration('publish_dock_point_cloud')
-    activate_dock_pose_detection = LaunchConfiguration('activate_dock_pose_detection') 
+    docking_bt_selection = LaunchConfiguration('docking_bt_selection') 
     staging_pose_str = LaunchConfiguration('staging_pose')
+    force_centroid_guess = LaunchConfiguration('force_centroid_guess')
 
     package_name = 'vizzy_navigation' 
 
@@ -682,6 +687,14 @@ def generate_launch_description():
     output_bt_path_docking = os.path.join(output_bt_dir, 'custom_docking_bt_navigator_nav2.xml')
     save_bt_xml_action_docking = OpaqueFunction(function=save_rewritten_bt_xml,
                                                 args=[template_file_path_docking, output_bt_path_docking])
+    
+    # Get the template file path for the docking mission BT without staging pose navigation.
+    template_file_path_docking_no_staging = os.path.join(get_package_share_directory(package_name), 'config', 'custom_docking_bt_navigator_without_staging_nav2.xml')
+
+    # Action to generate the BT XML file for the docking mission without staging pose navigation.
+    output_bt_path_docking_no_staging = os.path.join(output_bt_dir, 'custom_docking_bt_navigator_without_staging_nav2.xml')
+    save_bt_xml_action_docking_no_staging = OpaqueFunction(function=save_rewritten_bt_xml,
+                                                        args=[template_file_path_docking_no_staging, output_bt_path_docking_no_staging])
     
     # Get the template file for the estimator-only docking mission BT.
     template_file_path_docking_estimator = os.path.join(get_package_share_directory(package_name), 'config', 'custom_docking_bt_navigator_nav2_estimator_only.xml')
@@ -823,6 +836,7 @@ def generate_launch_description():
                     'model_file': dock_pose_stl_model_path,
                     'rear_laser_topic': laser_rear_topic,
                     'publish_dock_point_cloud': publish_dock_point_cloud,
+                    'force_centroid_guess': force_centroid_guess,
                 }],),
                 # Uncomment the next line to debug the node with GDB.
                 #prefix=['xterm -e gdb -ex run --args']),
@@ -860,7 +874,7 @@ def generate_launch_description():
                 name='charging_action_server_node',
                 output='screen',
                 parameters=[{'is_simulation': use_battery_state_simulation}, 
-                            {'activate_dock_pose_detection': activate_dock_pose_detection},
+                            {'docking_bt_selection': docking_bt_selection},
                             {'staging_pose': staging_pose_str},
                             ],),
                 # Uncomment the next line to debug the node with GDB.
@@ -934,7 +948,8 @@ def generate_launch_description():
         dock_pose_stl_model_path_arg,
         use_battery_state_simulation_arg,
         publish_dock_point_cloud_arg,
-        activate_dock_pose_detection_arg,
+        docking_bt_selection_arg,
+        force_centroid_guess_arg,
         mppi_cost_critic_cost_weight_arg,
         mppi_path_align_critic_cost_weight_arg,
         mppi_wz_std_arg,
@@ -955,5 +970,6 @@ def generate_launch_description():
         save_bt_xml_action,
         save_bt_xml_action_docking,
         save_bt_xml_action_docking_estimator,
+        save_bt_xml_action_docking_no_staging,
         load_nodes,
     ])

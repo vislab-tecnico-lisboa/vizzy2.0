@@ -199,7 +199,7 @@ The Vizzy simulation can be configured using a wide range of launch arguments, a
 | `battery_state` | `0` | Initial battery state: `0` = not charging, `1` = charging. |
 | `use_battery_state_simulation` | `true` | Enables simulated battery behavior. |
 | `publish_dock_point_cloud` | `false` | Whether to publish the dock point cloud. |
-| `activate_dock_pose_detection` | `false` | Whether to activate docking pose detection on startup. |
+| `docking_bt_selection` | `false` | Whether to activate docking pose detection on startup. |
 | `staging_pose` | `-x -1.0 -y 0.0 -Y 0.0` | Staging pose to use for the docking procedure. |
 
 ---

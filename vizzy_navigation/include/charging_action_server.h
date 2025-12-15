@@ -91,9 +91,12 @@ private:
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
     /**
-     * @brief Boolean flag to indicate if the user wants to activate the dock pose detection immediately.
+     * @brief Integer flag to indicate the BT to use for the docking procedure.
+     * If set to 0, the docking procedure with staging pose navigation is activated.
+     * If set to 1, the docking procedure without staging pose navigation is activated.
+     * If set to 2, the estimator-only docking procedure is activated.
      */
-    bool activate_dock_pose_detection_;
+    int docking_bt_selection_;
     
     /**
      * @brief The goal callback for the action server.

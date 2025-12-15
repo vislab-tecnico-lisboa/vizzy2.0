@@ -70,7 +70,8 @@
   <arg name="battery_state" default="0" description="Initial battery state. 0: Not charging, 1: Charging"/>
   <arg name="use_battery_state_simulation" default="true" description="Whether to use the battery state simulation node."/>
   <arg name="publish_dock_point_cloud" default="false" description="Whether to publish the dock point cloud for visualization."/>
-  <arg name="activate_dock_pose_detection" default="false" description="Whether to activate the dock pose detection immediately for testing."/>
+  <arg name="docking_bt_selection" default="0" description="Short integer flag to indicate the BT to use for the docking procedure. If set to 0, the docking procedure with staging pose navigation is activated, if set to 1, the docking procedure without staging pose navigation is activated, if set to 2, the estimator-only docking procedure is activated."/>
+  <arg name="force_centroid_guess" default="false" description="Whether to force the centroid guess in the docking procedure."/>
 
   <!-- General MPPI Controller Parameters -->
   <arg name="mppi_cost_critic_cost_weight" default="3.82" description="Cost weight for the general MPPI cost critic"/>
@@ -175,7 +176,8 @@
           <arg name="dock_pose_stl_model_path" value="$(var dock_pose_stl_model_path)"/>
           <arg name="use_battery_state_simulation" value="$(var use_battery_state_simulation)"/>
           <arg name="publish_dock_point_cloud" value="$(var publish_dock_point_cloud)"/>
-          <arg name="activate_dock_pose_detection" value="$(var activate_dock_pose_detection)"/>
+          <arg name="docking_bt_selection" value="$(var docking_bt_selection)"/>
+          <arg name="force_centroid_guess" value="$(var force_centroid_guess)"/>
           <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
           <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
           <arg name="mppi_time_steps" value="$(var mppi_time_steps)"/>
@@ -239,7 +241,8 @@
           <arg name="dock_pose_stl_model_path" value="$(var dock_pose_stl_model_path)"/>
           <arg name="use_battery_state_simulation" value="$(var use_battery_state_simulation)"/>
           <arg name="publish_dock_point_cloud" value="$(var publish_dock_point_cloud)"/>
-          <arg name="activate_dock_pose_detection" value="$(var activate_dock_pose_detection)"/>
+          <arg name="docking_bt_selection" value="$(var docking_bt_selection)"/>
+          <arg name="force_centroid_guess" value="$(var force_centroid_guess)"/>
           <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
           <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
           <arg name="mppi_time_steps" value="$(var mppi_time_steps)"/>
@@ -327,7 +330,8 @@
           <arg name="dock_pose_stl_model_path" value="$(var dock_pose_stl_model_path)"/>
           <arg name="use_battery_state_simulation" value="$(var use_battery_state_simulation)"/>
           <arg name="publish_dock_point_cloud" value="$(var publish_dock_point_cloud)"/>
-          <arg name="activate_dock_pose_detection" value="$(var activate_dock_pose_detection)"/>
+          <arg name="docking_bt_selection" value="$(var docking_bt_selection)"/>
+          <arg name="force_centroid_guess" value="$(var force_centroid_guess)"/>
           <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
           <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
           <arg name="mppi_time_steps" value="$(var mppi_time_steps)"/>
@@ -391,7 +395,8 @@
           <arg name="dock_pose_stl_model_path" value="$(var dock_pose_stl_model_path)"/>
           <arg name="use_battery_state_simulation" value="$(var use_battery_state_simulation)"/>
           <arg name="publish_dock_point_cloud" value="$(var publish_dock_point_cloud)"/>
-          <arg name="activate_dock_pose_detection" value="$(var activate_dock_pose_detection)"/>
+          <arg name="docking_bt_selection" value="$(var docking_bt_selection)"/>
+          <arg name="force_centroid_guess" value="$(var force_centroid_guess)"/>
           <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
           <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
           <arg name="mppi_time_steps" value="$(var mppi_time_steps)"/>
