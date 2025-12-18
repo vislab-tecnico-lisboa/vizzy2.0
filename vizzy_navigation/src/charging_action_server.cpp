@@ -75,7 +75,7 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
                     nav_goal.behavior_tree = bt_xml_path;
                     RCLCPP_INFO(this->get_logger(), "Using BT file: %s", bt_xml_path.c_str());
                 }
-                else
+                if (docking_bt_selection_ == 0)
                 {
                     RCLCPP_INFO(this->get_logger(), "Dock pose detection will NOT be activated immediately. Robot WILL navigate & execute full docking protocol.");
                     std::string bt_xml_path = pkg_share_path + "/behavior_trees/custom_docking_bt_navigator_nav2.xml";

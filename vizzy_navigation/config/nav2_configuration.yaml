@@ -355,11 +355,11 @@ controller_server:
       model_dt: 0.05
       batch_size: 2000 # Configurable
       vx_std: 0.2 # Configurable
-      vy_std: 0.2
+      vy_std: 0.0
       wz_std: 0.4 # Configurable
       vx_max: 0.5 # Configurable
       vx_min: -0.35
-      vy_max: 0.5
+      vy_max: 0.0
       wz_max: 1.9
       ax_max: 3.0
       ax_min: -3.0
@@ -398,14 +398,14 @@ controller_server:
         cost_weight: 3.0
         threshold_to_consider: 0.5
       PreferForwardCritic:
-        enabled: false
+        enabled: true
         cost_power: 1
         cost_weight: 5.0
         threshold_to_consider: 0.5
       CostCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 3.81 # Configurable
+        cost_weight: 10.0 # Configurable
         critical_cost: 300.0
         consider_footprint: false
         collision_cost: 1000000.0
@@ -414,7 +414,7 @@ controller_server:
       PathAlignCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 14.0 # Configurable
+        cost_weight: 7.0 # Configurable
         max_path_occupancy_ratio: 0.05
         trajectory_point_step: 4
         threshold_to_consider: 0.5
