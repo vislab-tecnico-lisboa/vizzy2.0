@@ -50,8 +50,8 @@ void DockPoseEstimator::declareAndGetParameters()
     // without recompilation, preventing blind spots if the robot stages further away.
     this->declare_parameter<double>("roi_min_x", 0.1);
     this->declare_parameter<double>("roi_max_x", 2.0);
-    this->declare_parameter<double>("roi_min_y", -1.0);
-    this->declare_parameter<double>("roi_max_y", 1.0);
+    this->declare_parameter<double>("roi_min_y", -0.5);
+    this->declare_parameter<double>("roi_max_y", 0.5);
 
     // NDT Parameters: Exposing resolution and step size allows us to balance.
     // speed vs. accuracy. For docking, a finer resolution (5cm) is often required.
@@ -469,7 +469,7 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
     const double epsilon = 0.0005;
     const double step = ndt_step_size_;
 
-    Eigen::Matrix4f guess = Eigen::Matrix4f::Identity();
+    Eigen::Matrix4f base_guess = Eigen::Matrix4f::Identity();
 
     // Log the force_centroid_guess_ parameter state.
     RCLCPP_INFO(get_logger(), "force_centroid_guess_ parameter is set to: %s", force_centroid_guess_ ? "TRUE" : "FALSE");
@@ -502,17 +502,17 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
                             pred_in_laser.pose.orientation.z,
                             pred_in_laser.pose.orientation.w);
             tf2::Matrix3x3(q).getRPY(rr, rp, ry);
-            guess = Eigen::Matrix4f::Identity();
-            guess(0,3) = static_cast<float>(pred_in_laser.pose.position.x);
-            guess(1,3) = static_cast<float>(pred_in_laser.pose.position.y);
+            base_guess = Eigen::Matrix4f::Identity();
+            base_guess(0,3) = static_cast<float>(pred_in_laser.pose.position.x);
+            base_guess(1,3) = static_cast<float>(pred_in_laser.pose.position.y);
             Eigen::Matrix3f R;
             R << std::cos(ry), -std::sin(ry), 0,
                 std::sin(ry),  std::cos(ry), 0,
                             0,              0, 1;
-            guess.block<3,3>(0,0) = R;
+            base_guess.block<3,3>(0,0) = R;
 
             RCLCPP_INFO(get_logger(), "Using TF-based initial guess: x=%.2f y=%.2f yaw=%.1f°",
-                        guess(0,3), guess(1,3), ry * 180.0f/M_PI);
+                        base_guess(0,3), base_guess(1,3), ry * 180.0f/M_PI);
         } catch (const tf2::TransformException &ex) {
             RCLCPP_WARN(get_logger(), "TF transform for guess failed: %s — using fallback guess.", ex.what());
             // If the TF lookup fails, we invalidate the saved pose so the code falls through 
@@ -532,13 +532,13 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
         Eigen::Vector4f centroid;
         pcl::compute3DCentroid(*target_cloud, centroid);
         
-        guess(0,3) = centroid[0]; 
-        guess(1,3) = centroid[1];
+        base_guess(0,3) = centroid[0]; 
+        base_guess(1,3) = centroid[1];
         
         // We keep rotation as identity (0 degrees) since we lack orientation info without tracking.
         RCLCPP_INFO(get_logger(), "Initializing guess at cloud centroid (Tracking: %s): x=%.2f y=%.2f", 
                     last_dock_pose_saved_ ? "FORCED OFF" : "UNAVAILABLE",
-                    guess(0,3), guess(1,3));
+                    base_guess(0,3), base_guess(1,3));
     }
 
     // Use OMP NDT for speed (multi-threaded).
@@ -554,18 +554,48 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
     ndt.setInputTarget(target_cloud);
     ndt.setInputSource(source_cloud);
 
-    // Align point clouds.
-    pcl::PointCloud<pcl::PointXYZ> aligned_fine;
-    ndt.align(aligned_fine, guess);
+    // Multi-Start Optimization Strategy:
+    // We try the base guess, plus offsets to the left and right. 
+    // This handles cases where the initial guess is stuck in a local minimum (one V matched to the other).
+    // The offset (0.30m) is roughly half the dock width, enough to nudge the guess out of bad local minima.
+    // By checking multiple hypotheses, we avoid the "WW" mismatch problem.
+    std::vector<float> y_offsets = {0.0f, 0.30f, -0.30f}; 
+    
+    double best_fitness = std::numeric_limits<double>::max();
+    Eigen::Matrix4f best_transform = Eigen::Matrix4f::Identity();
+    bool any_converged = false;
 
-    // Check for convergence.
-    if (!ndt.hasConverged()) {
-        RCLCPP_INFO(get_logger(), "NDT did not converge this scan.");
+    for (float offset : y_offsets) {
+        // Create a new guess based on the calculated base guess.
+        Eigen::Matrix4f candidate_guess = base_guess;
+        
+        // Apply lateral offset in the candidate's local Y frame (scan frame).
+        candidate_guess(1, 3) += offset;
+
+        // Perform alignment.
+        pcl::PointCloud<pcl::PointXYZ> output_cloud_unused;
+        ndt.align(output_cloud_unused, candidate_guess);
+
+        // Evaluate the result.
+        if (ndt.hasConverged()) {
+            double score = ndt.getFitnessScore();
+            // NDT fitness score is Euclidean distance (lower is better).
+            if (score < best_fitness) {
+                best_fitness = score;
+                best_transform = ndt.getFinalTransformation();
+                any_converged = true;
+            }
+        }
+    }
+
+    // Check if any of the hypotheses converged.
+    if (!any_converged) {
+        RCLCPP_INFO(get_logger(), "NDT did not converge on any hypothesis.");
         return std::pair(nullptr, Eigen::Matrix4f::Identity());
     }
 
-    // Get final transformation matrix.
-    Eigen::Matrix4f T_model_in_laser = ndt.getFinalTransformation();
+    // Get final transformation matrix from the best hypothesis.
+    Eigen::Matrix4f T_model_in_laser = best_transform;
 
     // Transform source model with final transform.
     pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_model(new pcl::PointCloud<pcl::PointXYZ>());
@@ -576,15 +606,15 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
     float yaw_laser = std::atan2(R(1,0), R(0,0));
     Eigen::Vector3f t = T_model_in_laser.block<3,1>(0,3);
 
-    RCLCPP_INFO(get_logger(), "NDT fitness=%.6f  t=[%.3f %.3f] yaw=%.1f°  (threads=%d)",
-                ndt.getFitnessScore(), t.x(), t.y(), yaw_laser * 180.0f/M_PI, threads);
+    RCLCPP_INFO(get_logger(), "NDT Best Fitness=%.6f  t=[%.3f %.3f] yaw=%.1f°  (threads=%d)",
+                best_fitness, t.x(), t.y(), yaw_laser * 180.0f/M_PI, threads);
 
     // Threshold the fitness score to reject bad alignments.
     // I have tightened this threshold from 0.5 to 0.15. A score > 0.15 in NDT usually indicates 
     // the shapes do not match well (e.g. matching a corner to a flat wall).
     const double fitness_threshold = 0.15;
-    if (ndt.getFitnessScore() > fitness_threshold) {
-        RCLCPP_WARN(get_logger(), "NDT fitness score %.6f exceeds threshold %.2f; rejecting estimate.", ndt.getFitnessScore(), fitness_threshold);
+    if (best_fitness > fitness_threshold) {
+        RCLCPP_WARN(get_logger(), "NDT fitness score %.6f exceeds threshold %.2f; rejecting estimate.", best_fitness, fitness_threshold);
         return std::pair(nullptr, Eigen::Matrix4f::Identity());
     }
 
@@ -598,7 +628,7 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
     Eigen::Matrix3f Rdbg = T_model_in_laser.block<3,3>(0,0);
     double raw_yaw_dbg = std::atan2(Rdbg(1,0), Rdbg(0,0));
     RCLCPP_INFO(get_logger(), "NDT raw transform: tx=%.3f ty=%.3f yaw=%.3fdeg fitness=%.6f",
-                T_model_in_laser(0,3), T_model_in_laser(1,3), raw_yaw_dbg * 180.0/M_PI, ndt.getFitnessScore());
+                T_model_in_laser(0,3), T_model_in_laser(1,3), raw_yaw_dbg * 180.0/M_PI, best_fitness);
 
     return std::pair(transformed_model, T_model_in_laser);
 }
