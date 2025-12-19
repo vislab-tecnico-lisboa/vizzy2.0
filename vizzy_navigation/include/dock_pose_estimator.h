@@ -48,6 +48,7 @@
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <rclcpp_lifecycle/lifecycle_publisher.hpp>
+#include <pcl/filters/statistical_outlier_removal.h> 
 
 /**
  * @brief The DockPoseEstimator class is responsible for estimating the pose of a docking pattern.
@@ -342,6 +343,23 @@ private:
      * This is useful for testing the robustness of the centroid initialization method.
      */
     bool force_centroid_guess_ = false;
+
+    /**
+     * @brief Calculated width of the dock model in meters.
+     * This value is computed during parameter loading by analyzing the loaded model point cloud.
+     * It is used to dynamically adjust the multi-start optimization offsets in the NDT alignment process,
+     * ensuring that the offsets are geometrically relevant to the actual size of the dock.
+     */
+    float calculated_model_width_;
+
+    /**
+     * @brief Flag to enable or disable the use of Statistical Outlier Removal and Downsampling.
+     * When set to true, the point cloud processing pipeline will include a Statistical Outlier Removal filter
+     * followed by a Voxel Grid downsampling step. This improves noise hygiene and reduces the number of points
+     * for faster NDT registration, at the cost of some detail loss.
+     * When set to false, only ROI filtering will be applied to the point cloud.
+     */
+    bool use_statistical_outlier_removal_and_downsampling_ = true;
 };
 
 #endif // DOCK_POSE_ESTIMATOR_ROS2_H_

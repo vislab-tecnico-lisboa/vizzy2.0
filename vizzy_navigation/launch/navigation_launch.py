@@ -578,6 +578,11 @@ def generate_launch_description():
         default_value='false',
         description='Whether to force the centroid guess in the docking procedure.'
     )
+    use_statistical_outlier_removal_and_downsampling_arg = DeclareLaunchArgument(
+        'use_statistical_outlier_removal_and_downsampling',
+        default_value='true',
+        description='Whether to use statistical outlier removal and downsampling in the dock pose estimator.'
+    )
 
     # ------------- GENERAL MPPI PARAMETERS -------------
 
@@ -663,6 +668,7 @@ def generate_launch_description():
     docking_bt_selection = LaunchConfiguration('docking_bt_selection') 
     staging_pose_str = LaunchConfiguration('staging_pose')
     force_centroid_guess = LaunchConfiguration('force_centroid_guess')
+    use_statistical_outlier_removal_and_downsampling = LaunchConfiguration('use_statistical_outlier_removal_and_downsampling')
 
     package_name = 'vizzy_navigation' 
 
@@ -837,6 +843,7 @@ def generate_launch_description():
                     'rear_laser_topic': laser_rear_topic,
                     'publish_dock_point_cloud': publish_dock_point_cloud,
                     'force_centroid_guess': force_centroid_guess,
+                    'use_statistical_outlier_removal_and_downsampling': use_statistical_outlier_removal_and_downsampling,
                 }],),
                 # Uncomment the next line to debug the node with GDB.
                 #prefix=['xterm -e gdb -ex run --args']),
@@ -950,6 +957,7 @@ def generate_launch_description():
         publish_dock_point_cloud_arg,
         docking_bt_selection_arg,
         force_centroid_guess_arg,
+        use_statistical_outlier_removal_and_downsampling_arg,
         mppi_cost_critic_cost_weight_arg,
         mppi_path_align_critic_cost_weight_arg,
         mppi_wz_std_arg,

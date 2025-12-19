@@ -59,6 +59,7 @@
   <arg name="publish_dock_point_cloud" default="false" description="Whether to publish the dock point cloud for visualization."/>
   <arg name="docking_bt_selection" default="0" description="Short integer flag to indicate the BT to use for the docking procedure. If set to 0, the docking procedure with staging pose navigation is activated, if set to 1, the docking procedure without staging pose navigation is activated, if set to 2, the estimator-only docking procedure is activated."/>
   <arg name="force_centroid_guess" default="false" description="Whether to force the centroid guess in the docking procedure."/>
+  <arg name="use_statistical_outlier_removal_and_downsampling" default="true" description="Whether to use statistical outlier removal and downsampling in the dock pose estimator."/>
 
   <!-- General MPPI Controller Parameters -->
   <arg name="mppi_cost_critic_cost_weight" default="10.0" description="Cost weight for the general MPPI cost critic"/>
@@ -135,6 +136,7 @@
       <arg name="publish_dock_point_cloud" value="$(var publish_dock_point_cloud)"/>
       <arg name="docking_bt_selection" value="$(var docking_bt_selection)"/>
       <arg name="force_centroid_guess" value="$(var force_centroid_guess)"/>
+      <arg name="use_statistical_outlier_removal_and_downsampling" value="$(var use_statistical_outlier_removal_and_downsampling)"/>
       <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
       <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
       <arg name="mppi_time_steps" value="$(var mppi_time_steps)"/>
@@ -193,6 +195,7 @@
       <arg name="publish_dock_point_cloud" value="$(var publish_dock_point_cloud)"/>
       <arg name="docking_bt_selection" value="$(var docking_bt_selection)"/>
       <arg name="force_centroid_guess" value="$(var force_centroid_guess)"/>
+      <arg name="use_statistical_outlier_removal_and_downsampling" value="$(var use_statistical_outlier_removal_and_downsampling)"/>
       <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
       <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
       <arg name="mppi_time_steps" value="$(var mppi_time_steps)"/>

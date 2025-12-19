@@ -58,6 +58,7 @@ void DockPoseEstimator::declareAndGetParameters()
     this->declare_parameter<double>("ndt_resolution", 0.05);
     this->declare_parameter<double>("ndt_step_size", 0.1);
     this->declare_parameter<bool>("force_centroid_guess", false);
+    this->declare_parameter<bool>("use_statistical_outlier_removal_and_downsampling", true);
 
     // Get the current active parameter values.
     std::string model_file = this->get_parameter("model_file").as_string();
@@ -71,6 +72,7 @@ void DockPoseEstimator::declareAndGetParameters()
     ndt_resolution_ = this->get_parameter("ndt_resolution").as_double();
     ndt_step_size_ = this->get_parameter("ndt_step_size").as_double();
     force_centroid_guess_ = this->get_parameter("force_centroid_guess").as_bool();
+    use_statistical_outlier_removal_and_downsampling_ = this->get_parameter("use_statistical_outlier_removal_and_downsampling").as_bool();
 
     RCLCPP_INFO(this->get_logger(), "--- Dock Pose Estimator Parameters ---");
     RCLCPP_INFO(this->get_logger(), "model_file: %s", model_file.c_str());
@@ -150,6 +152,16 @@ void DockPoseEstimator::declareAndGetParameters()
 
     model_cloud_.reset(new pcl::PointCloud<pcl::PointXYZ>());
     v.filter(*model_cloud_);
+
+    // Calculate model width for dynamic multi-start offsetting.
+    // Instead of hardcoding a value, we measure the bounding box of the model.
+    // This allows the multi-hypothesis strategy to scale automatically to different dock sizes.
+    pcl::PointXYZ min_pt, max_pt;
+    pcl::getMinMax3D(*model_cloud_, min_pt, max_pt);
+    calculated_model_width_ = max_pt.y - min_pt.y;
+    RCLCPP_INFO(this->get_logger(),
+                "Calculated dock model width: %.3f meters.",
+                calculated_model_width_);
 
     // ----------------------------------------------------------------------------------------------------
 
@@ -281,6 +293,14 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
         return;
     }
 
+    // Flatten the Z-axis immediately.
+    // Lidar scans can have small Z variations due to sensor tilt or noise.
+    // Since we are doing 2D docking, these variations only hurt NDT convergence.
+    // We enforce 2D by zeroing Z, ensuring a pure SE(2) problem.
+    for (auto& p : cloud_pcl_->points) {
+        p.z = 0.0f;
+    }
+
     // ------------------------ ROI FILTERING BLOCK -----------------------------------------------
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered_x(new pcl::PointCloud<pcl::PointXYZ>());
@@ -315,26 +335,87 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
         return;
     }
 
-    // Publish filtered scene cloud.
+    // Statistical Outlier Removal (Hygiene).
+    // Remove "ghost points" or mixed-pixel noise that often occur at edges of objects.
+    // This dramatically stabilizes NDT by providing a clean input.
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_denoised(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+    sor.setInputCloud(cloud_filtered_xy);
+    sor.setMeanK(10);             // Analyze 10 neighbors.
+    sor.setStddevMulThresh(1.0);  // Points > 1.0 sigma away are noise.
+    sor.filter(*cloud_denoised);
+
+    if (cloud_denoised->size() < 10) {
+        RCLCPP_INFO(get_logger(), "Too few points after outlier removal. Skipping.");
+        return;
+    }
+
+    // Voxel Grid Downsampling on Target Cloud.
+    // If the robot is close, we might have thousands of points, slowing down NDT.
+    // We downsample the scan to a consistent density (e.g. 0.5cm) to guarantee real-time performance.
+    // TODO: I am trying to choose a leaf size that does not reduce the number of points above a certain distance to the dock.
+    // TODO: This way, only dense scans get downsampled, while sparse scans (far away) remain intact.
+    // TODO: Still need to test this in real scenarios.
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_downsampled(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::VoxelGrid<pcl::PointXYZ> vox;
+    vox.setInputCloud(cloud_denoised);
+    vox.setLeafSize(0.005f, 0.005f, 0.005f); // 0.5cm leaf size.
+    vox.filter(*cloud_downsampled);
+
+    // Publish filtered scene cloud (visualize the cleaned data).
     {
         sensor_msgs::msg::PointCloud2 filtered_cloud_msg;
-        pcl::toROSMsg(*cloud_filtered_xy, filtered_cloud_msg);
+        pcl::toROSMsg(*cloud_downsampled, filtered_cloud_msg);
         filtered_cloud_msg.header = scan->header;
         scene_cloud_pub_->publish(filtered_cloud_msg);
     }
 
+    RCLCPP_INFO(get_logger(), "scene points: %zu (raw) -> %zu (denoised) -> %zu (downsampled)",
+        cloud_filtered_xy->size(),
+        cloud_denoised->size(),
+        cloud_downsampled->size());
+
+    // Calculate the percentage of points removed during denoising for logging.
+    float denoising_removal_ratio = 100.0f * (1.0f - static_cast<float>(cloud_denoised->size()) / static_cast<float>(cloud_filtered_xy->size()));
+    RCLCPP_INFO(get_logger(), "Denoising removed %.2f%% of points.", denoising_removal_ratio);
+
+    // Calculate the percentage of points removed during downsampling for logging.
+    float downsampling_removal_ratio = 100.0f * (1.0f - static_cast<float>(cloud_downsampled->size()) / static_cast<float>(cloud_denoised->size()));
+    RCLCPP_INFO(get_logger(), "Downsampling removed %.2f%% of points.", downsampling_removal_ratio);
+
     RCLCPP_INFO(get_logger(), "scene points: %zu first=[%.3f %.3f %.3f] header.frame=%s",
-        cloud_filtered_xy->points.size(),
-        cloud_filtered_xy->points[0].x,
-        cloud_filtered_xy->points[0].y,
-        cloud_filtered_xy->points[0].z,
+        cloud_downsampled->points.size(),
+        cloud_downsampled->points[0].x,
+        cloud_downsampled->points[0].y,
+        cloud_downsampled->points[0].z,
         scan->header.frame_id.c_str());
 
     // ----------------------------------------------------------------------------------------------------
 
     // ------------------------ ESTIMATION FUNCTION CALL  -------------------------------------------------
 
-    auto [aligned_model, T_model_in_laser] = estimateDockPose(cloud_filtered_xy, model_cloud_, scan);
+    // Start the timer to measure the performance of the NDT registration.
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    // Log the use_statistical_outlier_removal_and_downsampling_ flag status.
+    RCLCPP_INFO(get_logger(), "use_statistical_outlier_removal_and_downsampling_ flag is set to: %s",
+                use_statistical_outlier_removal_and_downsampling_ ? "TRUE" : "FALSE");
+
+    // Pass the fully optimized (denoised + downsampled) cloud to the estimator or the raw one based on the flag.
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_to_use = cloud_downsampled;
+    if (!use_statistical_outlier_removal_and_downsampling_) {
+        cloud_to_use = cloud_filtered_xy;
+        // Log that we are skipping the extra processing.
+        RCLCPP_INFO(get_logger(), " !!! Skipping Statistical Outlier Removal and Downsampling as per configuration. !!! ");
+    }
+    auto [aligned_model, T_model_in_laser] = estimateDockPose(cloud_to_use, model_cloud_, scan);
+
+    // Stop the timer and calculate the duration in milliseconds.
+    auto end_time = std::chrono::high_resolution_clock::now();
+    double execution_time_ms = std::chrono::duration<double, std::milli>(end_time - start_time).count();
+
+    // Log the execution time for performance monitoring.
+    RCLCPP_INFO(get_logger(), "Dock Pose Estimation took: %.3f ms", execution_time_ms);
 
     // ----------------------------------------------------------------------------------------------------
 
@@ -344,7 +425,7 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     // convergence failed or the fitness score was too high.
     if (!aligned_model) {
         consecutive_failures_++;
-        RCLCPP_WARN(get_logger(), "Dock pose estimation failed. Failure count: %d", consecutive_failures_);
+        RCLCPP_WARN(get_logger(), "!!! Dock pose estimation FAILED. Failure count: %d !!!", consecutive_failures_);
 
         // If we lose tracking for too many consecutive frames, the previous 'last_dock_pose_' 
         // is likely too stale to be a valid initial guess. We reset the tracking state 
@@ -463,6 +544,9 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
 
 std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimator::estimateDockPose(pcl::PointCloud<pcl::PointXYZ>::Ptr target_cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr source_cloud, std::shared_ptr<sensor_msgs::msg::LaserScan> scan)
 {
+    // Start timer for average execution time measurement.
+    auto start_debug = std::chrono::high_resolution_clock::now();
+
     // NDT parameters.
     const float resolution = static_cast<float>(ndt_resolution_); 
     const int max_iter = 35;
@@ -521,7 +605,7 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
         }
     } 
     
-    // Logic Update: We calculate the centroid-based guess if:
+    // We calculate the centroid-based guess if:
     // 1. No previous tracking data exists (!last_dock_pose_saved_).
     // OR
     // 2. The 'force_centroid_guess_' parameter is set to TRUE, specifically overriding history.
@@ -557,9 +641,11 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
     // Multi-Start Optimization Strategy:
     // We try the base guess, plus offsets to the left and right. 
     // This handles cases where the initial guess is stuck in a local minimum (one V matched to the other).
-    // The offset (0.30m) is roughly half the dock width, enough to nudge the guess out of bad local minima.
+    // The offset retrieven from calculated_model_width_ is dynamic based on the model size.
+    float lateral_offset = calculated_model_width_ * 0.5f; // Half the model width.
+    RCLCPP_INFO(get_logger(), "Using lateral offset of %.3f meters for multi-start NDT.", lateral_offset);
     // By checking multiple hypotheses, we avoid the "WW" mismatch problem.
-    std::vector<float> y_offsets = {0.0f, 0.30f, -0.30f}; 
+    std::vector<float> y_offsets = {0.0f, lateral_offset, -lateral_offset}; 
     
     double best_fitness = std::numeric_limits<double>::max();
     Eigen::Matrix4f best_transform = Eigen::Matrix4f::Identity();
@@ -610,9 +696,7 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
                 best_fitness, t.x(), t.y(), yaw_laser * 180.0f/M_PI, threads);
 
     // Threshold the fitness score to reject bad alignments.
-    // I have tightened this threshold from 0.5 to 0.15. A score > 0.15 in NDT usually indicates 
-    // the shapes do not match well (e.g. matching a corner to a flat wall).
-    const double fitness_threshold = 0.15;
+    const double fitness_threshold = 0.001;
     if (best_fitness > fitness_threshold) {
         RCLCPP_WARN(get_logger(), "NDT fitness score %.6f exceeds threshold %.2f; rejecting estimate.", best_fitness, fitness_threshold);
         return std::pair(nullptr, Eigen::Matrix4f::Identity());
@@ -629,6 +713,28 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
     double raw_yaw_dbg = std::atan2(Rdbg(1,0), Rdbg(0,0));
     RCLCPP_INFO(get_logger(), "NDT raw transform: tx=%.3f ty=%.3f yaw=%.3fdeg fitness=%.6f",
                 T_model_in_laser(0,3), T_model_in_laser(1,3), raw_yaw_dbg * 180.0/M_PI, best_fitness);
+
+    // Average Time and Fitness logging (every 10 scans)
+    // We compute this right before returning a SUCCESSFUL estimation.
+    auto end_debug = std::chrono::high_resolution_clock::now();
+    double dur_ms = std::chrono::duration<double, std::milli>(end_debug - start_debug).count();
+    
+    // Static variables to maintain state between function calls without modifying header
+    static int stats_count = 0;
+    static double stats_time_sum = 0.0;
+    static double stats_fitness_sum = 0.0;
+    
+    stats_count++;
+    stats_time_sum += dur_ms;
+    stats_fitness_sum += best_fitness;
+    
+    if (stats_count >= 10) {
+        RCLCPP_INFO(get_logger(), "--- [10-SCAN AVG] Time: %.3f ms | Fitness: %.6f ---", 
+                    stats_time_sum / 10.0, stats_fitness_sum / 10.0);
+        stats_count = 0;
+        stats_time_sum = 0.0;
+        stats_fitness_sum = 0.0;
+    }
 
     return std::pair(transformed_model, T_model_in_laser);
 }
