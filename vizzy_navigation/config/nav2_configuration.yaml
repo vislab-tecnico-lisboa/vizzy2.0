@@ -703,7 +703,7 @@ docking_server:
 
     vizzy_isr_dock:
       plugin: 'opennav_docking::SimpleChargingDock'
-      docking_threshold: 0.5
+      docking_threshold: 0.46
       staging_x_offset: -1.0
       use_external_detection_pose: true
       use_battery_status: false
