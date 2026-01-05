@@ -497,7 +497,7 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     inst_laser.pose.position.z = static_cast<float>(filtered_z_);
 
     // Move the dock pose slightly to the right for correction purposes regarding the model used.
-    float lateral_offset = -0.1f; // 10cm to the right.
+    float lateral_offset = -0.04f; // 10cm to the right.
     inst_laser.pose.position.y = static_cast<float>(filtered_y_) + lateral_offset;
 
     tf2::Quaternion q; q.setRPY(0.0, 0.0, fyaw);
