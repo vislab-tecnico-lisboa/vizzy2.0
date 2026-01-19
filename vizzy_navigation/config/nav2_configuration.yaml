@@ -724,7 +724,7 @@ docking_server:
       k_delta: 2.0
       v_linear_min: 0.15
       v_linear_max: 0.15
-      v_angular_max: 0.75
+      v_angular_max: 0.35
       slowdown_radius: 0.25
       rotate_to_heading_angular_vel: 1.0
       rotate_to_heading_max_angular_accel: 3.2
