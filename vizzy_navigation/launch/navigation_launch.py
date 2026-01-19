@@ -899,8 +899,8 @@ def generate_launch_description():
                 parameters=[{'use_sim_time': use_sim_time,
                              'autostart': False,
                              'node_names': ['dock_pose_estimator_node'],
-                             'bond_timeout': 0.0}],),
-                #prefix=['xterm -e gdb -ex run --args']),
+                             'bond_timeout': 0.0}],#),
+                prefix=['xterm -e gdb -ex run --args']),
         ]
     )
 
