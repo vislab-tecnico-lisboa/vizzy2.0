@@ -32,11 +32,8 @@
           <DockRobot dock_id="dock_1" navigate_to_staging_pose="false"/>
 
           <!-- Deactivate the dock pose estimator node after the docking is complete. -->
+          <!-- ! Keep in mind that this DEACTIVATE corresponds to a RESET in the lifecycle node's context. -->
           <ManageLifecycleNodes transition="deactivate" node="{node}"/>
-
-          <!-- Cleanup the dock pose estimator node so it goes back to the 'unconfigured' stage. -->
-          <ManageLifecycleNodes transition="cleanup" node="{node}"/>
-          
         </Sequence>
       </Sequence>
 
