@@ -88,9 +88,9 @@ BT::NodeStatus ManageLifecycleNodes::onStart()
   } else if (transition == "activate") { // ! 'RESUME' in the lifecycle manager context.
     RCLCPP_INFO(node_->get_logger(), "COMMAND RECEIVED: Activating the node.");
     command = 2;
-  } else if (transition == "deactivate") { // ! SHUTDOWN in the lifecycle manager context.
+  } else if (transition == "deactivate") { // ! RESET in the lifecycle manager context.
     RCLCPP_INFO(node_->get_logger(), "COMMAND RECEIVED: Deactivating the node.");
-    command = 4;
+    command = 3;
   } else {
     RCLCPP_ERROR(node_->get_logger(), "Invalid transition string: %s", transition.c_str());
     return BT::NodeStatus::FAILURE;

@@ -844,9 +844,9 @@ def generate_launch_description():
                     'publish_dock_point_cloud': publish_dock_point_cloud,
                     'force_centroid_guess': force_centroid_guess,
                     'use_statistical_outlier_removal_and_downsampling': use_statistical_outlier_removal_and_downsampling,
-                }],#),
+                }],),
                 # Uncomment the next line to debug the node with GDB.
-                prefix=['xterm -e gdb -ex run --args']),
+                #prefix=['xterm -e gdb -ex run --args']),
             
             Node(
                 package='opennav_docking',
@@ -899,8 +899,8 @@ def generate_launch_description():
                 parameters=[{'use_sim_time': use_sim_time,
                              'autostart': False,
                              'node_names': ['dock_pose_estimator_node'],
-                             'bond_timeout': 0.0}],#),
-                prefix=['xterm -e gdb -ex run --args']),
+                             'bond_timeout': 0.0}],),
+                #prefix=['xterm -e gdb -ex run --args']),
         ]
     )
 
