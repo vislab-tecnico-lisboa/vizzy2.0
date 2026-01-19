@@ -43,22 +43,28 @@ DockPoseEstimator::DockPoseEstimator(const rclcpp::NodeOptions & options)
 void DockPoseEstimator::declareAndGetParameters()
 {
     // Declare parameters with default values.
-    this->declare_parameter<std::string>("model_file", "file");
-    this->declare_parameter<std::string>("rear_laser_topic", "/nav_hokuyo_laser/rear/scan");
+    if (!this->has_parameter("model_file")) {
+        this->declare_parameter<std::string>("model_file", "file");
+    }
+    if (!this->has_parameter("rear_laser_topic")) {
+        this->declare_parameter<std::string>("rear_laser_topic", "/nav_hokuyo_laser/rear/scan");
+    }
 
     // ROI Parameters: Defining the Region of Interest as parameters allows tuning.
     // without recompilation, preventing blind spots if the robot stages further away.
-    this->declare_parameter<double>("roi_min_x", 0.1);
-    this->declare_parameter<double>("roi_max_x", 2.0);
-    this->declare_parameter<double>("roi_min_y", -0.5);
-    this->declare_parameter<double>("roi_max_y", 0.5);
+    if (!this->has_parameter("roi_min_x")) this->declare_parameter<double>("roi_min_x", 0.1);
+    if (!this->has_parameter("roi_max_x")) this->declare_parameter<double>("roi_max_x", 2.0);
+    if (!this->has_parameter("roi_min_y")) this->declare_parameter<double>("roi_min_y", -0.5);
+    if (!this->has_parameter("roi_max_y")) this->declare_parameter<double>("roi_max_y", 0.5);
 
     // NDT Parameters: Exposing resolution and step size allows us to balance.
     // speed vs. accuracy. For docking, a finer resolution (5cm) is often required.
-    this->declare_parameter<double>("ndt_resolution", 0.05);
-    this->declare_parameter<double>("ndt_step_size", 0.1);
-    this->declare_parameter<bool>("force_centroid_guess", false);
-    this->declare_parameter<bool>("use_statistical_outlier_removal_and_downsampling", true);
+    if (!this->has_parameter("ndt_resolution")) this->declare_parameter<double>("ndt_resolution", 0.05);
+    if (!this->has_parameter("ndt_step_size")) this->declare_parameter<double>("ndt_step_size", 0.1);
+    if (!this->has_parameter("force_centroid_guess")) this->declare_parameter<bool>("force_centroid_guess", false);
+    if (!this->has_parameter("use_statistical_outlier_removal_and_downsampling")) {
+        this->declare_parameter<bool>("use_statistical_outlier_removal_and_downsampling", true);
+    }
 
     // Get the current active parameter values.
     std::string model_file = this->get_parameter("model_file").as_string();
