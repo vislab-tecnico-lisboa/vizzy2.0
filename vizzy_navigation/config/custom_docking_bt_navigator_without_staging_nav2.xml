@@ -33,6 +33,10 @@
 
           <!-- Deactivate the dock pose estimator node after the docking is complete. -->
           <ManageLifecycleNodes transition="deactivate" node="{node}"/>
+
+          <!-- Cleanup the dock pose estimator node so it goes back to the 'unconfigured' stage. -->
+          <ManageLifecycleNodes transition="cleanup" node="{node}"/>
+          
         </Sequence>
       </Sequence>
 
