@@ -42,6 +42,11 @@ DockPoseEstimator::DockPoseEstimator(const rclcpp::NodeOptions & options)
 
 void DockPoseEstimator::declareAndGetParameters()
 {
+    // ! The 'has_parameter' checks need to be implemented because when
+    // ! the BT orders the transition of the managed node from 'active' to 'unconfigured',
+    // ! the parameters are not automatically destroyed. Thus, when re-configuring in the 
+    // ! next docking attempt, re-declaring parameters without checking would throw an exception.
+
     // Declare parameters with default values.
     if (!this->has_parameter("model_file")) {
         this->declare_parameter<std::string>("model_file", "file");
@@ -285,9 +290,9 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
         return;
     }
 
-    RCLCPP_INFO(get_logger(), "---------------------");
-    RCLCPP_INFO(get_logger(), "PROCESSING LASER SCAN");
-    RCLCPP_INFO(get_logger(), "---------------------");
+    RCLCPP_DEBUG(get_logger(), "---------------------");
+    RCLCPP_DEBUG(get_logger(), "PROCESSING LASER SCAN");
+    RCLCPP_DEBUG(get_logger(), "---------------------");
 
     // LaserScan -> PCL (laser frame).
     laser_geometry::LaserProjection projector_;
@@ -376,20 +381,20 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
         scene_cloud_pub_->publish(filtered_cloud_msg);
     }
 
-    RCLCPP_INFO(get_logger(), "scene points: %zu (raw) -> %zu (denoised) -> %zu (downsampled)",
+    RCLCPP_DEBUG(get_logger(), "scene points: %zu (raw) -> %zu (denoised) -> %zu (downsampled)",
         cloud_filtered_xy->size(),
         cloud_denoised->size(),
         cloud_downsampled->size());
 
     // Calculate the percentage of points removed during denoising for logging.
     float denoising_removal_ratio = 100.0f * (1.0f - static_cast<float>(cloud_denoised->size()) / static_cast<float>(cloud_filtered_xy->size()));
-    RCLCPP_INFO(get_logger(), "Denoising removed %.2f%% of points.", denoising_removal_ratio);
+    RCLCPP_DEBUG(get_logger(), "Denoising removed %.2f%% of points.", denoising_removal_ratio);
 
     // Calculate the percentage of points removed during downsampling for logging.
     float downsampling_removal_ratio = 100.0f * (1.0f - static_cast<float>(cloud_downsampled->size()) / static_cast<float>(cloud_denoised->size()));
-    RCLCPP_INFO(get_logger(), "Downsampling removed %.2f%% of points.", downsampling_removal_ratio);
+    RCLCPP_DEBUG(get_logger(), "Downsampling removed %.2f%% of points.", downsampling_removal_ratio);
 
-    RCLCPP_INFO(get_logger(), "scene points: %zu first=[%.3f %.3f %.3f] header.frame=%s",
+    RCLCPP_DEBUG(get_logger(), "scene points: %zu first=[%.3f %.3f %.3f] header.frame=%s",
         cloud_downsampled->points.size(),
         cloud_downsampled->points[0].x,
         cloud_downsampled->points[0].y,
@@ -404,7 +409,7 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     auto start_time = std::chrono::high_resolution_clock::now();
 
     // Log the use_statistical_outlier_removal_and_downsampling_ flag status.
-    RCLCPP_INFO(get_logger(), "use_statistical_outlier_removal_and_downsampling_ flag is set to: %s",
+    RCLCPP_DEBUG(get_logger(), "use_statistical_outlier_removal_and_downsampling_ flag is set to: %s",
                 use_statistical_outlier_removal_and_downsampling_ ? "TRUE" : "FALSE");
 
     // Pass the fully optimized (denoised + downsampled) cloud to the estimator or the raw one based on the flag.
@@ -412,7 +417,7 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     if (!use_statistical_outlier_removal_and_downsampling_) {
         cloud_to_use = cloud_filtered_xy;
         // Log that we are skipping the extra processing.
-        RCLCPP_INFO(get_logger(), " !!! Skipping Statistical Outlier Removal and Downsampling as per configuration. !!! ");
+        RCLCPP_DEBUG(get_logger(), " !!! Skipping Statistical Outlier Removal and Downsampling as per configuration. !!! ");
     }
     auto [aligned_model, T_model_in_laser] = estimateDockPose(cloud_to_use, model_cloud_, scan);
 
@@ -421,7 +426,7 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
     double execution_time_ms = std::chrono::duration<double, std::milli>(end_time - start_time).count();
 
     // Log the execution time for performance monitoring.
-    RCLCPP_INFO(get_logger(), "Dock Pose Estimation took: %.3f ms", execution_time_ms);
+    RCLCPP_DEBUG(get_logger(), "Dock Pose Estimation took: %.3f ms", execution_time_ms);
 
     // ----------------------------------------------------------------------------------------------------
 
@@ -511,7 +516,7 @@ void DockPoseEstimator::laserCallback(const std::shared_ptr<sensor_msgs::msg::La
 
     // Log difference between raw and filtered (position in meters, yaw in degrees).
     double yaw_diff = std::atan2(std::sin(fyaw - raw_yaw), std::cos(fyaw - raw_yaw));
-    RCLCPP_INFO(get_logger(), "Filter delta: Δx=%.4f m Δy=%.4f m Δyaw=%.2f°",
+    RCLCPP_DEBUG(get_logger(), "Filter delta: Δx=%.4f m Δy=%.4f m Δyaw=%.2f°",
                  filtered_x_ - raw_x, filtered_y_ - raw_y, yaw_diff * 180.0 / M_PI);
 
     // ------------------------------- PUBLISHING BLOCK -----------------------------------------------
@@ -566,7 +571,7 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
     Eigen::Matrix4f base_guess = Eigen::Matrix4f::Identity();
 
     // Log the force_centroid_guess_ parameter state.
-    RCLCPP_INFO(get_logger(), "force_centroid_guess_ parameter is set to: %s", force_centroid_guess_ ? "TRUE" : "FALSE");
+    RCLCPP_DEBUG(get_logger(), "force_centroid_guess_ parameter is set to: %s", force_centroid_guess_ ? "TRUE" : "FALSE");
 
     // We only attempt to use the previous pose for tracking if two conditions are met:
     // 1. A valid previous pose exists (last_dock_pose_saved_ is true).
@@ -580,11 +585,11 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
             auto pred_in_laser = tf_buffer_->transform(last_dock_pose_, scan->header.frame_id,
                                                     tf2::durationFromSec(0.1));
 
-            RCLCPP_INFO(get_logger(), "pred_in_laser header: frame=%s sec=%u nsec=%u",
+            RCLCPP_DEBUG(get_logger(), "pred_in_laser header: frame=%s sec=%u nsec=%u",
                          pred_in_laser.header.frame_id.c_str(),
                          pred_in_laser.header.stamp.sec,
                          pred_in_laser.header.stamp.nanosec);
-            RCLCPP_INFO(get_logger(), "pred_in_laser pose: x=%.3f y=%.3f z=%.3f",
+            RCLCPP_DEBUG(get_logger(), "pred_in_laser pose: x=%.3f y=%.3f z=%.3f",
                          pred_in_laser.pose.position.x,
                          pred_in_laser.pose.position.y,
                          pred_in_laser.pose.position.z);
@@ -605,7 +610,7 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
                             0,              0, 1;
             base_guess.block<3,3>(0,0) = R;
 
-            RCLCPP_INFO(get_logger(), "Using TF-based initial guess: x=%.2f y=%.2f yaw=%.1f°",
+            RCLCPP_DEBUG(get_logger(), "Using TF-based initial guess: x=%.2f y=%.2f yaw=%.1f°",
                         base_guess(0,3), base_guess(1,3), ry * 180.0f/M_PI);
         } catch (const tf2::TransformException &ex) {
             RCLCPP_WARN(get_logger(), "TF transform for guess failed: %s — using fallback guess.", ex.what());
@@ -630,7 +635,7 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
         base_guess(1,3) = centroid[1];
         
         // We keep rotation as identity (0 degrees) since we lack orientation info without tracking.
-        RCLCPP_INFO(get_logger(), "Initializing guess at cloud centroid (Tracking: %s): x=%.2f y=%.2f", 
+        RCLCPP_DEBUG(get_logger(), "Initializing guess at cloud centroid (Tracking: %s): x=%.2f y=%.2f", 
                     last_dock_pose_saved_ ? "FORCED OFF" : "UNAVAILABLE",
                     base_guess(0,3), base_guess(1,3));
     }
@@ -653,7 +658,7 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
     // This handles cases where the initial guess is stuck in a local minimum (one V matched to the other).
     // The offset retrieven from calculated_model_width_ is dynamic based on the model size.
     float lateral_offset = calculated_model_width_ * 0.5f; // Half the model width.
-    RCLCPP_INFO(get_logger(), "Using lateral offset of %.3f meters for multi-start NDT.", lateral_offset);
+    RCLCPP_DEBUG(get_logger(), "Using lateral offset of %.3f meters for multi-start NDT.", lateral_offset);
     // By checking multiple hypotheses, we avoid the "WW" mismatch problem.
     std::vector<float> y_offsets = {0.0f, lateral_offset, -lateral_offset}; 
     
@@ -702,7 +707,7 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
     float yaw_laser = std::atan2(R(1,0), R(0,0));
     Eigen::Vector3f t = T_model_in_laser.block<3,1>(0,3);
 
-    RCLCPP_INFO(get_logger(), "NDT Best Fitness=%.6f  t=[%.3f %.3f] yaw=%.1f°  (threads=%d)",
+    RCLCPP_DEBUG(get_logger(), "NDT Best Fitness=%.6f  t=[%.3f %.3f] yaw=%.1f°  (threads=%d)",
                 best_fitness, t.x(), t.y(), yaw_laser * 180.0f/M_PI, threads);
 
     // Threshold the fitness score to reject bad alignments.
@@ -721,7 +726,7 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
 
     Eigen::Matrix3f Rdbg = T_model_in_laser.block<3,3>(0,0);
     double raw_yaw_dbg = std::atan2(Rdbg(1,0), Rdbg(0,0));
-    RCLCPP_INFO(get_logger(), "NDT raw transform: tx=%.3f ty=%.3f yaw=%.3fdeg fitness=%.6f",
+    RCLCPP_DEBUG(get_logger(), "NDT raw transform: tx=%.3f ty=%.3f yaw=%.3fdeg fitness=%.6f",
                 T_model_in_laser(0,3), T_model_in_laser(1,3), raw_yaw_dbg * 180.0/M_PI, best_fitness);
 
     // Average Time and Fitness logging (every 10 scans)
@@ -739,7 +744,7 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
     stats_fitness_sum += best_fitness;
     
     if (stats_count >= 10) {
-        RCLCPP_INFO(get_logger(), "--- [10-SCAN AVG] Time: %.3f ms | Fitness: %.6f ---", 
+        RCLCPP_DEBUG(get_logger(), "--- [10-SCAN AVG] Time: %.3f ms | Fitness: %.6f ---", 
                     stats_time_sum / 10.0, stats_fitness_sum / 10.0);
         stats_count = 0;
         stats_time_sum = 0.0;
