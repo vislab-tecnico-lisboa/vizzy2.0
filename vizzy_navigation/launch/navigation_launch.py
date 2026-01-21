@@ -246,7 +246,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'global_costmap.global_costmap.ros__parameters.inflation_layer.inflation_radius': float(LaunchConfiguration('inflation_radius').perform(context)),
         'global_costmap.global_costmap.ros__parameters.inflation_layer.cost_scaling_factor': float(LaunchConfiguration('cost_scaling_factor').perform(context)),
         'global_costmap.global_costmap.ros__parameters.robot_radius': float(LaunchConfiguration('robot_radius').perform(context)),
-        'local_costmap.local_costmap.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
+        #'local_costmap.local_costmap.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
         'local_costmap.local_costmap.ros__parameters.robot_base_frame': LaunchConfiguration('base_frame_id').perform(context),
         'local_costmap.local_costmap.ros__parameters.obstacle_layer.scan_front.topic': LaunchConfiguration('scan_topic_front').perform(context),
         'local_costmap.local_costmap.ros__parameters.obstacle_layer.scan_rear.topic': LaunchConfiguration('scan_topic_rear').perform(context),

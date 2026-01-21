@@ -194,7 +194,7 @@ controller_server:
       ay_min: -3.0
       ay_max: 3.0
       az_max: 1.5
-      iteration_count: 1
+      iteration_count: 3
       prune_distance: 1.7
       transform_tolerance: 0.1 # Configurable
       temperature: 0.3
@@ -414,22 +414,22 @@ controller_server:
       PathAlignCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 7.0 # Configurable
+        cost_weight: 10.0 # Configurable
         max_path_occupancy_ratio: 0.05
         trajectory_point_step: 4
         threshold_to_consider: 0.5
         offset_from_furthest: 20
-        use_path_orientations: false
+        use_path_orientations: true
       PathFollowCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 5.0
+        cost_weight: 8.0
         offset_from_furthest: 5
         threshold_to_consider: 1.4
       PathAngleCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 2.0
+        cost_weight: 4.0
         offset_from_furthest: 4
         threshold_to_consider: 0.5
         max_angle_to_furthest: 1.0
@@ -441,7 +441,7 @@ local_costmap:
       always_send_full_costmap: true # Configurable
       update_frequency: 5.0
       publish_frequency: 5.0
-      global_frame: map # Configurable
+      global_frame: odometry
       robot_base_frame: base_footprint # Configurable
       use_sim_time: True # Configurable
       rolling_window: true
@@ -658,7 +658,7 @@ velocity_smoother:
     min_velocity: [-1.0, 0.0, -0.6]
     max_accel: [1.0, 0.0, 1.0]
     max_decel: [-1.0, 0.0, -1.0]
-    odom_topic: "odometry" # Configurable
+    odom_topic: "/odom" # Configurable
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
