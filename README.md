@@ -262,6 +262,8 @@ ros2 launch vizzy_launch vizzy_simulation_launch.xml use_obstacles:=true inflati
 
 Adjusting these values allows you to customize simulation performance, navigation behavior, and controller/docking behavior to fit your use case or experiment.
 
+**Note:** If the simulated or real robot responds too conservatively (low linear/angular speeds), try increasing mppi_vx_std and mppi_wz_std to encourage more aggressive exploration when using the MPPI controller.
+
 ## Setup the Real Vizzy (Developer & Authorized-Only Guide)
 For those to whom this may concern, we leave here a setup tutorial for the real Vizzy with detailed steps.
 
