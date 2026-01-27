@@ -1,0 +1,39 @@
+<!--
+  This Behavior Tree is designed to perform JUST dock pose estimation.
+
+  It consists of the following steps:
+    1. Activate the dock_pose_estimator_node to start estimating the dock's pose using laser scan data.
+
+  * The main objective of this BT to test and validate the dock pose estimation node in isolation.
+-->
+<root main_tree_to_execute="DockingMission" BTCPP_format="4">
+  <BehaviorTree ID="DockingMission">
+    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+      <Sequence name="CompleteProcedure">
+        <RecoveryNode number_of_retries="1" name="NavigateToStagingPose">
+          <Sequence name="ConfiguringAndNavigating">
+            <!-- Configure the dock pose estimator node. -->
+            <ManageLifecycleNodes transition="configure" node="{node}"/> 
+          </Sequence>
+          <ClearEntireCostmap name="ClearCostmaps-Nav" service_name="global_costmap/clear_entirely_global_costmap"/>
+        </RecoveryNode>
+
+        <Sequence name="DockingBackwards">
+          <!-- Activate the dock pose estimator node. -->
+          <ManageLifecycleNodes transition="activate" node="{node}"/>
+        </Sequence>
+      </Sequence>
+
+      <!-- Fallback behaviour. -->
+      <ReactiveFallback name="RecoveryFallback">
+        <GoalUpdated/>
+        <RoundRobin name="RecoveryActions">
+          <Sequence name="ClearingActions">
+            <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+            <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
+          </Sequence>
+        </RoundRobin>
+      </ReactiveFallback>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>

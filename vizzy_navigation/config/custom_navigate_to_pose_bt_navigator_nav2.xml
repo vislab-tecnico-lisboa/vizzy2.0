@@ -1,4 +1,3 @@
-
 <!--
   This Behavior Tree replans the global path periodically at GLOBAL_PLANNER_FREQUENCY Hz and it also has
   recovery actions specific to planning / control as well as general system issues.
@@ -10,17 +9,13 @@
   
   These placeholders will be replaced with the actual values when the navigation launch is executed.
 
-  This Behaviour Tree is designed to be used with the Vizzy Navigation stack and has a dynamic controller selection functionality based on the path cost.
-  It will select between two controllers: `mppi_controller_narrow` and `mppi_controller_wide` based on the cost of the path computed by the `CheckPathCost` node.
-  The controller selection is done in a loop with a rate of 1 Hz, allowing for dynamic adjustments based on the path cost at runtime.
-
-  * The main objective of this BT is to ensure optimal performance in different navigation environments.
+  * The main objective of this BT is to ensure simple navigation with periodic replanning and recovery behaviors.
 -->
-<root main_tree_to_execute="MainTree">
+<root main_tree_to_execute="MainTree" BTCPP_format="4">
   <BehaviorTree ID="MainTree">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
-        <SetBlackboard output_key="selected_controller" value="mppi_controller_wide" />   
+        <SetBlackboard output_key="selected_controller" value="CONTROLLER_PLACEHOLDER" />   
         <RateController hz="GLOBAL_PLANNER_FREQUENCY">
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
             <Sequence name="ComputeAndSmoothPath">
@@ -31,46 +26,7 @@
           </RecoveryNode>
         </RateController>
         <RecoveryNode number_of_retries="1" name="FollowPath">
-
-          <!-- The Parallel node is responsible for the dynamic change of the controller
-               It does this by concurrently following the path and checking its cost.
-               Because of the concurrent nature of the Parallel node, it must be controlled
-               very carefully to ensure it does not return FAILURE or SUCCESS prematurely.
-
-               The Parallel node has 2 children:
-                1. GoalReached: This node checks if the goal has been reached.
-                2. FollowPath: This node will follow the path using the selected controller.
-                3. Repeat: This node will continuously check the path cost and select the appropriate controller.
-
-               The success_threshold is set to 1, meaning that if the FollowPath node or the GoalReached node succeed, 
-               the Parallel node will succeed.
-               The Repeat node will run indefinitely until the goal is reached, so it will never return anything.
-
-               The failure_threshold is set to 2, meaning that FAILURE is only returned if the goal is not reached 
-               (GoalReached node fails) and the FollowPath node fails as well.
-           -->
-
-          <Parallel success_threshold="1" failure_threshold="2">
-            <GoalReached goal="{goal}" />
-            <FollowPath path="{path}" controller_id="{selected_controller}"/>
-            <Repeat num_cycles="-1">
-              <Sequence>
-                <IfThenElse name="CheckAndSelectController">
-                  <CheckPathCost
-                      path="{path}"
-                      tf_buffer="{tf_buffer}"
-                      global_frame="{global_frame}"
-                      robot_base_frame="{robot_base_frame}"
-                      check_distance="1.0"
-                      cost_threshold="30"
-                      ratio_threshold="0.25" />
-                  <SetBlackboard output_key="selected_controller" value="mppi_controller_narrow" />
-                  <SetBlackboard output_key="selected_controller" value="mppi_controller_wide" />
-                </IfThenElse>
-                <Wait wait_duration="1.0" />
-              </Sequence>
-            </Repeat>
-          </Parallel>
+          <FollowPath path="{path}" controller_id="CONTROLLER_PLACEHOLDER"/>
           <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
       </PipelineSequence>
@@ -81,9 +37,7 @@
             <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
             <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
           </Sequence>
-          <Spin spin_dist="1.57"/>
           <Wait wait_duration="5"/>
-          <BackUp backup_dist="0.30" backup_speed="0.05"/>
         </RoundRobin>
       </ReactiveFallback>
     </RecoveryNode>

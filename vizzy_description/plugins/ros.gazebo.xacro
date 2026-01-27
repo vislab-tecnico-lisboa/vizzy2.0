@@ -37,7 +37,7 @@
           <publish_odom>true</publish_odom>
           <publish_odom_tf>true</publish_odom_tf>
           <publish_wheel_tf>true</publish_wheel_tf>
-          <odom_topic>$(arg odom_topic)</odom_topic>
+          <odom_topic>/model/vizzy/odometry</odom_topic>
           <frame_id>$(arg odom_frame_id)</frame_id>
           <child_frame_id>$(arg base_frame_id)</child_frame_id>
           <tf_topic>model/vizzy/tf</tf_topic>

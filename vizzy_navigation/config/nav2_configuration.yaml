@@ -20,7 +20,7 @@ amcl:
     recovery_alpha_slow: 0.005
     resample_interval: 1
     sigma_hit: 0.2
-    transform_tolerance: 0.7
+    transform_tolerance: 0.7 # Configurable
     update_min_a: 0.05 # Configurable
     update_min_d: 0.05 # Configurable
     z_hit: 0.95
@@ -52,58 +52,21 @@ bt_navigator:
     default_server_timeout: 20
     wait_for_service_timeout: 1000
     plugin_lib_names:
-      - nav2_compute_path_to_pose_action_bt_node
-      - nav2_compute_path_through_poses_action_bt_node
-      - nav2_smooth_path_action_bt_node
-      - nav2_follow_path_action_bt_node
-      - nav2_spin_action_bt_node
-      - nav2_wait_action_bt_node
-      - nav2_assisted_teleop_action_bt_node
-      - nav2_back_up_action_bt_node
-      - nav2_drive_on_heading_bt_node
-      - nav2_clear_costmap_service_bt_node
-      - nav2_is_stuck_condition_bt_node
-      - nav2_goal_reached_condition_bt_node
-      - nav2_goal_updated_condition_bt_node
-      - nav2_globally_updated_goal_condition_bt_node
-      - nav2_is_path_valid_condition_bt_node
-      - nav2_initial_pose_received_condition_bt_node
-      - nav2_reinitialize_global_localization_service_bt_node
-      - nav2_rate_controller_bt_node
-      - nav2_distance_controller_bt_node
-      - nav2_speed_controller_bt_node
-      - nav2_truncate_path_action_bt_node
-      - nav2_truncate_path_local_action_bt_node
-      - nav2_goal_updater_node_bt_node
-      - nav2_recovery_node_bt_node
-      - nav2_pipeline_sequence_bt_node
-      - nav2_round_robin_node_bt_node
-      - nav2_transform_available_condition_bt_node
-      - nav2_time_expired_condition_bt_node
-      - nav2_path_expiring_timer_condition
-      - nav2_distance_traveled_condition_bt_node
-      - nav2_single_trigger_bt_node
-      - nav2_goal_updated_controller_bt_node
-      - nav2_is_battery_low_condition_bt_node
-      - nav2_navigate_through_poses_action_bt_node
-      - nav2_navigate_to_pose_action_bt_node
-      - nav2_remove_passed_goals_action_bt_node
-      - nav2_planner_selector_bt_node
-      - nav2_controller_selector_bt_node
-      - nav2_goal_checker_selector_bt_node
-      - nav2_controller_cancel_bt_node
-      - nav2_path_longer_on_approach_bt_node
-      - nav2_wait_cancel_bt_node
-      - nav2_spin_cancel_bt_node
-      - nav2_back_up_cancel_bt_node
-      - nav2_assisted_teleop_cancel_bt_node
-      - nav2_drive_on_heading_cancel_bt_node
-      - nav2_is_battery_charging_condition_bt_node
-      - nav2_check_path_cost_bt_node
-      
-bt_navigator_navigate_through_poses_rclcpp_node:
-  ros__parameters:
-    use_sim_time: True # Configurable
+      - nav2_lifecycle_manager_bt_node
+      - opennav_docking_bt_plugin
+    error_code_name_prefixes:
+      - assisted_teleop
+      - backup
+      - compute_path
+      - dock_robot
+      - drive_on_heading
+      - follow_path
+      - nav_thru_poses
+      - nav_to_pose
+      - spin
+      - route
+      - undock_robot
+      - wait
 
 bt_navigator_navigate_to_pose_rclcpp_node:
   ros__parameters:
@@ -119,7 +82,7 @@ controller_server:
     failure_tolerance: 0.3
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["general_goal_checker"]
-    controller_plugins: ["mppi_controller_wide", "mppi_controller_narrow"]
+    controller_plugins: ["mppi_controller_wide", "mppi_controller_narrow", "mppi_controller"]
     odom_topic: /odom # Configurable
     
     # Progress checker parameters
@@ -158,7 +121,7 @@ controller_server:
       sim_time: 2.5
       linear_granularity: 0.05
       angular_granularity: 0.025
-      transform_tolerance: 0.5
+      transform_tolerance: 0.5 # Configurable
       xy_goal_tolerance: 0.25
       trans_stopped_velocity: 0.25
       short_circuit_trajectory_evaluation: True
@@ -231,9 +194,9 @@ controller_server:
       ay_min: -3.0
       ay_max: 3.0
       az_max: 1.5
-      iteration_count: 1
+      iteration_count: 3
       prune_distance: 1.7
-      transform_tolerance: 0.1
+      transform_tolerance: 0.1 # Configurable
       temperature: 0.3
       gamma: 0.015
       motion_model: "DiffDrive"
@@ -263,24 +226,13 @@ controller_server:
         cost_power: 1
         cost_weight: 5.0
         threshold_to_consider: 0.5
-      ObstaclesCritic:
-        enabled: true
-        cost_power: 1
-        repulsion_weight: 1.5 # Configurable
-        critical_weight: 20.0 # Configurable
-        consider_footprint: true
-        collision_cost: 10000.0
-        collision_margin_distance: 0.2 # Configurable
-        near_goal_distance: 0.5
-        inflation_radius: 0.4 # Configurable
-        cost_scaling_factor: 10.0 # Configurable
       CostCritic:
         enabled: true
         cost_power: 1
         cost_weight: 10.0 # Configurable
         critical_cost: 300.0
-        consider_footprint: true
         collision_cost: 1000000.0
+        consider_footprint: false
         near_goal_distance: 1.0
         trajectory_point_step: 2
       PathAlignCritic:
@@ -330,7 +282,7 @@ controller_server:
       az_max: 1.5
       iteration_count: 1
       prune_distance: 1.7
-      transform_tolerance: 0.1
+      transform_tolerance: 0.1 # Configurable
       temperature: 0.3
       gamma: 0.015
       motion_model: "DiffDrive"
@@ -360,24 +312,13 @@ controller_server:
         cost_power: 1
         cost_weight: 10.0
         threshold_to_consider: 0.5
-      ObstaclesCritic:
-        enabled: true
-        cost_power: 1
-        repulsion_weight: 1.5 # Configurable
-        critical_weight: 20.0 # Configurable
-        consider_footprint: true
-        collision_cost: 10000.0
-        collision_margin_distance: 0.2 # Configurable
-        near_goal_distance: 0.5
-        inflation_radius: 0.4 # Configurable
-        cost_scaling_factor: 10.0 # Configurable
       CostCritic:
         enabled: true
         cost_power: 1
         cost_weight: 10.0 # Configurable
         critical_cost: 300.0
-        consider_footprint: true
         collision_cost: 1000000.0
+        consider_footprint: false
         near_goal_distance: 1.0
         trajectory_point_step: 2
       PathAlignCritic:
@@ -403,13 +344,104 @@ controller_server:
         threshold_to_consider: 0.5
         max_angle_to_furthest: 1.0
         mode: 0
+
+    # * ---------------------------------------------------------------------
+    # * General use MPPI Controller for new nav2 Stack (humble_main).
+    # * ---------------------------------------------------------------------
+
+    mppi_controller: 
+      plugin: "nav2_mppi_controller::MPPIController"
+      time_steps: 64 # Configurable
+      model_dt: 0.05
+      batch_size: 2000 # Configurable
+      vx_std: 0.2 # Configurable
+      vy_std: 0.0
+      wz_std: 0.4 # Configurable
+      vx_max: 0.5 # Configurable
+      vx_min: -0.35
+      vy_max: 0.0
+      wz_max: 1.9
+      ax_max: 3.0
+      ax_min: -3.0
+      ay_min: -3.0
+      ay_max: 3.0
+      az_max: 3.5
+      iteration_count: 1 # Configurable
+      prune_distance: 1.7
+      transform_tolerance: 0.1 # Configurable
+      temperature: 0.3 # Configurable
+      gamma: 0.015
+      motion_model: "DiffDrive"
+      visualize: false
+      reset_period: 1.0
+      regenerate_noises: false
+      TrajectoryVisualizer:
+        trajectory_step: 5
+        time_step: 3
+      TrajectoryValidator:
+        plugin: "mppi::DefaultOptimalTrajectoryValidator"
+        collision_lookahead_time: 2.0
+        consider_footprint: false
+      critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
+      ConstraintCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 4.0 # Configurable
+      GoalCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 5.0
+        threshold_to_consider: 1.4
+      GoalAngleCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 3.0
+        threshold_to_consider: 0.5
+      PreferForwardCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 5.0
+        threshold_to_consider: 0.5
+      CostCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 10.0 # Configurable
+        critical_cost: 300.0
+        consider_footprint: false
+        collision_cost: 1000000.0
+        near_goal_distance: 1.0
+        trajectory_point_step: 2
+      PathAlignCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 10.0 # Configurable
+        max_path_occupancy_ratio: 0.05
+        trajectory_point_step: 4
+        threshold_to_consider: 0.5
+        offset_from_furthest: 20
+        use_path_orientations: true
+      PathFollowCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 8.0
+        offset_from_furthest: 5
+        threshold_to_consider: 1.4
+      PathAngleCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 4.0
+        offset_from_furthest: 4
+        threshold_to_consider: 0.5
+        max_angle_to_furthest: 1.0
+        mode: 0
   
 local_costmap:
   local_costmap:
     ros__parameters:
+      always_send_full_costmap: true # Configurable
       update_frequency: 5.0
       publish_frequency: 5.0
-      global_frame: map # Configurable
+      global_frame: odometry
       robot_base_frame: base_footprint # Configurable
       use_sim_time: True # Configurable
       rolling_window: true
@@ -455,12 +487,6 @@ local_costmap:
           obstacle_max_range: 3.75
           obstacle_min_range: 0.0
           observation_persistence: 0.0
-
-      static_layer:
-        plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: True
-        map_topic: "map_2" # Configurable
-      always_send_full_costmap: True
 
 global_costmap:
   global_costmap:
@@ -540,7 +566,7 @@ planner_server:
     # NavFn Planner Parameters.
     # Use the NavFn Planner for grid-based path planning with A* or Dijkstra algorithms.
     navfv_planner:
-      plugin: "nav2_navfn_planner/NavfnPlanner"
+      plugin: "nav2_navfn_planner::NavfnPlanner"
       tolerance: 1.0
       use_astar: false
       allow_unknown: true       
@@ -548,7 +574,7 @@ planner_server:
     # Theta* Planner Parameters.
     # Use the Theta* Planner for grid-based path planning with a focus on smooth paths with straight lines (any-angle approach).
     theta_star_planner:
-      plugin: "nav2_theta_star_planner/ThetaStarPlanner" 
+      plugin: "nav2_theta_star_planner::ThetaStarPlanner" 
       how_many_corners: 8
       w_euc_cost: 1.0
       w_traversal_cost: 2.0
@@ -588,23 +614,24 @@ behavior_server:
     cycle_frequency: 10.0
     behavior_plugins: ["spin", "backup", "drive_on_heading", "assisted_teleop", "wait"]
     spin:
-      plugin: "nav2_behaviors/Spin"
+      plugin: "nav2_behaviors::Spin"
     backup:
-      plugin: "nav2_behaviors/BackUp"
+      plugin: "nav2_behaviors::BackUp"
     drive_on_heading:
-      plugin: "nav2_behaviors/DriveOnHeading"
+      plugin: "nav2_behaviors::DriveOnHeading"
     wait:
-      plugin: "nav2_behaviors/Wait"
+      plugin: "nav2_behaviors::Wait"
     assisted_teleop:
-      plugin: "nav2_behaviors/AssistedTeleop"
-    global_frame: odometry # Configurable
+      plugin: "nav2_behaviors::AssistedTeleop"
+    global_frame: map # Configurable
     robot_base_frame: base_footprint # Configurable
-    transform_tolerance: 0.5
+    transform_tolerance: 0.5 # Configurable
     use_sim_time: True
     simulate_ahead_time: 2.0
     max_rotational_vel: 0.6
     min_rotational_vel: 0.3
     rotational_acc_lim: 3.2
+    local_frame: odometry # Configurable
 
 robot_state_publisher:
   ros__parameters:
@@ -631,7 +658,7 @@ velocity_smoother:
     min_velocity: [-1.0, 0.0, -0.6]
     max_accel: [1.0, 0.0, 1.0]
     max_decel: [-1.0, 0.0, -1.0]
-    odom_topic: "odometry" # Configurable
+    odom_topic: "/odom" # Configurable
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
@@ -649,3 +676,62 @@ lifecycle_manager_navigation:
       - behavior_server
       - waypoint_follower
       - velocity_smoother
+
+docking_server:
+  ros__parameters:
+    use_sim_time: True # Configurable
+    controller_frequency: 50.0
+    initial_perception_timeout: 5.0
+    wait_charge_timeout: 5.0
+    dock_approach_timeout: 30.0
+    undock_linear_tolerance: 0.05
+    undock_angular_tolerance: 0.1
+    max_retries: 3
+    base_frame: "base_footprint"
+    fixed_frame: "odometry"
+    odom_topic: "odom"
+    dock_prestaging_tolerance: 0.5
+    introspection_mode: "disabled"
+
+    dock_plugins: ['vizzy_isr_dock']
+
+    docks: ["dock_1"]
+    dock_1:
+      type: "vizzy_isr_dock"
+      frame: "map"
+      pose: [0.0, 0.0, 0.0]
+
+    vizzy_isr_dock:
+      plugin: 'opennav_docking::SimpleChargingDock'
+      docking_threshold: 0.46
+      staging_x_offset: -1.0
+      use_external_detection_pose: true
+      use_battery_status: false
+      use_stall_detection: false
+      rotate_to_dock: false
+
+      external_detection_timeout: 5.0
+      external_detection_translation_x: 0.0
+      external_detection_translation_y: 0.0
+      external_detection_rotation_roll: -1.57
+      external_detection_rotation_pitch: 0.0
+      external_detection_rotation_yaw: 0.0
+      filter_coef: 0.1
+      dock_direction: "backward"
+
+    controller:
+      k_phi: 3.0
+      k_delta: 2.0
+      v_linear_min: 0.15
+      v_linear_max: 0.15
+      v_angular_max: 0.35
+      slowdown_radius: 0.25
+      rotate_to_heading_angular_vel: 1.0
+      rotate_to_heading_max_angular_accel: 3.2
+      use_collision_detection: false
+      costmap_topic: "local_costmap/costmap_raw"
+      footprint_topic: "local_costmap/published_footprint" # Configurable
+      transform_tolerance: 0.1 # Configurable
+      projection_time: 1.0
+      simulation_time_step: 0.1
+      dock_collision_threshold: 0.3

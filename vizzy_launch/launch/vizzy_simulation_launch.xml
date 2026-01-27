@@ -53,6 +53,29 @@
   <arg name="mppi_wide_wz_std" default="0.2" description="Standard deviation for the wide MPPI controller"/>
   <arg name="mppi_narrow_wz_std" default="0.13" description="Standard deviation for the narrow MPPI controller"/>
   <arg name="velocity_smoother_feedback_type" default="OPEN_LOOP" description="Feedback type for the velocity smoother. Options: CLOSED_LOOP, OPEN_LOOP"/>
+  <arg name="dock_pose_stl_model_path" default="$(find-pkg-share vizzy_navigation)/models/docking_pattern.stl" description="Path to the STL model for the dock pose estimation"/>
+  <arg name="battery_state" default="0" description="Initial battery state. 0: Not charging, 1: Charging"/>
+  <arg name="use_battery_state_simulation" default="true" description="Whether to use the battery state simulation node."/>
+  <arg name="publish_dock_point_cloud" default="false" description="Whether to publish the dock point cloud for visualization."/>
+  <arg name="docking_bt_selection" default="0" description="Short integer flag to indicate the BT to use for the docking procedure. If set to 0, the docking procedure with staging pose navigation is activated, if set to 1, the docking procedure without staging pose navigation is activated, if set to 2, the estimator-only docking procedure is activated."/>
+  <arg name="force_centroid_guess" default="false" description="Whether to force the centroid guess in the docking procedure."/>
+  <arg name="use_statistical_outlier_removal_and_downsampling" default="true" description="Whether to use statistical outlier removal and downsampling in the dock pose estimator."/>
+
+  <!-- General MPPI Controller Parameters -->
+  <arg name="mppi_cost_critic_cost_weight" default="10.0" description="Cost weight for the general MPPI cost critic"/>
+  <arg name="mppi_path_align_critic_cost_weight" default="7.0" description="Cost weight for the general MPPI path align critic"/>
+  <arg name="mppi_time_steps" default="64" description="Number of time steps (points) in candidate trajectories."/>
+  <arg name="mppi_batch_size" default="1400" description="Count of randomly sampled candidate trajectories from current optimal control sequence in a given iteration."/>
+  <arg name="mppi_vx_std" default="0.1" description="Standard deviation for linear velocity in the MPPI controller."/>
+  <arg name="mppi_wz_std" default="0.2" description="Standard deviation for the general MPPI controller"/>
+  <arg name="mppi_vx_max" default="1.0" description="Maximum linear velocity in the MPPI controller."/>
+  <arg name="mppi_temperature" default="0.3" description="Selectiveness of trajectories by their costs."/>
+  <arg name="mppi_iteration_count" default="1" description="Iteration count in the MPPI algorithm. Recommended to remain as 1 and instead prefer larger batch sizes."/>
+  <arg name="mppi_constraint_critic_cost_weight" default="4.0" description="Cost weight for the MPPI constraint critic."/>
+  
+  <arg name="staging_pose" default="-x -1.0 -y 0.0 -Y 0.0" description="Staging pose of the robot in the map frame for docking. Format: 'x y Yaw'"/>
+  <arg name="always_send_full_costmap" default="false" description="Whether to always send the full costmap to the controller."/>
+  <arg name="transform_tolerance" default="0.1" description="Transform tolerance for the navigation stack."/>
 
   <!-- Launch gazebo -->
   <include file="$(find-pkg-share vizzy_gazebo)/launch/gazebo_launch.xml">
@@ -108,6 +131,25 @@
       <arg name="mppi_wide_wz_std" value="$(var mppi_wide_wz_std)"/>
       <arg name="mppi_narrow_wz_std" value="$(var mppi_narrow_wz_std)"/>
       <arg name="velocity_smoother_feedback_type" value="$(var velocity_smoother_feedback_type)"/>
+      <arg name="dock_pose_stl_model_path" value="$(var dock_pose_stl_model_path)"/>
+      <arg name="use_battery_state_simulation" value="$(var use_battery_state_simulation)"/>
+      <arg name="publish_dock_point_cloud" value="$(var publish_dock_point_cloud)"/>
+      <arg name="docking_bt_selection" value="$(var docking_bt_selection)"/>
+      <arg name="force_centroid_guess" value="$(var force_centroid_guess)"/>
+      <arg name="use_statistical_outlier_removal_and_downsampling" value="$(var use_statistical_outlier_removal_and_downsampling)"/>
+      <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
+      <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
+      <arg name="mppi_time_steps" value="$(var mppi_time_steps)"/>
+      <arg name="mppi_batch_size" value="$(var mppi_batch_size)"/>
+      <arg name="mppi_vx_std" value="$(var mppi_vx_std)"/>
+      <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
+      <arg name="mppi_vx_max" value="$(var mppi_vx_max)"/>
+      <arg name="mppi_temperature" value="$(var mppi_temperature)"/>
+      <arg name="mppi_iteration_count" value="$(var mppi_iteration_count)"/>
+      <arg name="mppi_constraint_critic_cost_weight" value="$(var mppi_constraint_critic_cost_weight)"/>
+      <arg name="staging_pose" value="$(var staging_pose)"/>
+      <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
+      <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
     </include>
   </group>
   <group unless="$(var use_obstacles)">
@@ -148,7 +190,33 @@
       <arg name="mppi_wide_wz_std" value="$(var mppi_wide_wz_std)"/>
       <arg name="mppi_narrow_wz_std" value="$(var mppi_narrow_wz_std)"/>
       <arg name="velocity_smoother_feedback_type" value="$(var velocity_smoother_feedback_type)"/>
+      <arg name="dock_pose_stl_model_path" value="$(var dock_pose_stl_model_path)"/>
+      <arg name="use_battery_state_simulation" value="$(var use_battery_state_simulation)"/>
+      <arg name="publish_dock_point_cloud" value="$(var publish_dock_point_cloud)"/>
+      <arg name="docking_bt_selection" value="$(var docking_bt_selection)"/>
+      <arg name="force_centroid_guess" value="$(var force_centroid_guess)"/>
+      <arg name="use_statistical_outlier_removal_and_downsampling" value="$(var use_statistical_outlier_removal_and_downsampling)"/>
+      <arg name="mppi_cost_critic_cost_weight" value="$(var mppi_cost_critic_cost_weight)"/>
+      <arg name="mppi_path_align_critic_cost_weight" value="$(var mppi_path_align_critic_cost_weight)"/>
+      <arg name="mppi_time_steps" value="$(var mppi_time_steps)"/>
+      <arg name="mppi_batch_size" value="$(var mppi_batch_size)"/>
+      <arg name="mppi_vx_std" value="$(var mppi_vx_std)"/>
+      <arg name="mppi_wz_std" value="$(var mppi_wz_std)"/>
+      <arg name="mppi_vx_max" value="$(var mppi_vx_max)"/>
+      <arg name="mppi_temperature" value="$(var mppi_temperature)"/>
+      <arg name="mppi_iteration_count" value="$(var mppi_iteration_count)"/>
+      <arg name="mppi_constraint_critic_cost_weight" value="$(var mppi_constraint_critic_cost_weight)"/>
+      <arg name="staging_pose" value="$(var staging_pose)"/>
+      <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
+      <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
     </include>
+  </group>
+
+  <!-- Launch the battery state simulator script -->
+  <group>
+    <node pkg="vizzy_navigation" exec="battery_state_simulator_service.py" name="battery_charging_service" output="screen">
+        <param name="initial_battery_state" value="$(var battery_state)"/>
+    </node>
   </group>
 
   <!-- Start RViz2 using the new python launcher from vizzy_launch -->

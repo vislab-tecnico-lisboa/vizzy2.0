@@ -1,0 +1,80 @@
+<!--
+  This Behavior Tree is designed to perform a complete docking mission using Nav2's Docking Server.
+
+  It consists of the following steps:
+    1. Navigate to a predefined staging pose near the docking station using the custom navigation sequence.
+    2. Activate the dock_pose_estimator_node to start estimating the dock's pose using laser scan data.
+    3. Execute the docking maneuver using the DockRobot action, which utilizes the estimated dock pose.
+    4. Deactivate the dock_pose_estimator_node after the docking maneuver is complete to conserve resources.    
+    The BT ensures that the dock_pose_estimator_node is only active during the docking procedure, optimizing resource usage.
+
+  The automatic navigation to the staging pose handled by the docking server is not used due to the need
+  for the integration of the dock_pose_estimator_node activation and deactivation within the docking process.
+
+  * The main objective of this BT is to ensure a seamless and efficient docking procedure by using as few
+  * resources as possible.
+-->
+<root main_tree_to_execute="DockingMission" BTCPP_format="4">
+  <BehaviorTree ID="DockingMission">
+    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+      <Sequence name="CompleteProcedure">
+        <RecoveryNode number_of_retries="1" name="NavigateToStagingPose">
+          <Sequence name="ConfiguringAndNavigating">
+            <!-- Configure the dock pose estimator node. -->
+            <!-- ? We configure the dock pose estimator here and not immediatly before the activation 
+                ? because the lifecycle manager entered a deadlock state when receiving the success
+                ? messages from the dock_pose_estimator_node. Maybe understand why this happens?... -->
+            <ManageLifecycleNodes transition="configure" node="{node}"/> 
+
+            <!-- Pipeline Sequence ticks all of its children in order repeatedly if
+            any of them return RUNNING, therefore, we have to separate the staging part
+            of the docking with the rest as to deactivate the path planning after successfully
+            reaching the staging pose. -->
+            <PipelineSequence name="NavigateAndReplan">
+              <!-- Compute path and Smooth it. -->
+              <RateController hz="GLOBAL_PLANNER_FREQUENCY">
+                <Sequence name="ComputeAndSmoothPath">
+                  <ComputePathToPose goal="{goal}" path="{path}" planner_id="PLANNER_PLACEHOLDER"/>
+                  <SmoothPath unsmoothed_path="{path}" smoothed_path="{path}"/>
+                </Sequence>
+              </RateController>
+              <!-- Follow the computed path to the staging pose. -->
+              <!-- Comment this section to test the docking procedure from the staging pose. -->
+              <RecoveryNode number_of_retries="1" name="FollowPath">
+                <FollowPath path="{path}" controller_id="CONTROLLER_PLACEHOLDER"/>
+                <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+              </RecoveryNode> 
+            </PipelineSequence>
+          </Sequence>
+          <ClearEntireCostmap name="ClearCostmaps-Nav" service_name="global_costmap/clear_entirely_global_costmap"/>
+        </RecoveryNode>
+
+        <Sequence name="DockingBackwards">
+          <!-- Activate the dock pose estimator node only in the staging pose. This will save unecessary resources. -->
+          <ManageLifecycleNodes transition="activate" node="{node}"/>
+
+          <!-- Wait for 2 seconds to allow the dock pose estimator to start publishing the dock pose. -->
+          <Wait wait_duration="2"/>
+
+          <!-- Once in the staging pose and the dock pose estimator is active, we can dock the robot. -->
+          <DockRobot dock_id="dock_1" navigate_to_staging_pose="false"/>
+
+          <!-- Deactivate the dock pose estimator node after the docking is complete. -->
+          <ManageLifecycleNodes transition="deactivate" node="{node}"/>
+        </Sequence>
+      </Sequence>
+
+      <!-- Fallback behaviour. -->
+      <ReactiveFallback name="RecoveryFallback">
+        <GoalUpdated/>
+        <RoundRobin name="RecoveryActions">
+          <Sequence name="ClearingActions">
+            <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+            <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
+          </Sequence>
+          <Wait wait_duration="5"/>
+        </RoundRobin>
+      </ReactiveFallback>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>

@@ -17,6 +17,9 @@
   <arg name="base_frame_id" default="base_footprint" description="Frame id for the base footprint"/>
   <arg name="linear_odom_scale" default="1.6" description="Scale factor for linear odometry"/>
   <arg name="angular_odom_scale" default="1.8" description="Scale factor for angular odometry"/>
+  <arg name="linear_vel_scale" default="false" description="Apply scale factor for linear velocity commands"/>
+  <arg name="angular_vel_scale" default="false" description="Apply scale factor for angular velocity commands"/>
+  <arg name="log_level_segway" default="info" description="Log level for segway_rmp_ros2"/>
   
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
@@ -34,6 +37,9 @@
         <arg name="base_frame_id" value="$(var base_frame_id)" />
         <arg name="linear_odom_scale" value="$(var linear_odom_scale)" />
         <arg name="angular_odom_scale" value="$(var angular_odom_scale)" />
+        <arg name="linear_vel_scale" value="$(var linear_vel_scale)" />
+        <arg name="angular_vel_scale" value="$(var angular_vel_scale)" />
+        <arg name="log_level_segway" value="$(var log_level_segway)" />
     </include>
   
     <!-- Launch the Hokuyo laser scanners -->

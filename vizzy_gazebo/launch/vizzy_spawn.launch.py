@@ -220,7 +220,7 @@ def generate_launch_description():
         arguments=[
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/model/vizzy/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-            '/model/vizzy/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
+            '/model/vizzy/cmd_vel@geometry_msgs/msg/TwistStamped]gz.msgs.Twist',
             '/model/vizzy/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/model/vizzy/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
             '/model/vizzy/camera/l/image_raw@sensor_msgs/msg/Image[gz.msgs.Image',

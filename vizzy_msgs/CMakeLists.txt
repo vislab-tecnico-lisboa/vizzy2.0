@@ -34,6 +34,7 @@ set(srv_files
   "srv/MotorsShutdown.srv"
   "srv/BatteryChargingState.srv"
   "srv/ShutdownStartYarpRunProcess.srv"
+  "srv/SetBatteryState.srv"
 )
 
 # Declare action files.
