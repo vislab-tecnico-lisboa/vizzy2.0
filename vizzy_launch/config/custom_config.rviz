@@ -5,6 +5,8 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Map1/Topic1
+        - /Path1
+        - /Path2
       Splitter Ratio: 0.5
     Tree Height: 746
   - Class: rviz_common/Selection
