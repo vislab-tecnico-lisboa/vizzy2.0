@@ -320,13 +320,12 @@ For those to whom this may concern, we leave here a setup tutorial for the real 
     colcon build --symlink-install
     ```
 8.  **Final Details**
-    Once (and if) everything is correctly built, we can safely ignore the nav2, segway drivers and TEASER++ packages in future builds and remove the ignore command on our main vizzy2 folder.
+    Once (and if) everything is correctly built, we can safely ignore the nav2 and segway drivers packages in future builds and remove the ignore command on our main vizzy2 folder.
     ```bash
     rm src/vizzy2/COLCON_IGNORE
     touch src/navigation2/COLCON_IGNORE
     touch src/libsegwayrmp_ros2/COLCON_IGNORE
     touch src/segway_rmp_ros2/COLCON_IGNORE
-    touch src/TEASER-plusplus/COLCON_IGNORE
     ```
 
 For more information regarding this version of nav2, please refer to [their official repository](https://github.com/ros-navigation/navigation2/tree/humble_main).
