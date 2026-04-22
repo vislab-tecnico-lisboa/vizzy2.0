@@ -68,7 +68,7 @@
   <arg name="velocity_smoother_feedback_type" default="OPEN_LOOP" description="Feedback type for the velocity smoother. Options: CLOSED_LOOP, OPEN_LOOP"/>
   <arg name="dock_pose_stl_model_path" default="$(find-pkg-share vizzy_navigation)/models/docking_pattern.stl" description="Path to the STL model for the dock pose estimation"/>
   <arg name="battery_state" default="0" description="Initial battery state. 0: Not charging, 1: Charging"/>
-  <arg name="use_battery_state_simulation" default="true" description="Whether to use the battery state simulation node."/>
+  <arg name="use_battery_state_simulation" default="false" description="Whether to use the battery state simulation node or the real battery state."/>
   <arg name="publish_dock_point_cloud" default="false" description="Whether to publish the dock point cloud for visualization."/>
   <arg name="docking_bt_selection" default="0" description="Short integer flag to indicate the BT to use for the docking procedure. If set to 0, the docking procedure with staging pose navigation is activated, if set to 1, the docking procedure without staging pose navigation is activated, if set to 2, the estimator-only docking procedure is activated."/>
   <arg name="force_centroid_guess" default="false" description="Whether to force the centroid guess in the docking procedure."/>
@@ -420,10 +420,17 @@
     </group>
   </group>
 
-  <!-- Launch the battery state simulator script -->
-  <group>
+  <group if="$(var use_battery_state_simulation)">
     <node pkg="vizzy_navigation" exec="battery_state_simulator_service.py" name="battery_charging_service" output="screen">
         <param name="initial_battery_state" value="$(var battery_state)"/>
+    </node>
+  </group>
+  <group unless="$(var use_battery_state_simulation)">
+    <node pkg="vizzy_navigation" exec="battery_kokam_service.py" name="battery_kokam_service" output="screen">
+        <param name="port" value="/dev/kokam_power"/>
+        <param name="charged_thr" value="29.39"/>
+        <param name="medium_thr" value="25.5"/>
+        <param name="low_thr" value="24.5"/>
     </node>
   </group>
 </launch>

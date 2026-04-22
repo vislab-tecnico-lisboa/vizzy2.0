@@ -204,6 +204,7 @@ install(
 
 install(PROGRAMS
   script/battery_state_simulator_service.py
+  script/battery_kokam_service.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
