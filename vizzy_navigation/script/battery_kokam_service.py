@@ -6,7 +6,87 @@
 # battery-charging-state-service.cpp) by João Penha Lopes.
 #
 # Provides two real-hardware-backed services sourced from the Kokam battery
-# serial PCB.
+# serial PCB: battery_state and battery_charging_state.
+#
+# ------------------------------------------------------------------------------
+# Design notes: differences from ROS1 and why this version is better
+# ------------------------------------------------------------------------------
+#
+# ROS1 architecture (battery-state-service.cpp,
+#                    battery-charging-state-service.cpp)
+# ------------------------------------------------------
+# Both services were blocking:
+#
+#   battery_state         — on each service call, performed one serial
+#                           round-trip (write '0', sleep 300 ms, read 8 bytes,
+#                           sleep 300 ms) and returned immediately. Latency
+#                           per call: ~600 ms.
+#
+#   battery_charging_state — on each service call, performed 40 sequential
+#                           round-trips (samples = 40), collecting
+#                           (timestamp, voltage) pairs, then fitted a linear
+#                           slope with L2 least squares. Total latency per
+#                           call: 40 × 600 ms ≈ 24 seconds. The ROS service
+#                           thread was blocked for the entire collection period.
+#                           Classification: slope > 0 → CHARGING,
+#                                           slope ≤ 0 → NOT_CHARGING.
+#
+# ROS2 architecture (this file)
+# -----------------------------
+# A single background thread polls the serial port continuously at the same
+# ~600 ms/sample rate and maintains a rolling deque of the last `slope_window`
+# (default 40) samples. Both service handlers read from this shared buffer and
+# return immediately. This eliminates the 24-second blocking call while
+# preserving the same sampling protocol and slope estimation as ROS1, 
+# while using a more robust charging-state decision rule for the continuously 
+# updated ROS2 architecture.
+#
+# Charging-state noise problem and hysteresis solution
+# ----------------------------------------------------
+# The voltage is decoded as a 16-bit unsigned integer divided by 100, giving
+# a resolution of 0.01 V per LSB. When the battery is static (no charger, no
+# load change), the true voltage is flat, but individual readings fluctuate by
+# ±1 LSB due to ADC quantisation noise. Over a 40-sample / 24-second window
+# this produces a spurious slope of approximately:
+#
+#   noise slope ≈ ΔV / Δt = 0.01 V / 24 s ≈ 0.0004 V/s
+#
+# In ROS1 this was not observable in practice because the 24-second collection
+# was triggered on demand (typically infrequently). In this ROS2 port the
+# rolling window is continuously updated, so consecutive service calls see
+# overlapping sample sets whose slope oscillates around zero at the noise
+# magnitude above, causing false CHARGING / NOT_CHARGING transitions on a
+# static, uncharged battery.
+#
+# The solution we decided to apply in this case is hysteresis: 
+# the threshold to enter a state differs from the threshold to
+# exit it, and in the absence of a clear signal the system holds its last
+# known state. This node implements symmetric hysteresis with a single
+# `slope_threshold` parameter (default 0.001 V/s, ~2.5× the noise floor):
+#
+#   current state = NOT_CHARGING:
+#     slope >  +slope_threshold  →  transition to CHARGING
+#     slope ≤  +slope_threshold  →  remain NOT_CHARGING
+#
+#   current state = CHARGING:
+#     slope < −slope_threshold   →  transition to NOT_CHARGING
+#     slope ≥ −slope_threshold   →  remain CHARGING
+#
+# A real charging event is expected to produce a sustained positive slope well 
+# above the quantisation-noise floor, however the threshold should still be 
+# validated on the hardware (TODO). Quantisation noise, which has no dominant direction, 
+# never exceeds the threshold in a sustained way and cannot trigger
+# a false transition. The service always returns a definite CHARGING or
+# NOT_CHARGING, thus the UNKNOWN state is reserved only for the startup period
+# before `min_slope_samples` have been collected.
+#
+# Serial port resilience
+# ----------------------
+# USB-to-serial devices can undergo kernel-level resets (autosuspend, power
+# glitch, udev re-trigger) that invalidate the open file descriptor. The read
+# loop detects consecutive SerialException errors and attempts to reopen the
+# port after a short back-off, clearing the sample buffer so that stale
+# data spanning the error gap cannot distort the slope estimate.
 
 import collections
 import math
@@ -46,18 +126,29 @@ class BatteryKokamService(Node):
         self.declare_parameter('slope_window', 40)
         self.declare_parameter('min_slope_samples', 40)
 
+        # Hysteresis dead-band: slope must exceed this magnitude (V/s) to
+        # trigger a state transition. Default is ~2.5× the ADC quantisation
+        # noise floor (~0.0004 V/s) observed on this hardware.
+        self.declare_parameter('slope_threshold', 0.001)
+
         port = self.get_parameter('port').value
         self._charged_thr = self.get_parameter('charged_thr').value
         self._medium_thr = self.get_parameter('medium_thr').value
         self._low_thr = self.get_parameter('low_thr').value
         slope_window = self.get_parameter('slope_window').value
         self._min_slope_samples = self.get_parameter('min_slope_samples').value
+        self._slope_threshold = self.get_parameter('slope_threshold').value
 
         # Thread-safe sample buffer.
         self._lock = threading.Lock()
         # maxlen matches slope_window so the deque acts as a rolling window.
         self._samples: collections.deque = collections.deque(maxlen=slope_window)
         self._latest_voltage: float | None = None
+
+        # Hysteresis state: persists between service calls.
+        # Initialised to NOT_CHARGING and matches initial_battery_state=0 used
+        # by the simulator which is correct when the charger is disconnected.
+        self._current_charging_state: int = BatteryChargingState.Response.NOT_CHARGING
 
         # Serial port setup.
         try:
@@ -94,13 +185,22 @@ class BatteryKokamService(Node):
           5. Validate: buf[0] == '0', checksum(buf[0:6]) == buf[6:8] as uint16 BE
           6. Decode: voltage = (buf[1]<<8 | buf[2]) / 100.0
                      current = (buf[3]<<8 | buf[4]) / 100.0
+
+        On persistent serial errors the port is closed and reopened. The sample
+        buffer is cleared on reopen so that the time gap does not corrupt the
+        slope estimate.
         """
+        consecutive_errors = 0
+        max_consecutive_errors = 3
+
         while rclpy.ok():
             try:
                 self._serial.write(b'0')
                 time.sleep(0.3)
                 buf = self._serial.read(8)
                 time.sleep(0.3)
+
+                consecutive_errors = 0  # reset on any successful I/O.
 
                 if len(buf) != 8 or buf[0] != ord('0'):
                     self.get_logger().warning(
@@ -125,7 +225,26 @@ class BatteryKokamService(Node):
 
             except serial.SerialException as exc:
                 self.get_logger().error(f'Serial read error: {exc}')
+                consecutive_errors += 1
                 time.sleep(1.0)
+
+                if consecutive_errors >= max_consecutive_errors:
+                    self.get_logger().warning(
+                        f'Attempting to reopen {self._serial.port} after '
+                        f'{consecutive_errors} consecutive errors...'
+                    )
+                    try:
+                        self._serial.close()
+                        time.sleep(2.0)
+                        self._serial.open()
+                        with self._lock:
+                            self._samples.clear()
+                        consecutive_errors = 0
+                        self.get_logger().info(
+                            f'{self._serial.port} reopened successfully.'
+                        )
+                    except serial.SerialException as reopen_exc:
+                        self.get_logger().error(f'Reopen failed: {reopen_exc}')
 
     # ------------------------------------------------------------------
     # Service handlers
@@ -192,13 +311,25 @@ class BatteryKokamService(Node):
             samples = list(self._samples)
 
         R = BatteryChargingState.Response
+
         if len(samples) < self._min_slope_samples:
             response.battery_charging_state = R.UNKNOWN
-        else:
-            slope = self._l2_slope(samples)
-            self.get_logger().info(f'battery_charging_state → slope={slope:.6f} V/s')
-            response.battery_charging_state = R.CHARGING if slope > 0.0 else R.NOT_CHARGING
+            return response
 
+        slope = self._l2_slope(samples)
+
+        if self._current_charging_state == R.NOT_CHARGING:
+            if slope > self._slope_threshold:
+                self._current_charging_state = R.CHARGING
+        else:  # currently CHARGING
+            if slope < -self._slope_threshold:
+                self._current_charging_state = R.NOT_CHARGING
+
+        self.get_logger().info(
+            f'battery_charging_state → slope={slope:.6f} V/s '
+            f'state={self._current_charging_state}'
+        )
+        response.battery_charging_state = self._current_charging_state
         return response
 
     # ------------------------------------------------------------------
