@@ -88,6 +88,14 @@
 # loop detects consecutive SerialException errors and attempts to reopen the
 # port after a short back-off, clearing the sample buffer so that stale
 # data spanning the error gap cannot distort the slope estimate.
+#
+# Notes: before figuring out that the issue of the constant USB-resetting was
+# due to the USB hub, I tried turning autosuspend off:
+# vizzy@vizzy-System-Product-Name:~$ cat /etc/udev/rules.d/99-kokam-battery.rules
+# SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="Vizzy_BAT", SYMLINK+="kokam_power", MODE="0666"
+# SUBSYSTEM=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="Vizzy_BAT", ATTR{power/control}="on"
+# Shouldn't affect anything else though.
+
 
 import collections
 import math
