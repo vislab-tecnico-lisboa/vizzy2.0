@@ -72,13 +72,14 @@
 #     slope < −slope_threshold   →  transition to NOT_CHARGING
 #     slope ≥ −slope_threshold   →  remain CHARGING
 #
-# A real charging event is expected to produce a sustained positive slope well 
-# above the quantisation-noise floor, however the threshold should still be 
-# validated on the hardware (TODO). Quantisation noise, which has no dominant direction, 
-# never exceeds the threshold in a sustained way and cannot trigger
+# A real charging event is expected to produce a sustained positive slope well
+# above the quantisation-noise floor, however the threshold should still be
+# validated on the hardware (TODO). Quantisation noise, which has no dominant
+# direction, never exceeds the threshold in a sustained way and cannot trigger
 # a false transition. The service always returns a definite CHARGING or
-# NOT_CHARGING, thus the UNKNOWN state is reserved only for the startup period
-# before `min_slope_samples` have been collected.
+# NOT_CHARGING, including during the startup window and after a serial port
+# reopen, where the hysteresis state (initialised to NOT_CHARGING) is returned
+# instead.
 #
 # Serial port resilience
 # ----------------------
@@ -313,7 +314,7 @@ class BatteryKokamService(Node):
         R = BatteryChargingState.Response
 
         if len(samples) < self._min_slope_samples:
-            response.battery_charging_state = R.UNKNOWN
+            response.battery_charging_state = self._current_charging_state
             return response
 
         slope = self._l2_slope(samples)
