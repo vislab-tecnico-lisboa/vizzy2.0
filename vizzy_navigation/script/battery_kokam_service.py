@@ -196,6 +196,7 @@ class BatteryKokamService(Node):
 
         while rclpy.ok():
             try:
+                self._serial.reset_input_buffer()
                 self._serial.write(b'0')
                 time.sleep(0.3)
                 buf = self._serial.read(8)
