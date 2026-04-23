@@ -161,8 +161,13 @@ class BatteryKokamService(Node):
         self._current_charging_state: int = BatteryChargingState.Response.NOT_CHARGING
 
         # Serial port setup.
+        # dsrdtr=False / rtscts=False prevents pyserial from asserting DTR/RTS
+        # on open. Trying to fix infinite reset loop.
         try:
-            self._serial = serial.Serial(port, baudrate=115200, timeout=1)
+            self._serial = serial.Serial(
+                port, baudrate=115200, timeout=1, dsrdtr=False, rtscts=False
+            )
+            self._serial.dtr = False
             self.get_logger().info(f'{port} open at 115200 baud')
         except serial.SerialException as exc:
             self.get_logger().fatal(f'Cannot open serial port {port}: {exc}')
