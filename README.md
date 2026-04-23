@@ -251,6 +251,7 @@ The Vizzy stack launch can be configured using a wide range of launch arguments,
 | `log_level_segway` | `info` | Log level for `segway_rmp_ros2`. |
 | `autostart` | `true` | Whether to autostart the navigation stack. |
 | `use_respawn` | `false` | Whether to respawn the navigation nodes if they crash. |
+| `inter_cycle_delay` | `0.0` | Idle gap between query cycles (seconds) for kokam battery service. |
 
 ---
 
@@ -332,7 +333,7 @@ For more information regarding this version of nav2, please refer to [their offi
 
 At the end of the setup, you should have something that looks exactly like this:
 
-<img width="615" height="172" alt="Screenshot from 2025-09-23 07-01-26" src="https://github.com/user-attachments/assets/fa38f9b9-2063-4d99-8bc8-8692d848b928" />
+<img width="814" height="146" alt="image" src="https://github.com/user-attachments/assets/2139c6f6-988b-4db7-8cff-1d6c9ba6f06b" />
 
 ## Documentation & Citation
 
