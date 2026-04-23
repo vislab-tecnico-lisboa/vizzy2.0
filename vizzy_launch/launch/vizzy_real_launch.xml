@@ -91,13 +91,15 @@
   <arg name="transform_tolerance" default="0.1" description="Transform tolerance for the navigation stack."/>
   
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
-  <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner"/>
-  <arg name="angle_max" default="1.309" description="Maximum angle for the laser scanner"/>
+  <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner."/>
+  <arg name="angle_max" default="1.309" description="Maximum angle for the laser scanner."/>
 
-  <arg name="linear_vel_scale" default="false" description="Apply scale factor for linear velocity commands"/>
-  <arg name="angular_vel_scale" default="false" description="Apply scale factor for angular velocity commands"/>
+  <arg name="linear_vel_scale" default="false" description="Apply scale factor for linear velocity commands."/>
+  <arg name="angular_vel_scale" default="false" description="Apply scale factor for angular velocity commands."/>
 
-  <arg name="log_level_segway" default="info" description="Log level for segway_rmp_ros2"/>
+  <arg name="log_level_segway" default="info" description="Log level for segway_rmp_ros2."/>
+
+  <arg name="inter_cycle_delay" default="2.0" description="Idle gap between query cycles (seconds) for kokam battery service."/>
 
   <!-- Launch the laser filters -->
   <group if="$(var use_laser_filters)">
@@ -431,6 +433,7 @@
         <param name="charged_thr" value="29.39"/>
         <param name="medium_thr" value="25.5"/>
         <param name="low_thr" value="24.5"/>
+        <param name="inter_cycle_delay" value="2.0"/>
     </node>
   </group>
 </launch>

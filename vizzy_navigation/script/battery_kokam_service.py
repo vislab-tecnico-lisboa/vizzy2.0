@@ -133,6 +133,13 @@ class BatteryKokamService(Node):
         # noise floor (~0.0004 V/s) observed on this hardware.
         self.declare_parameter('slope_threshold', 0.001)
 
+        # Idle gap between query cycles (seconds). Continuous 600ms polling 
+        # can stress the USB-serial bridge and trigger resets (TODO). ~
+        # Default 2s gives ~2.6 s per cycle while
+        # keeping the slope window to ~104 s (still well above noise floor).
+        # Set to 0.0 to match the tightest ROS1-equivalent polling rate.
+        self.declare_parameter('inter_cycle_delay', 2.0)
+
         port = self.get_parameter('port').value
         self._charged_thr = self.get_parameter('charged_thr').value
         self._medium_thr = self.get_parameter('medium_thr').value
@@ -140,6 +147,7 @@ class BatteryKokamService(Node):
         slope_window = self.get_parameter('slope_window').value
         self._min_slope_samples = self.get_parameter('min_slope_samples').value
         self._slope_threshold = self.get_parameter('slope_threshold').value
+        self._inter_cycle_delay = self.get_parameter('inter_cycle_delay').value
 
         # Thread-safe sample buffer.
         self._lock = threading.Lock()
@@ -226,6 +234,9 @@ class BatteryKokamService(Node):
                     self._samples.append((time.monotonic(), voltage))
                     self._latest_voltage = voltage
 
+                if self._inter_cycle_delay > 0.0:
+                    time.sleep(self._inter_cycle_delay)
+
             except (serial.SerialException, termios.error) as exc:
                 self.get_logger().error(f'Serial read error: {exc}')
                 consecutive_errors += 1
@@ -246,7 +257,7 @@ class BatteryKokamService(Node):
                         self.get_logger().info(
                             f'{self._serial.port} reopened successfully.'
                         )
-                    except serial.SerialException as reopen_exc:
+                    except (serial.SerialException, OSError) as reopen_exc:
                         self.get_logger().error(f'Reopen failed: {reopen_exc}')
 
     # ------------------------------------------------------------------
