@@ -99,7 +99,7 @@
 
   <arg name="log_level_segway" default="info" description="Log level for segway_rmp_ros2."/>
 
-  <arg name="inter_cycle_delay" default="2.0" description="Idle gap between query cycles (seconds) for kokam battery service."/>
+  <arg name="inter_cycle_delay" default="0.0" description="Idle gap between query cycles (seconds) for kokam battery service."/>
 
   <!-- Launch the laser filters -->
   <group if="$(var use_laser_filters)">
@@ -433,7 +433,7 @@
         <param name="charged_thr" value="29.39"/>
         <param name="medium_thr" value="25.5"/>
         <param name="low_thr" value="24.5"/>
-        <param name="inter_cycle_delay" value="2.0"/>
+        <param name="inter_cycle_delay" value="$(var inter_cycle_delay)"/>
     </node>
   </group>
 </launch>

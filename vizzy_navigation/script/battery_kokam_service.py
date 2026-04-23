@@ -133,12 +133,10 @@ class BatteryKokamService(Node):
         # noise floor (~0.0004 V/s) observed on this hardware.
         self.declare_parameter('slope_threshold', 0.001)
 
-        # Idle gap between query cycles (seconds). Continuous 600ms polling 
-        # can stress the USB-serial bridge and trigger resets (TODO). ~
-        # Default 2s gives ~2.6 s per cycle while
-        # keeping the slope window to ~104 s (still well above noise floor).
-        # Set to 0.0 to match the tightest ROS1-equivalent polling rate.
-        self.declare_parameter('inter_cycle_delay', 2.0)
+        # Optional idle gap between query cycles (seconds). Set to 0.0 for
+        # the tightest ROS1-equivalent polling rate (~600 ms/sample, 40 samples
+        # fills the slope window in ~24 s).
+        self.declare_parameter('inter_cycle_delay', 0.0)
 
         port = self.get_parameter('port').value
         self._charged_thr = self.get_parameter('charged_thr').value
