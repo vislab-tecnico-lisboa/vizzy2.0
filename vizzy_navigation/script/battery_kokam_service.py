@@ -91,6 +91,7 @@
 
 import collections
 import math
+import termios
 import threading
 import time
 
@@ -225,7 +226,7 @@ class BatteryKokamService(Node):
                     self._samples.append((time.monotonic(), voltage))
                     self._latest_voltage = voltage
 
-            except serial.SerialException as exc:
+            except (serial.SerialException, termios.error) as exc:
                 self.get_logger().error(f'Serial read error: {exc}')
                 consecutive_errors += 1
                 time.sleep(1.0)
