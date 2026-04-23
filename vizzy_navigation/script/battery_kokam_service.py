@@ -249,8 +249,14 @@ class BatteryKokamService(Node):
                     )
                     try:
                         self._serial.close()
+                        # Wait for the USB-serial bridge to finish its
+                        # re-enumeration cycle before attempting reopen.
                         time.sleep(2.0)
                         self._serial.open()
+                        # Discard any garbage left in the FIFO from before
+                        # the reset, then wait for the line to settle.
+                        self._serial.reset_input_buffer()
+                        time.sleep(0.5)
                         with self._lock:
                             self._samples.clear()
                         consecutive_errors = 0
