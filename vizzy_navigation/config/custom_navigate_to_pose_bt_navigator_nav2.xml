@@ -20,13 +20,15 @@
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
             <Sequence name="ComputeAndSmoothPath">
               <ComputePathToPose goal="{goal}" path="{path}" planner_id="PLANNER_PLACEHOLDER"/>
-              <SmoothPath unsmoothed_path="{path}" smoothed_path="{path}"/>
+              <ForceSuccess>
+                <SmoothPath unsmoothed_path="{path}" smoothed_path="{path}" smoother_id="SmoothPath"/>
+              </ForceSuccess>
             </Sequence>
             <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
           </RecoveryNode>
         </RateController>
         <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{path}" controller_id="CONTROLLER_PLACEHOLDER"/>
+          <FollowPath path="{path}" controller_id="CONTROLLER_PLACEHOLDER" goal_checker_id="general_goal_checker" progress_checker_id="progress_checker"/>
           <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
         </RecoveryNode>
       </PipelineSequence>

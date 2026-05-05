@@ -31,6 +31,7 @@ import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, LogInfo, OpaqueFunction
+from launch.conditions import IfCondition
 from launch.launch_context import LaunchContext
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node, PushRosNamespace, LifecycleNode
@@ -639,6 +640,17 @@ def generate_launch_description():
 
     # -------------------------------------------
     
+    use_patrol_arg = DeclareLaunchArgument(
+        'use_patrol',
+        default_value='false',
+        description='Launch the autonomous patrol node alongside the navigation stack.'
+    )
+    waypoints_file_arg = DeclareLaunchArgument(
+        'waypoints_file',
+        default_value=os.path.join(pkg_dir, 'config', 'patrol_waypoints_simulation.yaml'),
+        description='Full path to the patrol waypoints YAML file.'
+    )
+
     staging_pose_arg = DeclareLaunchArgument(
         'staging_pose',
         default_value='-x 0.0 -y 0.0 -Y 0.0',
@@ -880,12 +892,26 @@ def generate_launch_description():
                 executable='charging_action_server_node',
                 name='charging_action_server_node',
                 output='screen',
-                parameters=[{'is_simulation': use_battery_state_simulation}, 
+                parameters=[{'is_simulation': use_battery_state_simulation},
                             {'docking_bt_selection': docking_bt_selection},
                             {'staging_pose': staging_pose_str},
                             ],),
                 # Uncomment the next line to debug the node with GDB.
                 # prefix=['xterm -e gdb -ex run --args']),
+
+            # Only launch the patrol node if the use_patrol launch argument is set to true. 
+            # This allows us to keep the patrol node separate from the main navigation stack.
+            Node(
+                condition=IfCondition(LaunchConfiguration('use_patrol')),
+                package='vizzy_navigation',
+                executable='patrol_node.py',
+                name='patrol_node',
+                output='screen',
+                parameters=[{
+                    'waypoints_file': LaunchConfiguration('waypoints_file'),
+                    'is_simulation': use_battery_state_simulation,
+                    'battery_check_period_s': 5.0,
+                }],),
 
             # A separate Lifecycle manager for the dock_pose_estimator_node
             # to be able to launch the node without starting it.
@@ -964,6 +990,8 @@ def generate_launch_description():
         staging_pose_arg,
         always_send_full_costmap_arg,
         transform_tolerance_arg,
+        use_patrol_arg,
+        waypoints_file_arg,
         mppi_batch_size_arg,
         mppi_time_steps_arg,
         mppi_vx_std_arg,

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-
-# Copyright 2025, João Penha Lopes. All rights reserved.
+#
+# Copyright 2026, João Penha Lopes. All rights reserved.
 #
 # Migrated from ROS1 vizzy_serial_interfaces (battery-state-service.cpp and
 # battery-charging-state-service.cpp) by João Penha Lopes.

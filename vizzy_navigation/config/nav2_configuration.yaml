@@ -49,7 +49,7 @@ bt_navigator:
     robot_base_frame: base_footprint # Configurable
     odom_topic: /odom # Configurable
     bt_loop_duration: 50
-    default_server_timeout: 20
+    default_server_timeout: 10000
     wait_for_service_timeout: 1000
     plugin_lib_names:
       - nav2_lifecycle_manager_bt_node
@@ -492,7 +492,7 @@ global_costmap:
   global_costmap:
     ros__parameters:
       update_frequency: 5.0
-      publish_frequency: 1.0
+      publish_frequency: 5.0
       global_frame: map # Configurable
       robot_base_frame: base_footprint # Configurable
       use_sim_time: True # Configurable
@@ -584,6 +584,8 @@ smoother_server:
   ros__parameters:
     use_sim_time: True
     smoother_plugins: ["SmoothPath"]
+    costmap_topic: global_costmap/costmap_raw
+    footprint_topic: global_costmap/published_footprint
 
     SmoothPath:
       plugin: "nav2_constrained_smoother/ConstrainedSmoother"

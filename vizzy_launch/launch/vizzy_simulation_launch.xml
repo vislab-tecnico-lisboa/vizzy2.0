@@ -29,7 +29,7 @@
   <arg name="scan_topic_front" default="/nav_hokuyo_laser/front/scan" description="The name of the output scan topic"/> 
   <arg name="scan_topic_rear" default="/nav_hokuyo_laser/rear/scan" description="The name of the rear output scan topic"/>
   <arg name="params_file" default="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml" description="Path to the Nav2 parameters file"/> 
-  <arg name="controller_frequency" default="20.0" description="Frequency of the controller in Hz"/> 
+  <arg name="controller_frequency" default="20.0" description="Frequency of the controller in Hz"/>
   <arg name="path_align_forward_point_distance" default="0.325" description="Forward point distance for PathAlign"/>
   <arg name="goal_align_forward_point_distance" default="0.325" description="Forward point distance for GoalAlign"/>
   <arg name="inflation_radius" default="0.50" description="Inflation radius for the costmap"/>
@@ -76,6 +76,9 @@
   <arg name="staging_pose" default="-x -1.0 -y 0.0 -Y 0.0" description="Staging pose of the robot in the map frame for docking. Format: 'x y Yaw'"/>
   <arg name="always_send_full_costmap" default="false" description="Whether to always send the full costmap to the controller."/>
   <arg name="transform_tolerance" default="0.1" description="Transform tolerance for the navigation stack."/>
+
+  <arg name="use_patrol" default="false" description="Launch the autonomous patrol node."/>
+  <arg name="patrol_waypoints_file" default="$(find-pkg-share vizzy_navigation)/config/patrol_waypoints_simulation.yaml" description="Path to the patrol waypoints YAML file."/>
 
   <!-- Launch gazebo -->
   <include file="$(find-pkg-share vizzy_gazebo)/launch/gazebo_launch.xml">
@@ -150,6 +153,8 @@
       <arg name="staging_pose" value="$(var staging_pose)"/>
       <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
       <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
+      <arg name="use_patrol" value="$(var use_patrol)"/>
+      <arg name="waypoints_file" value="$(var patrol_waypoints_file)"/>
     </include>
   </group>
   <group unless="$(var use_obstacles)">
@@ -209,6 +214,8 @@
       <arg name="staging_pose" value="$(var staging_pose)"/>
       <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
       <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
+      <arg name="use_patrol" value="$(var use_patrol)"/>
+      <arg name="waypoints_file" value="$(var patrol_waypoints_file)"/>
     </include>
   </group>
 

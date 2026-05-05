@@ -89,7 +89,10 @@
   <arg name="staging_pose" default="-x -1.0 -y 0.0 -Y 0.0" description="Staging pose of the robot in the map frame for docking. Format: 'x y Yaw'"/>
   <arg name="always_send_full_costmap" default="false" description="Whether to always send the full costmap to the controller."/>
   <arg name="transform_tolerance" default="0.1" description="Transform tolerance for the navigation stack."/>
-  
+
+  <arg name="use_patrol" default="false" description="Launch the autonomous patrol node."/>
+  <arg name="patrol_waypoints_file" default="$(find-pkg-share vizzy_navigation)/config/patrol_waypoints_real.yaml" description="Path to the patrol waypoints YAML file."/>
+
   <!-- Both lasers have the same angle_min and angle_max specifications. -->
   <arg name="angle_min" default="-1.309" description="Minimum angle for the laser scanner."/>
   <arg name="angle_max" default="1.309" description="Maximum angle for the laser scanner."/>
@@ -195,6 +198,8 @@
           <arg name="staging_pose" value="$(var staging_pose)"/>
           <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
           <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
+          <arg name="use_patrol" value="$(var use_patrol)"/>
+          <arg name="waypoints_file" value="$(var patrol_waypoints_file)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -261,6 +266,8 @@
           <arg name="staging_pose" value="$(var staging_pose)"/>
           <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
           <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
+          <arg name="use_patrol" value="$(var use_patrol)"/>
+          <arg name="waypoints_file" value="$(var patrol_waypoints_file)"/>
         </include>
       </group>
     </group>
@@ -351,6 +358,8 @@
           <arg name="staging_pose" value="$(var staging_pose)"/>
           <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
           <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
+          <arg name="use_patrol" value="$(var use_patrol)"/>
+          <arg name="waypoints_file" value="$(var patrol_waypoints_file)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -417,6 +426,8 @@
           <arg name="staging_pose" value="$(var staging_pose)"/>
           <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
           <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
+          <arg name="use_patrol" value="$(var use_patrol)"/>
+          <arg name="waypoints_file" value="$(var patrol_waypoints_file)"/>
         </include>
       </group>
     </group>

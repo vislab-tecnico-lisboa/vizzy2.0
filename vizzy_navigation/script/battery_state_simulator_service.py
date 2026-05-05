@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+#
+# Copyright 2026, João Penha Lopes. All rights reserved.
 
 import rclpy
 from rclpy.node import Node
