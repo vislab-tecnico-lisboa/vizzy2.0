@@ -54,7 +54,7 @@
   <arg name="mppi_narrow_wz_std" default="0.13" description="Standard deviation for the narrow MPPI controller"/>
   <arg name="velocity_smoother_feedback_type" default="OPEN_LOOP" description="Feedback type for the velocity smoother. Options: CLOSED_LOOP, OPEN_LOOP"/>
   <arg name="dock_pose_stl_model_path" default="$(find-pkg-share vizzy_navigation)/models/docking_pattern.stl" description="Path to the STL model for the dock pose estimation"/>
-  <arg name="battery_state" default="0" description="Initial battery state. 0: Not charging, 1: Charging"/>
+  <arg name="battery_state" default="1" description="Initial battery state passed to the simulator. 0=CHARGED, 1=GOOD, 2=UNKNOWN, 3=LOW_BATTERY"/>
   <arg name="use_battery_state_simulation" default="true" description="Whether to use the battery state simulation node."/>
   <arg name="publish_dock_point_cloud" default="false" description="Whether to publish the dock point cloud for visualization."/>
   <arg name="docking_bt_selection" default="0" description="Short integer flag to indicate the BT to use for the docking procedure. If set to 0, the docking procedure with staging pose navigation is activated, if set to 1, the docking procedure without staging pose navigation is activated, if set to 2, the estimator-only docking procedure is activated."/>
