@@ -28,7 +28,7 @@ from rclpy.node import Node
 from vizzy_msgs.srv import BatteryChargingState, BatteryState, SetBatteryState
 
 # Approximate percentage reported for each battery state.
-_STATE_PERCENTAGE = {0: 100.0, 1: 80.0, 2: 50.0, 3: 10.0}
+_STATE_PERCENTAGE = {0: 100, 1: 80, 2: 50, 3: 10}
 
 class BatterySimulatorService(Node):
 
