@@ -261,9 +261,12 @@ ChargingActionServer::ChargingActionServer(const rclcpp::NodeOptions & options) 
     // Get the parameter's value and store it in the member variable.
     docking_bt_selection_ = this->get_parameter("docking_bt_selection").as_int();
 
-    // Retrieve and set "staging_pose" parameter.
-    this->declare_parameter<std::string>("staging_pose", "-x -1.0 -y 0.0 -Y 0.0");
-    std::string staging_pose_str = this->get_parameter("staging_pose").as_string();
+    // Retrieve and set staging pose based on simulation mode.
+    this->declare_parameter<std::string>("staging_pose_simulation", "-x -1.0 -y 0.0 -Y 0.0");
+    this->declare_parameter<std::string>("staging_pose_real", "-x -1.0 -y 0.0 -Y 0.0");
+    std::string staging_pose_str = is_simulation_
+        ? this->get_parameter("staging_pose_simulation").as_string()
+        : this->get_parameter("staging_pose_real").as_string();
 
     // Parse the string to extract the three double values.
     std::istringstream iss(staging_pose_str);

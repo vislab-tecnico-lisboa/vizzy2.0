@@ -86,7 +86,6 @@
   <arg name="mppi_iteration_count" default="1" description="Iteration count in the MPPI algorithm. Recommended to remain as 1 and instead prefer larger batch sizes."/>
   <arg name="mppi_constraint_critic_cost_weight" default="4.0" description="Cost weight for the MPPI constraint critic."/>
 
-  <arg name="staging_pose" default="-x -1.0 -y 0.0 -Y 0.0" description="Staging pose of the robot in the map frame for docking. Format: 'x y Yaw'"/>
   <arg name="always_send_full_costmap" default="false" description="Whether to always send the full costmap to the controller."/>
   <arg name="transform_tolerance" default="0.1" description="Transform tolerance for the navigation stack."/>
 
@@ -103,6 +102,9 @@
   <arg name="log_level_segway" default="info" description="Log level for segway_rmp_ros2."/>
 
   <arg name="inter_cycle_delay" default="0.0" description="Idle gap between query cycles (seconds) for kokam battery service."/>
+
+  <arg name="staging_pose_simulation" default="-x -1.0 -y 0.0 -Y 0.0" description="Simulated dock pose in the format 'x y Yaw' for testing the docking procedure in simulation."/>
+  <arg name="staging_pose_real" default="-x -1.0 -y 0.0 -Y 0.0" description="Real dock pose in the format 'x y Yaw' for the docking procedure with the real robot."/>
 
   <!-- Launch the laser filters -->
   <group if="$(var use_laser_filters)">
@@ -195,11 +197,12 @@
           <arg name="mppi_temperature" value="$(var mppi_temperature)"/>
           <arg name="mppi_iteration_count" value="$(var mppi_iteration_count)"/>
           <arg name="mppi_constraint_critic_cost_weight" value="$(var mppi_constraint_critic_cost_weight)"/>
-          <arg name="staging_pose" value="$(var staging_pose)"/>
           <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
           <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
           <arg name="use_patrol" value="$(var use_patrol)"/>
           <arg name="waypoints_file" value="$(var patrol_waypoints_file)"/>
+          <arg name="staging_pose_simulation" value="$(var staging_pose_simulation)"/>
+          <arg name="staging_pose_real" value="$(var staging_pose_real)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -263,11 +266,12 @@
           <arg name="mppi_temperature" value="$(var mppi_temperature)"/>
           <arg name="mppi_iteration_count" value="$(var mppi_iteration_count)"/>
           <arg name="mppi_constraint_critic_cost_weight" value="$(var mppi_constraint_critic_cost_weight)"/>
-          <arg name="staging_pose" value="$(var staging_pose)"/>
           <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
           <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
           <arg name="use_patrol" value="$(var use_patrol)"/>
           <arg name="waypoints_file" value="$(var patrol_waypoints_file)"/>
+          <arg name="staging_pose_simulation" value="$(var staging_pose_simulation)"/>
+          <arg name="staging_pose_real" value="$(var staging_pose_real)"/>
         </include>
       </group>
     </group>
@@ -355,11 +359,12 @@
           <arg name="mppi_temperature" value="$(var mppi_temperature)"/>
           <arg name="mppi_iteration_count" value="$(var mppi_iteration_count)"/>
           <arg name="mppi_constraint_critic_cost_weight" value="$(var mppi_constraint_critic_cost_weight)"/>
-          <arg name="staging_pose" value="$(var staging_pose)"/>
           <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
           <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
           <arg name="use_patrol" value="$(var use_patrol)"/>
           <arg name="waypoints_file" value="$(var patrol_waypoints_file)"/>
+          <arg name="staging_pose_simulation" value="$(var staging_pose_simulation)"/>
+          <arg name="staging_pose_real" value="$(var staging_pose_real)"/>
         </include>
       </group>
       <group unless="$(var use_obstacles)">
@@ -423,11 +428,12 @@
           <arg name="mppi_temperature" value="$(var mppi_temperature)"/>
           <arg name="mppi_iteration_count" value="$(var mppi_iteration_count)"/>
           <arg name="mppi_constraint_critic_cost_weight" value="$(var mppi_constraint_critic_cost_weight)"/>
-          <arg name="staging_pose" value="$(var staging_pose)"/>
           <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
           <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
           <arg name="use_patrol" value="$(var use_patrol)"/>
           <arg name="waypoints_file" value="$(var patrol_waypoints_file)"/>
+          <arg name="staging_pose_simulation" value="$(var staging_pose_simulation)"/>
+          <arg name="staging_pose_real" value="$(var staging_pose_real)"/>
         </include>
       </group>
     </group>

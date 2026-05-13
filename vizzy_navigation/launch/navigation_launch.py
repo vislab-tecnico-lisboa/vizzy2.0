@@ -651,11 +651,6 @@ def generate_launch_description():
         description='Full path to the patrol waypoints YAML file.'
     )
 
-    staging_pose_arg = DeclareLaunchArgument(
-        'staging_pose',
-        default_value='-x 0.0 -y 0.0 -Y 0.0',
-        description='Staging pose of the robot in the map frame for docking.'
-    )
     always_send_full_costmap_arg = DeclareLaunchArgument(
         'always_send_full_costmap',
         default_value='false',
@@ -665,6 +660,16 @@ def generate_launch_description():
         'transform_tolerance',
         default_value='0.1',
         description='Transform tolerance for the navigation stack.'
+    )
+    staging_pose_simulation_arg = DeclareLaunchArgument(
+        'staging_pose_simulation',
+        default_value='-x -1.0 -y 0.0 -Y 0.0',
+        description='Simulated dock pose in the format \'x y Yaw\' for testing the docking procedure in simulation.'
+    )
+    staging_pose_real_arg = DeclareLaunchArgument(
+        'staging_pose_real',
+        default_value='-x -1.0 -y 0.0 -Y 0.0',
+        description='Real dock pose in the format \'x y Yaw\' for the docking procedure with the real robot.'
     )
 
     # --- Launch Configurations ---
@@ -678,9 +683,10 @@ def generate_launch_description():
     laser_rear_topic = LaunchConfiguration('scan_topic_rear')
     publish_dock_point_cloud = LaunchConfiguration('publish_dock_point_cloud')
     docking_bt_selection = LaunchConfiguration('docking_bt_selection') 
-    staging_pose_str = LaunchConfiguration('staging_pose')
     force_centroid_guess = LaunchConfiguration('force_centroid_guess')
     use_statistical_outlier_removal_and_downsampling = LaunchConfiguration('use_statistical_outlier_removal_and_downsampling')
+    staging_pose_simulation = LaunchConfiguration('staging_pose_simulation')
+    staging_pose_real = LaunchConfiguration('staging_pose_real')
 
     package_name = 'vizzy_navigation' 
 
@@ -894,7 +900,8 @@ def generate_launch_description():
                 output='screen',
                 parameters=[{'is_simulation': use_battery_state_simulation},
                             {'docking_bt_selection': docking_bt_selection},
-                            {'staging_pose': staging_pose_str},
+                            {'staging_pose_simulation': staging_pose_simulation},
+                            {'staging_pose_real': staging_pose_real},
                             ],),
                 # Uncomment the next line to debug the node with GDB.
                 # prefix=['xterm -e gdb -ex run --args']),
@@ -987,7 +994,8 @@ def generate_launch_description():
         mppi_cost_critic_cost_weight_arg,
         mppi_path_align_critic_cost_weight_arg,
         mppi_wz_std_arg,
-        staging_pose_arg,
+        staging_pose_simulation_arg,
+        staging_pose_real_arg,
         always_send_full_costmap_arg,
         transform_tolerance_arg,
         use_patrol_arg,
