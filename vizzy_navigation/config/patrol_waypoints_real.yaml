@@ -1,9 +1,17 @@
 # Patrol waypoints for the autonomous patrol mission on the real 7th-floor map.
 # All poses are in the "map" frame.
 # Orientation is a quaternion (x, y, z, w).
-# TODO: Replace placeholder entries with validated real-robot waypoints.
 
 waypoints:
   - frame_id: map
-    position:    {x: 0.0, y: 0.0, z: 0.0}
-    orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}
+    position:    {x:  0.43108701705932617, y:  -2.950040817260742,  z: 0.0}
+    orientation: {x: 0.0, y: 0.0, z: -0.7418734552970585, w:  0.6705399140436036}
+  - frame_id: map
+    position:    {x: -1.1347460746765137,  y: -16.821735382080078,  z: 0.0}
+    orientation: {x: 0.0, y: 0.0, z: -0.07411726248797472, w: 0.9972495331667439}
+  - frame_id: map
+    position:    {x: 12.919004440307617,   y: -18.510698318481445,  z: 0.0}
+    orientation: {x: 0.0, y: 0.0, z:  0.6505778360206717, w:  0.7594395823754909}
+  - frame_id: map
+    position:    {x: 14.512432098388672,   y:  -4.809907913208008,  z: 0.0}
+    orientation: {x: 0.0, y: 0.0, z:  0.9950555298238773, w:  0.09932015186719509}
