@@ -491,7 +491,7 @@ def generate_launch_description():
     )
     expected_planner_frequency_arg = DeclareLaunchArgument(
         'expected_planner_frequency',
-        default_value='0.1',
+        default_value='1.0',
         description='Expected frequency of the planner in Hz.'
     )
     planner_plugin_arg = DeclareLaunchArgument(
@@ -589,12 +589,12 @@ def generate_launch_description():
 
     mppi_cost_critic_cost_weight_arg = DeclareLaunchArgument(
         'mppi_cost_critic_cost_weight',
-        default_value='3.82',
+        default_value='1.5',
         description='Cost weight for the general MPPI cost critic.'
     )
     mppi_path_align_critic_cost_weight_arg = DeclareLaunchArgument(
         'mppi_path_align_critic_cost_weight',
-        default_value='14.0',
+        default_value='20.0',
         description='Cost weight for the general MPPI path align critic.'
     )
     mppi_time_steps_arg = DeclareLaunchArgument(
