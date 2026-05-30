@@ -70,6 +70,14 @@ class PatrolNode(Node):
         self._active_goal_handle = None
         self._goal_lock          = threading.Lock()
 
+        # Manual docking control. _dock_requested asks the patrol loop to dock
+        # and hold (regardless of battery); _resume_requested releases the hold.
+        # See the dock_now / resume_patrol services below.
+        self._dock_requested   = threading.Event()
+        self._resume_requested = threading.Event()
+        self.create_service(Trigger, 'dock_now',      self._on_dock_now)
+        self.create_service(Trigger, 'resume_patrol', self._on_resume_patrol)
+
         self._patrol_thread = threading.Thread(target=self._patrol_loop, daemon=True)
         self._patrol_thread.start()
 
@@ -313,6 +321,65 @@ class PatrolNode(Node):
         self.get_logger().info('--- Charge cycle end ---')
 
     # ------------------------------------------------------------------
+    # Manual docking control
+    # ------------------------------------------------------------------
+
+    def _on_dock_now(self, request, response):
+        """Trigger service: dock now and hold, regardless of battery state.
+
+        Sets a flag the patrol loop acts on, and cancels any active waypoint
+        goal immediately so the robot stops patrolling without waiting for the
+        next battery-poll tick. The robot then docks and holds at the dock
+        until resume_patrol is called.
+        """
+        self.get_logger().info('Manual dock requested via dock_now service.')
+        self._dock_requested.set()
+        self._cancel_active_goal()
+        response.success = True
+        response.message = ('Dock request accepted. Robot will dock and hold '
+                            'until /resume_patrol is called.')
+        return response
+
+    def _on_resume_patrol(self, request, response):
+        """Trigger service: release a held dock and resume patrol (undocks)."""
+        self.get_logger().info('Resume requested via resume_patrol service.')
+        self._resume_requested.set()
+        response.success = True
+        response.message = ('Resume request accepted. Robot will undock (if '
+                            'holding at the dock) and resume patrol.')
+        return response
+
+    def _manual_dock_cycle(self) -> None:
+        """Dock on manual request and hold until resume_patrol is called.
+
+        Unlike _charge_cycle (battery-driven), this does not wait for battery
+        recovery and does not auto-undock; it parks at the dock until released.
+        """
+        self._dock_requested.clear()
+        self.get_logger().info('--- Manual dock cycle start (dock and hold) ---')
+
+        if not self._dock():
+            self.get_logger().error('Manual docking failed. Resuming patrol.')
+            return
+
+        # Discard any resume request that arrived before we finished docking.
+        self._resume_requested.clear()
+        self.get_logger().info('Docked. Holding until /resume_patrol is called.')
+
+        while rclpy.ok() and not self._resume_requested.is_set():
+            time.sleep(0.5)
+        if not rclpy.ok():
+            return
+        self._resume_requested.clear()
+
+        self.get_logger().info('Resuming: undocking...')
+        if not self._undock():
+            self.get_logger().error(
+                'Undocking failed. Manual intervention may be required.')
+
+        self.get_logger().info('--- Manual dock cycle end ---')
+
+    # ------------------------------------------------------------------
     # Main patrol loop
     # ------------------------------------------------------------------
 
@@ -323,7 +390,11 @@ class PatrolNode(Node):
         self._wait_for_nav2_active()
 
         while rclpy.ok():
-            # Pre-flight battery check before starting a new patrol run.
+            # Pre-flight checks before starting a new patrol run. A manual dock
+            # request takes priority over the battery check.
+            if self._dock_requested.is_set():
+                self._manual_dock_cycle()
+                continue
             if not self._battery_is_ok():
                 self._charge_cycle()
                 continue
@@ -339,10 +410,15 @@ class PatrolNode(Node):
 
             threading.Thread(target=_run, daemon=True).start()
 
-            # Poll battery concurrently while FollowWaypoints is executing.
+            # Poll battery and the manual-dock flag concurrently while
+            # FollowWaypoints is executing.
             battery_low = False
             while not patrol_done.wait(timeout=self._battery_check_period):
                 if not rclpy.ok():
+                    break
+                if self._dock_requested.is_set():
+                    # dock_now already cancelled the goal; just stop polling.
+                    self._cancel_active_goal()
                     break
                 if not self._battery_is_ok():
                     battery_low = True
@@ -351,7 +427,15 @@ class PatrolNode(Node):
 
             patrol_done.wait()  # ensure the action thread exits cleanly.
 
-            if battery_low:
+            # A manual dock request wins over the battery branch. It is the
+            # source of truth (set by the dock_now service), so check the flag
+            # directly rather than relying on the poll loop having caught it
+            # before FollowWaypoints finished cancelling.
+            if self._dock_requested.is_set():
+                self.get_logger().info(
+                    'Patrol interrupted: manual dock request. Docking and holding.')
+                self._manual_dock_cycle()
+            elif battery_low:
                 self.get_logger().info(
                     'Patrol interrupted: low battery. Starting charge cycle.')
                 self._charge_cycle()
