@@ -358,13 +358,22 @@ class PatrolNode(Node):
         self._dock_requested.clear()
         self.get_logger().info('--- Manual dock cycle start (dock and hold) ---')
 
-        if not self._dock():
-            self.get_logger().error('Manual docking failed. Resuming patrol.')
-            return
+        # Run the docking maneuver, then hold regardless of whether charging is
+        # confirmed. A manual dock may be triggered with a near-full battery (no
+        # measurable charge slope) or just to test the maneuver, so we do not
+        # resume patrol on a "not charging" result the way the battery-driven
+        # cycle does. The robot stays parked until /resume_patrol is called.
+        if self._dock():
+            self.get_logger().info('Docked and charging confirmed.')
+        else:
+            self.get_logger().warn(
+                'Dock did not confirm charging (near-full battery or no contact). '
+                'Holding at the dock anyway. If the robot is NOT physically docked, '
+                'call /resume_patrol to release it.')
 
         # Discard any resume request that arrived before we finished docking.
         self._resume_requested.clear()
-        self.get_logger().info('Docked. Holding until /resume_patrol is called.')
+        self.get_logger().info('Holding at dock until /resume_patrol is called.')
 
         while rclpy.ok() and not self._resume_requested.is_set():
             time.sleep(0.5)

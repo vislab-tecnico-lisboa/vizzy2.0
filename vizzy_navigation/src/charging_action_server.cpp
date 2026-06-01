@@ -7,6 +7,10 @@
 
 #include "charging_action_server.h"
 
+#include <chrono>
+#include <future>
+#include <thread>
+
 void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::ServerGoalHandle<vizzy_msgs::action::Charge>> goal_handle)
 {
     auto goal = goal_handle->get_goal();
@@ -101,25 +105,62 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
                         return;
                     }
 
-                    // The BT succeeded, now we do the final verification.
+                    // The BT succeeded; the dock maneuver is complete.
                     RCLCPP_INFO(this->get_logger(), "Docking Mission completed. Verifying charging status...");
-                    auto final_request = std::make_shared<vizzy_msgs::srv::BatteryChargingState::Request>();
-                    charging_state_client_->async_send_request(final_request,
-                        [this, goal_handle, result](rclcpp::Client<vizzy_msgs::srv::BatteryChargingState>::SharedFuture final_response)
+
+                    if (is_simulation_)
+                    {
+                        RCLCPP_INFO(this->get_logger(), "Simulation mode: assuming charging after successful docking.");
+                        result->result = result->CHARGE_SUCCESS;
+                        goal_handle->succeed(result);
+                        return;
+                    }
+
+                    // On real hardware the Kokam service derives "charging" from a voltage
+                    // slope over a rolling ~24 s window (40 samples @ ~600 ms). Right after
+                    // docking that window is still full of pre-dock discharge samples, so an
+                    // immediate check always reads NOT_CHARGING. We poll with a settle time long
+                    // enough for the window to refill with post-connection samples before
+                    // concluding. Done in a detached thread so the executor stays free to
+                    // service the battery_charging_state responses we wait on.
+                    std::thread([this, goal_handle, result]()
+                    {
+                        // Timeout must exceed the Kokam slope window (~24 s) so the window can
+                        // fill with rising-voltage samples once the charger is connected.
+                        const int timeout_s = 35;
+                        const auto poll_period = std::chrono::seconds(3);
+                        const auto deadline = std::chrono::steady_clock::now() +
+                                              std::chrono::seconds(timeout_s);
+
+                        while (rclcpp::ok() && std::chrono::steady_clock::now() < deadline)
                         {
-                            if (final_response.get()->battery_charging_state || is_simulation_)
+                            std::this_thread::sleep_for(poll_period);
+
+                            auto req = std::make_shared<vizzy_msgs::srv::BatteryChargingState::Request>();
+                            auto future = charging_state_client_->async_send_request(req).share();
+                            if (future.wait_for(std::chrono::seconds(5)) != std::future_status::ready)
+                            {
+                                RCLCPP_WARN(this->get_logger(), "battery_charging_state call timed out; retrying...");
+                                continue;
+                            }
+
+                            if (future.get()->battery_charging_state)
                             {
                                 RCLCPP_INFO(this->get_logger(), "SUCCESS! Robot is now charging!");
                                 result->result = result->CHARGE_SUCCESS;
                                 goal_handle->succeed(result);
+                                return;
                             }
-                            else 
-                            {
-                                RCLCPP_ERROR(this->get_logger(), "FAILURE! Docking Mission succeeded, but robot is not charging.");
-                                result->result = result->CHARGE_FAILED;
-                                goal_handle->abort(result);
-                            }
-                        });
+
+                            RCLCPP_INFO(this->get_logger(),
+                                "Not charging yet; waiting for the battery slope window to fill...");
+                        }
+
+                        RCLCPP_ERROR(this->get_logger(),
+                            "FAILURE! Docking succeeded, but charging was not detected within %d s.", timeout_s);
+                        result->result = result->CHARGE_FAILED;
+                        goal_handle->abort(result);
+                    }).detach();
                 };
 
                 RCLCPP_INFO(this->get_logger(), "Sending docking mission goal to Nav2...");
