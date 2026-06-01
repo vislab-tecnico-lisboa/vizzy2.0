@@ -33,8 +33,8 @@
   <arg name="obstacles_map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)" description="Path to the obstacles map YAML file"/>
   <arg name="laser_filter_params_file" default="$(find-pkg-share vizzy_sensors)/config/hokuyo_filters.yaml" description="Path to the laser filters parameters file"/>
   <arg name="map_frame_id" default="map" description="Frame id for the map"/>
-  <arg name="update_min_d" default="0.01" description="Minimum distance for localization updates"/>
-  <arg name="update_min_a" default="0.01" description="Minimum angle for localization updates"/>
+  <arg name="update_min_d" default="0.2" description="Minimum distance for localization updates"/>
+  <arg name="update_min_a" default="0.2" description="Minimum angle for localization updates"/>
   <arg name="laser_max_range" default="-1.0" description="Maximum range for the laser scanner"/>
   <arg name="beam_skip_distance" default="0.5" description="Distance threshold for beam skipping"/>
   <arg name="beam_skip_error_threshold" default="0.9" description="Error threshold for beam skipping"/>
@@ -53,7 +53,7 @@
   <arg name="cost_scaling_factor" default="3.0" description="Cost scaling factor for the inflation layer in the costmap"/>
   <arg name="base_obstacle_scale" default="0.02" description="Base obstacle scale for the costmap. This is used by the local and global costmaps to scale the cost of obstacles."/>
   <arg name="controller_plugin_type" default="MPPI" description="Type of controller plugin to use. Options: DWB, RPP, MPPI"/>
-  <arg name="expected_planner_frequency" default="1.0" description="Expected frequency of the planner in Hz"/>
+  <arg name="expected_planner_frequency" default="0.2" description="Expected frequency of the planner in Hz"/>
   <arg name="planner_plugin_type" default="ThetaStar" description="Planner plugin to use for the navigation stack"/>
   <arg name="robot_radius" default="0.4" description="Robot radius for the navigation stack. This is used by the local and global costmaps to scale the cost of obstacles."/>
   <arg name="mppi_wide_cost_critic_cost_weight" default="3.82" description="Cost weight for the wide MPPI cost critic"/>
@@ -76,7 +76,7 @@
 
   <!-- General MPPI Controller Parameters -->
   <arg name="mppi_cost_critic_cost_weight" default="1.5" description="Cost weight for the general MPPI cost critic"/>
-  <arg name="mppi_path_align_critic_cost_weight" default="20.0" description="Cost weight for the general MPPI path align critic"/>
+  <arg name="mppi_path_align_critic_cost_weight" default="10.0" description="Cost weight for the general MPPI path align critic"/>
   <arg name="mppi_time_steps" default="64" description="Number of time steps (points) in candidate trajectories."/>
   <arg name="mppi_batch_size" default="2000" description="Count of randomly sampled candidate trajectories from current optimal control sequence in a given iteration."/>
   <arg name="mppi_vx_std" default="0.3" description="Standard deviation for linear velocity in the MPPI controller."/>

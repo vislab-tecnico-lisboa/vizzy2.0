@@ -182,7 +182,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'amcl.ros__parameters.beam_skip_error_threshold': float(LaunchConfiguration('beam_skip_error_threshold').perform(context)),
         'amcl.ros__parameters.beam_skip_threshold': float(LaunchConfiguration('beam_skip_threshold').perform(context)),
         'amcl.ros__parameters.do_beamskip': LaunchConfiguration('do_beamskip').perform(context),
-        'amcl.ros__parameters.transform_tolerance': float(LaunchConfiguration('transform_tolerance').perform(context)),
+        # 'amcl.ros__parameters.transform_tolerance': float(LaunchConfiguration('transform_tolerance').perform(context)),
 
         # BT Navigator substitutions.
         'bt_navigator.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
