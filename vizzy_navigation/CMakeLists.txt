@@ -24,7 +24,6 @@ find_package(tf2_ros REQUIRED)
 find_package(ndt_omp REQUIRED)
 find_package(tf2_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(teaserpp REQUIRED)
 find_package(tf2_eigen REQUIRED)
 find_package(pluginlib REQUIRED) 
 find_package(nav2_amcl REQUIRED)
@@ -98,7 +97,6 @@ ament_target_dependencies(docking_lib PUBLIC
   laser_geometry
   sensor_msgs
   geometry_msgs
-  teaserpp
   OpenMP
   ndt_omp
 )
@@ -109,9 +107,7 @@ target_link_libraries(docking_lib PUBLIC
   ${PCL_LIBRARIES}
   ${VTK_LIBRARIES}
 
-  Eigen3::Eigen 
-  teaserpp::teaser_registration 
-  teaserpp::teaser_io
+  Eigen3::Eigen
 )
 
 # Create the executable from ONLY the main() file.
@@ -208,6 +204,8 @@ install(
 
 install(PROGRAMS
   script/battery_state_simulator_service.py
+  script/battery_kokam_service.py
+  script/patrol_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

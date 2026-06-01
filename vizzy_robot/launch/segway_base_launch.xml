@@ -20,7 +20,7 @@
 
           <!-- Parameters -->
           <param name="interface_type" value="serial" />
-          <param name="serial_port" value="/dev/ttyUSB0" />
+          <param name="serial_port" value="/dev/segway_rmp" />
           <param name="frame_id" value="$(var base_frame_id)" />
           <param name="invert_linear_vel_cmds" value="false" />
           <param name="invert_angular_vel_cmds" value="false" />

@@ -31,6 +31,7 @@ import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, LogInfo, OpaqueFunction
+from launch.conditions import IfCondition
 from launch.launch_context import LaunchContext
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node, PushRosNamespace, LifecycleNode
@@ -181,7 +182,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'amcl.ros__parameters.beam_skip_error_threshold': float(LaunchConfiguration('beam_skip_error_threshold').perform(context)),
         'amcl.ros__parameters.beam_skip_threshold': float(LaunchConfiguration('beam_skip_threshold').perform(context)),
         'amcl.ros__parameters.do_beamskip': LaunchConfiguration('do_beamskip').perform(context),
-        'amcl.ros__parameters.transform_tolerance': float(LaunchConfiguration('transform_tolerance').perform(context)),
+        # 'amcl.ros__parameters.transform_tolerance': float(LaunchConfiguration('transform_tolerance').perform(context)),
 
         # BT Navigator substitutions.
         'bt_navigator.ros__parameters.global_frame': LaunchConfiguration('map_frame_id').perform(context),
@@ -490,7 +491,7 @@ def generate_launch_description():
     )
     expected_planner_frequency_arg = DeclareLaunchArgument(
         'expected_planner_frequency',
-        default_value='0.1',
+        default_value='1.0',
         description='Expected frequency of the planner in Hz.'
     )
     planner_plugin_arg = DeclareLaunchArgument(
@@ -588,12 +589,12 @@ def generate_launch_description():
 
     mppi_cost_critic_cost_weight_arg = DeclareLaunchArgument(
         'mppi_cost_critic_cost_weight',
-        default_value='3.82',
+        default_value='1.5',
         description='Cost weight for the general MPPI cost critic.'
     )
     mppi_path_align_critic_cost_weight_arg = DeclareLaunchArgument(
         'mppi_path_align_critic_cost_weight',
-        default_value='14.0',
+        default_value='20.0',
         description='Cost weight for the general MPPI path align critic.'
     )
     mppi_time_steps_arg = DeclareLaunchArgument(
@@ -639,11 +640,17 @@ def generate_launch_description():
 
     # -------------------------------------------
     
-    staging_pose_arg = DeclareLaunchArgument(
-        'staging_pose',
-        default_value='-x 0.0 -y 0.0 -Y 0.0',
-        description='Staging pose of the robot in the map frame for docking.'
+    use_patrol_arg = DeclareLaunchArgument(
+        'use_patrol',
+        default_value='false',
+        description='Launch the autonomous patrol node alongside the navigation stack.'
     )
+    waypoints_file_arg = DeclareLaunchArgument(
+        'waypoints_file',
+        default_value=os.path.join(pkg_dir, 'config', 'patrol_waypoints_simulation.yaml'),
+        description='Full path to the patrol waypoints YAML file.'
+    )
+
     always_send_full_costmap_arg = DeclareLaunchArgument(
         'always_send_full_costmap',
         default_value='false',
@@ -653,6 +660,16 @@ def generate_launch_description():
         'transform_tolerance',
         default_value='0.1',
         description='Transform tolerance for the navigation stack.'
+    )
+    staging_pose_simulation_arg = DeclareLaunchArgument(
+        'staging_pose_simulation',
+        default_value='-x -1.0 -y 0.0 -Y 0.0',
+        description='Simulated dock pose in the format \'x y Yaw\' for testing the docking procedure in simulation.'
+    )
+    staging_pose_real_arg = DeclareLaunchArgument(
+        'staging_pose_real',
+        default_value='-x -1.0 -y 0.0 -Y 0.0',
+        description='Real dock pose in the format \'x y Yaw\' for the docking procedure with the real robot.'
     )
 
     # --- Launch Configurations ---
@@ -666,9 +683,10 @@ def generate_launch_description():
     laser_rear_topic = LaunchConfiguration('scan_topic_rear')
     publish_dock_point_cloud = LaunchConfiguration('publish_dock_point_cloud')
     docking_bt_selection = LaunchConfiguration('docking_bt_selection') 
-    staging_pose_str = LaunchConfiguration('staging_pose')
     force_centroid_guess = LaunchConfiguration('force_centroid_guess')
     use_statistical_outlier_removal_and_downsampling = LaunchConfiguration('use_statistical_outlier_removal_and_downsampling')
+    staging_pose_simulation = LaunchConfiguration('staging_pose_simulation')
+    staging_pose_real = LaunchConfiguration('staging_pose_real')
 
     package_name = 'vizzy_navigation' 
 
@@ -880,12 +898,27 @@ def generate_launch_description():
                 executable='charging_action_server_node',
                 name='charging_action_server_node',
                 output='screen',
-                parameters=[{'is_simulation': use_battery_state_simulation}, 
+                parameters=[{'is_simulation': use_battery_state_simulation},
                             {'docking_bt_selection': docking_bt_selection},
-                            {'staging_pose': staging_pose_str},
+                            {'staging_pose_simulation': staging_pose_simulation},
+                            {'staging_pose_real': staging_pose_real},
                             ],),
                 # Uncomment the next line to debug the node with GDB.
                 # prefix=['xterm -e gdb -ex run --args']),
+
+            # Only launch the patrol node if the use_patrol launch argument is set to true. 
+            # This allows us to keep the patrol node separate from the main navigation stack.
+            Node(
+                condition=IfCondition(LaunchConfiguration('use_patrol')),
+                package='vizzy_navigation',
+                executable='patrol_node.py',
+                name='patrol_node',
+                output='screen',
+                parameters=[{
+                    'waypoints_file': LaunchConfiguration('waypoints_file'),
+                    'is_simulation': use_battery_state_simulation,
+                    'battery_check_period_s': 5.0,
+                }],),
 
             # A separate Lifecycle manager for the dock_pose_estimator_node
             # to be able to launch the node without starting it.
@@ -961,9 +994,12 @@ def generate_launch_description():
         mppi_cost_critic_cost_weight_arg,
         mppi_path_align_critic_cost_weight_arg,
         mppi_wz_std_arg,
-        staging_pose_arg,
+        staging_pose_simulation_arg,
+        staging_pose_real_arg,
         always_send_full_costmap_arg,
         transform_tolerance_arg,
+        use_patrol_arg,
+        waypoints_file_arg,
         mppi_batch_size_arg,
         mppi_time_steps_arg,
         mppi_vx_std_arg,

@@ -29,7 +29,7 @@
   <arg name="scan_topic_front" default="/nav_hokuyo_laser/front/scan" description="The name of the output scan topic"/> 
   <arg name="scan_topic_rear" default="/nav_hokuyo_laser/rear/scan" description="The name of the rear output scan topic"/>
   <arg name="params_file" default="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml" description="Path to the Nav2 parameters file"/> 
-  <arg name="controller_frequency" default="20.0" description="Frequency of the controller in Hz"/> 
+  <arg name="controller_frequency" default="20.0" description="Frequency of the controller in Hz"/>
   <arg name="path_align_forward_point_distance" default="0.325" description="Forward point distance for PathAlign"/>
   <arg name="goal_align_forward_point_distance" default="0.325" description="Forward point distance for GoalAlign"/>
   <arg name="inflation_radius" default="0.50" description="Inflation radius for the costmap"/>
@@ -54,12 +54,14 @@
   <arg name="mppi_narrow_wz_std" default="0.13" description="Standard deviation for the narrow MPPI controller"/>
   <arg name="velocity_smoother_feedback_type" default="OPEN_LOOP" description="Feedback type for the velocity smoother. Options: CLOSED_LOOP, OPEN_LOOP"/>
   <arg name="dock_pose_stl_model_path" default="$(find-pkg-share vizzy_navigation)/models/docking_pattern.stl" description="Path to the STL model for the dock pose estimation"/>
-  <arg name="battery_state" default="0" description="Initial battery state. 0: Not charging, 1: Charging"/>
+  <arg name="battery_state" default="1" description="Initial battery state passed to the simulator. 0=CHARGED, 1=GOOD, 2=UNKNOWN, 3=LOW_BATTERY"/>
   <arg name="use_battery_state_simulation" default="true" description="Whether to use the battery state simulation node."/>
   <arg name="publish_dock_point_cloud" default="false" description="Whether to publish the dock point cloud for visualization."/>
   <arg name="docking_bt_selection" default="0" description="Short integer flag to indicate the BT to use for the docking procedure. If set to 0, the docking procedure with staging pose navigation is activated, if set to 1, the docking procedure without staging pose navigation is activated, if set to 2, the estimator-only docking procedure is activated."/>
   <arg name="force_centroid_guess" default="false" description="Whether to force the centroid guess in the docking procedure."/>
   <arg name="use_statistical_outlier_removal_and_downsampling" default="true" description="Whether to use statistical outlier removal and downsampling in the dock pose estimator."/>
+  <arg name="staging_pose_simulation" default="-x -1.0 -y 0.0 -Y 0.0" description="Simulated dock pose in the format 'x y Yaw' for testing the docking procedure in simulation."/>
+  <arg name="staging_pose_real" default="-x -1.0 -y 0.0 -Y 0.0" description="Real dock pose in the format 'x y Yaw' for the docking procedure with the real robot."/>
 
   <!-- General MPPI Controller Parameters -->
   <arg name="mppi_cost_critic_cost_weight" default="10.0" description="Cost weight for the general MPPI cost critic"/>
@@ -73,9 +75,11 @@
   <arg name="mppi_iteration_count" default="1" description="Iteration count in the MPPI algorithm. Recommended to remain as 1 and instead prefer larger batch sizes."/>
   <arg name="mppi_constraint_critic_cost_weight" default="4.0" description="Cost weight for the MPPI constraint critic."/>
   
-  <arg name="staging_pose" default="-x -1.0 -y 0.0 -Y 0.0" description="Staging pose of the robot in the map frame for docking. Format: 'x y Yaw'"/>
   <arg name="always_send_full_costmap" default="false" description="Whether to always send the full costmap to the controller."/>
   <arg name="transform_tolerance" default="0.1" description="Transform tolerance for the navigation stack."/>
+
+  <arg name="use_patrol" default="false" description="Launch the autonomous patrol node."/>
+  <arg name="patrol_waypoints_file" default="$(find-pkg-share vizzy_navigation)/config/patrol_waypoints_simulation.yaml" description="Path to the patrol waypoints YAML file."/>
 
   <!-- Launch gazebo -->
   <include file="$(find-pkg-share vizzy_gazebo)/launch/gazebo_launch.xml">
@@ -147,9 +151,12 @@
       <arg name="mppi_temperature" value="$(var mppi_temperature)"/>
       <arg name="mppi_iteration_count" value="$(var mppi_iteration_count)"/>
       <arg name="mppi_constraint_critic_cost_weight" value="$(var mppi_constraint_critic_cost_weight)"/>
-      <arg name="staging_pose" value="$(var staging_pose)"/>
       <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
       <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
+      <arg name="use_patrol" value="$(var use_patrol)"/>
+      <arg name="waypoints_file" value="$(var patrol_waypoints_file)"/>
+      <arg name="staging_pose_simulation" value="$(var staging_pose_simulation)"/>
+      <arg name="staging_pose_real" value="$(var staging_pose_real)"/>
     </include>
   </group>
   <group unless="$(var use_obstacles)">
@@ -206,9 +213,12 @@
       <arg name="mppi_temperature" value="$(var mppi_temperature)"/>
       <arg name="mppi_iteration_count" value="$(var mppi_iteration_count)"/>
       <arg name="mppi_constraint_critic_cost_weight" value="$(var mppi_constraint_critic_cost_weight)"/>
-      <arg name="staging_pose" value="$(var staging_pose)"/>
       <arg name="always_send_full_costmap" value="$(var always_send_full_costmap)"/>
       <arg name="transform_tolerance" value="$(var transform_tolerance)"/>
+      <arg name="use_patrol" value="$(var use_patrol)"/>
+      <arg name="waypoints_file" value="$(var patrol_waypoints_file)"/>
+      <arg name="staging_pose_simulation" value="$(var staging_pose_simulation)"/>
+      <arg name="staging_pose_real" value="$(var staging_pose_real)"/>
     </include>
   </group>
 

@@ -1,0 +1,22 @@
+# Patrol waypoints for the autonomous patrol mission in the simulation environment.
+# All poses are in the "map" frame.
+# Orientation is a quaternion (x, y, z, w). For a robot facing along +X: w=1.0, rest 0.
+# The robot visits waypoints in order and restarts from waypoint 0 after each loop
+# or after returning from a charging dock.
+
+waypoints:
+  - frame_id: map
+    position:    {x: -2.477031707763672,     y: 3.4208154678344727,  z: 0.0}
+    orientation: {x: 0.0, y: 0.0, z: 0.6564072984776258,   w: 0.754406693041164}
+
+  - frame_id: map
+    position:    {x: -2.6785964965820312,    y: 17.260581970214844,  z: 0.0}
+    orientation: {x: 0.0, y: 0.0, z: -0.9999479250975207,  w: 0.010205248314617553}
+
+  - frame_id: map
+    position:    {x: -16.07689094543457,     y: 16.554548263549805,  z: 0.0}
+    orientation: {x: 0.0, y: 0.0, z: -0.7016183530013241,  w: 0.7125529360908629}
+
+  - frame_id: map
+    position:    {x: -15.626153945922852,    y: 3.431760787963867,   z: 0.0}
+    orientation: {x: 0.0, y: 0.0, z: -0.0009856676380607817, w: 0.9999995142295357}

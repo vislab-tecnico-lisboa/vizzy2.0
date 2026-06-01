@@ -20,9 +20,9 @@ amcl:
     recovery_alpha_slow: 0.005
     resample_interval: 1
     sigma_hit: 0.2
-    transform_tolerance: 0.7 # Configurable
-    update_min_a: 0.05 # Configurable
-    update_min_d: 0.05 # Configurable
+    transform_tolerance: 0.3
+    update_min_a: 0.01 # Configurable
+    update_min_d: 0.01 # Configurable
     z_hit: 0.95
     z_max: 0.05
     z_rand: 0.05
@@ -49,7 +49,7 @@ bt_navigator:
     robot_base_frame: base_footprint # Configurable
     odom_topic: /odom # Configurable
     bt_loop_duration: 50
-    default_server_timeout: 20
+    default_server_timeout: 10000
     wait_for_service_timeout: 1000
     plugin_lib_names:
       - nav2_lifecycle_manager_bt_node
@@ -93,7 +93,7 @@ controller_server:
     general_goal_checker:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.25
+      xy_goal_tolerance: 0.35
       yaw_goal_tolerance: 0.1
 
     # DWB Parameters.
@@ -122,7 +122,7 @@ controller_server:
       linear_granularity: 0.05
       angular_granularity: 0.025
       transform_tolerance: 0.5 # Configurable
-      xy_goal_tolerance: 0.25
+      xy_goal_tolerance: 0.35
       trans_stopped_velocity: 0.25
       short_circuit_trajectory_evaluation: True
       stateful: True
@@ -492,7 +492,7 @@ global_costmap:
   global_costmap:
     ros__parameters:
       update_frequency: 5.0
-      publish_frequency: 1.0
+      publish_frequency: 5.0
       global_frame: map # Configurable
       robot_base_frame: base_footprint # Configurable
       use_sim_time: True # Configurable
@@ -500,7 +500,7 @@ global_costmap:
       lethal_cost_threshold: 100
       resolution: 0.05
       track_unknown_space: true
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      plugins: ["static_layer", "inflation_layer"]
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
@@ -584,11 +584,13 @@ smoother_server:
   ros__parameters:
     use_sim_time: True
     smoother_plugins: ["SmoothPath"]
+    costmap_topic: global_costmap/costmap_raw
+    footprint_topic: global_costmap/published_footprint
 
     SmoothPath:
       plugin: "nav2_constrained_smoother/ConstrainedSmoother"
-      reversing_enabled: true       
-      path_downsampling_factor: 3   
+      reversing_enabled: false       
+      path_downsampling_factor: 1   
       path_upsampling_factor: 1     
       keep_start_orientation: true 
       keep_goal_orientation: true   

@@ -34,7 +34,6 @@
 #include <pcl/search/kdtree.h>
 #include <pcl/common/common.h>
 #include <pcl/PCLPointCloud2.h>
-#include "teaser/registration.h"
 #include <pcl/registration/icp.h>
 #include <pcl/registration/ndt.h>   
 #include <tf2_eigen/tf2_eigen.hpp>

@@ -251,6 +251,7 @@ The Vizzy stack launch can be configured using a wide range of launch arguments,
 | `log_level_segway` | `info` | Log level for `segway_rmp_ros2`. |
 | `autostart` | `true` | Whether to autostart the navigation stack. |
 | `use_respawn` | `false` | Whether to respawn the navigation nodes if they crash. |
+| `inter_cycle_delay` | `0.0` | Idle gap between query cycles (seconds) for kokam battery service. |
 
 ---
 
@@ -292,31 +293,21 @@ For those to whom this may concern, we leave here a setup tutorial for the real 
     cd ~/vizzy2/vizzy2_ws/src/
     git clone https://github.com/ros-navigation/navigation2.git --branch humble_main
     ```
-4.  **Clone and Build the TEASER++ Repository**
-      ```bash
-      git clone https://github.com/MIT-SPARK/TEASER-plusplus.git
-      cd TEASER-plusplus
-      mkdir build
-      cd build
-      cmake ..
-      make -j$(nproc)
-      sudo make install
-      ```
 
-5.  **Install the ROS2 Dependencies**
+4.  **Install the ROS2 Dependencies**
     Use rosdep to install the necessary dependencies while disregarding dev packages.
     ```bash
     cd ..
     rosdep install -i --from-path src --rosdistro humble -y --skip-keys "nav2_minimal_tb3_sim nav2_minimal_tb4_sim"
     ```
-6.  **Remove Apt-Installed Dependencies**
+5.  **Remove Apt-Installed Dependencies**
     Sometimes rosdep installs dependencies from packages that are present in the source folder (ignoring the -i command). For this,
      we need to manually remove any installed nav2 dependence.
     ```bash
     sudo apt remove "ros-humble-nav2-*"
     rm -rf build/ install/ log/
     ```
-7.  **Tell Colcon to Ignore Certain Packages**
+6.  **Tell Colcon to Ignore Certain Packages**
     Because we want to focus just on nav2 now, let us ignore all the other packages.
     ```bash
     touch src/navigation2/nav2_system_tests/COLCON_IGNORE
@@ -324,26 +315,25 @@ For those to whom this may concern, we leave here a setup tutorial for the real 
     touch src/navigation2/segway_rmp_ros2/COLCON_IGNORE
     touch src/navigation2/libsegway_rmp_ros2/COLCON_IGNORE
     ```
-8.  **Build the Package**
+7.  **Build the Package**
     Let us build everything.
     ```bash
     colcon build --symlink-install
     ```
-9.  **Final Details**
-    Once (and if) everything is correctly built, we can safely ignore the nav2, segway drivers and TEASER++ packages in future builds and remove the ignore command on our main vizzy2 folder.
+8.  **Final Details**
+    Once (and if) everything is correctly built, we can safely ignore the nav2 and segway drivers packages in future builds and remove the ignore command on our main vizzy2 folder.
     ```bash
     rm src/vizzy2/COLCON_IGNORE
     touch src/navigation2/COLCON_IGNORE
     touch src/libsegwayrmp_ros2/COLCON_IGNORE
     touch src/segway_rmp_ros2/COLCON_IGNORE
-    touch src/TEASER-plusplus/COLCON_IGNORE
     ```
 
 For more information regarding this version of nav2, please refer to [their official repository](https://github.com/ros-navigation/navigation2/tree/humble_main).
 
 At the end of the setup, you should have something that looks exactly like this:
 
-<img width="615" height="172" alt="Screenshot from 2025-09-23 07-01-26" src="https://github.com/user-attachments/assets/fa38f9b9-2063-4d99-8bc8-8692d848b928" />
+<img width="814" height="146" alt="image" src="https://github.com/user-attachments/assets/2139c6f6-988b-4db7-8cff-1d6c9ba6f06b" />
 
 ## Documentation & Citation
 
