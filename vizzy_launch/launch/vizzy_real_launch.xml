@@ -81,7 +81,7 @@
   <arg name="mppi_batch_size" default="2000" description="Count of randomly sampled candidate trajectories from current optimal control sequence in a given iteration."/>
   <arg name="mppi_vx_std" default="0.3" description="Standard deviation for linear velocity in the MPPI controller."/>
   <arg name="mppi_wz_std" default="0.2" description="Standard deviation for the general MPPI controller"/>
-  <arg name="mppi_vx_max" default="0.7" description="Maximum linear velocity in the MPPI controller."/>
+  <arg name="mppi_vx_max" default="0.5" description="Maximum linear velocity in the MPPI controller."/>
   <arg name="mppi_temperature" default="0.3" description="Selectiveness of trajectories by their costs."/>
   <arg name="mppi_iteration_count" default="1" description="Iteration count in the MPPI algorithm. Recommended to remain as 1 and instead prefer larger batch sizes."/>
   <arg name="mppi_constraint_critic_cost_weight" default="4.0" description="Cost weight for the MPPI constraint critic."/>
