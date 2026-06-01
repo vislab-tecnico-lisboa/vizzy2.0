@@ -261,7 +261,7 @@ class PatrolNode(Node):
         with self._goal_lock:
             handle = self._active_goal_handle
         if handle is not None:
-            self.get_logger().info('Cancelling active navigation goal (low battery).')
+            self.get_logger().info('Cancelling active navigation goal.')
             handle.cancel_goal_async()
 
     # ------------------------------------------------------------------

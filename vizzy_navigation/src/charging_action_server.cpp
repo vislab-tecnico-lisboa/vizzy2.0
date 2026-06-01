@@ -27,16 +27,15 @@ void ChargingActionServer::goalCallback(const std::shared_ptr<rclcpp_action::Ser
         charging_state_client_->async_send_request(request,
             [this, goal_handle, result](rclcpp::Client<vizzy_msgs::srv::BatteryChargingState>::SharedFuture response)
         {
-            if (response.get()->battery_charging_state)
+            // Always perform the docking maneuver on a CHARGE request. We do NOT
+            // short-circuit on an "already charging" reading: for ~24 s after the
+            // robot leaves the dock, the Kokam slope window still holds charging
+            // samples and reports CHARGING, which would make a dock request succeed
+            // without ever docking (the robot just stops in place). The initial
+            // service response is therefore intentionally ignored.
             {
-                RCLCPP_INFO(this->get_logger(), "SUCCESS! Robot is already at the dock and charging.");
-                result->result = result->CHARGE_SUCCESS;
-                goal_handle->succeed(result);
-                return;
-            }
-            else
-            {
-                RCLCPP_INFO(this->get_logger(), "Robot is not charging. Delegating to Docking Mission BT...");
+                (void)response;
+                RCLCPP_INFO(this->get_logger(), "Proceeding to docking mission...");
 
                 // Define the staging pose for the mission. 
                 // * (-2.430 -1.849 1.535 usefull for VISLAB) 
