@@ -16,8 +16,8 @@ amcl:
     max_particles: 5000
     min_particles: 250
     odom_frame_id: "odometry" # Configurable
-    recovery_alpha_fast: 0.1
-    recovery_alpha_slow: 0.005
+    recovery_alpha_fast: 0.0
+    recovery_alpha_slow: 0.0
     resample_interval: 1
     sigma_hit: 0.2
     transform_tolerance: 0.3
@@ -500,7 +500,7 @@ global_costmap:
       lethal_cost_threshold: 100
       resolution: 0.05
       track_unknown_space: true
-      plugins: ["static_layer", "inflation_layer"]
+      plugins: ["static_layer", "inflation_layer", "obstacle_layer"]
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
