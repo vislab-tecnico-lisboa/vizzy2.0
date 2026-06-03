@@ -55,7 +55,7 @@
   <arg name="controller_plugin_type" default="MPPI" description="Type of controller plugin to use. Options: DWB, RPP, MPPI"/>
   <arg name="expected_planner_frequency" default="0.2" description="Expected frequency of the planner in Hz"/>
   <arg name="planner_plugin_type" default="ThetaStar" description="Planner plugin to use for the navigation stack"/>
-  <arg name="robot_radius" default="0.4" description="Robot radius for the navigation stack. This is used by the local and global costmaps to scale the cost of obstacles."/>
+  <arg name="robot_radius" default="0.45" description="Robot radius for the navigation stack. This is used by the local and global costmaps to scale the cost of obstacles."/>
   <arg name="mppi_wide_cost_critic_cost_weight" default="3.82" description="Cost weight for the wide MPPI cost critic"/>
   <arg name="mppi_narrow_cost_critic_cost_weight" default="10.0" description="Cost weight for the narrow MPPI cost critic"/>
   <arg name="mppi_wide_path_align_critic_cost_weight" default="14.0" description="Cost weight for the wide MPPI path align critic"/>
@@ -445,7 +445,7 @@
     </node>
   </group>
   <group unless="$(var use_battery_state_simulation)">
-    <node pkg="vizzy_navigation" exec="battery_kokam_service.py" name="battery_kokam_service" output="screen">
+    <node pkg="vizzy_navigation" exec="battery_monitoring_service.py" name="battery_monitoring_service" output="screen">
         <param name="port" value="/dev/kokam_power"/>
         <param name="charged_thr" value="29.39"/>
         <param name="medium_thr" value="25.5"/>

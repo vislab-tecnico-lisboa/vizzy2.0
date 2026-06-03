@@ -613,7 +613,7 @@ std::pair<pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f> DockPoseEstimato
             RCLCPP_DEBUG(get_logger(), "Using TF-based initial guess: x=%.2f y=%.2f yaw=%.1f°",
                         base_guess(0,3), base_guess(1,3), ry * 180.0f/M_PI);
         } catch (const tf2::TransformException &ex) {
-            RCLCPP_WARN(get_logger(), "TF transform for guess failed: %s — using fallback guess.", ex.what());
+            RCLCPP_WARN(get_logger(), "TF transform for guess failed: %s, using fallback guess.", ex.what());
             // If the TF lookup fails, we invalidate the saved pose so the code falls through 
             // to the centroid-based guess logic below.
             last_dock_pose_saved_ = false;

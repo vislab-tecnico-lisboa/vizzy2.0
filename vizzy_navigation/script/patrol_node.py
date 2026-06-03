@@ -11,12 +11,13 @@
 # recovery, undocks, then immediately resumes patrol from waypoint 0.
 #
 # Battery policy:
-#   - Real hardware: battery_state service MUST be available. The node blocks on
-#     startup if the service is not yet reachable and logs an error until it is.
-#   - Simulation (is_simulation=True): if battery_state service is unavailable,
-#     a warning is logged and patrol continues uninterrupted. This is an explicit
-#     fallback for simulation environments where a full battery service is not
-#     deployed. Use a separate mock battery_state service to test the charge branch.
+#   - Monitors the aggregated /battery_status topic (Kokam + both Segway
+#     batteries). Docks if ANY source is low (any_low); leaves the dock only once
+#     ALL sources are full (all_full), since they share one charge connector.
+#   - Real hardware: /battery_status MUST be published. The node blocks at the
+#     first check until a message arrives.
+#   - Simulation (is_simulation=True): if no /battery_status is available, a
+#     warning is logged and patrol continues uninterrupted.
 
 import threading
 import time
@@ -30,15 +31,10 @@ from geometry_msgs.msg import PoseStamped
 from nav2_msgs.action import FollowWaypoints
 from std_srvs.srv import Trigger
 from vizzy_msgs.action import Charge
-from vizzy_msgs.srv import BatteryState
+from vizzy_msgs.msg import BatteryStatus
 
 
 class PatrolNode(Node):
-
-    _LOW_BATTERY = 3   # BatteryState.Response.LOW_BATTERY
-    _GOOD        = 1   # BatteryState.Response.GOOD
-    _CHARGED     = 0   # BatteryState.Response.CHARGED
-    # (state 2 is reserved for "UNKNOWN")
 
     def __init__(self):
         super().__init__('patrol_node')
@@ -61,9 +57,15 @@ class PatrolNode(Node):
 
         self._follow_wp_client    = ActionClient(self, FollowWaypoints, 'follow_waypoints')
         self._charge_client       = ActionClient(self, Charge,           'charge')
-        self._battery_client      = self.create_client(BatteryState,    'battery_state')
         self._nav2_active_client  = self.create_client(
             Trigger, '/lifecycle_manager_navigation/is_active')
+
+        # Aggregated battery status from the battery monitor (Kokam + both Segway
+        # batteries). Cached from the topic; the patrol logic reads the latest.
+        self._battery_status = None
+        self._battery_lock   = threading.Lock()
+        self.create_subscription(
+            BatteryStatus, 'battery_status', self._on_battery_status, 10)
 
         # Protected by _goal_lock. Holds the currently active action goal handle
         # so it can be cancelled from the battery-monitor path.
@@ -143,56 +145,57 @@ class PatrolNode(Node):
     # Battery monitoring
     # ------------------------------------------------------------------
 
-    def _battery_is_ok(self) -> bool:
-        """Return True if battery state is above LOW_BATTERY.
+    def _on_battery_status(self, msg: BatteryStatus) -> None:
+        with self._battery_lock:
+            self._battery_status = msg
 
-        Real hardware: waits indefinitely for the service to appear, then
-        checks. A missing service is treated as a mission-blocking fault.
-        Simulation: if the service is unavailable, logs a warning and returns
-        True so patrol continues (explicit simulation-only fallback).
+    def _latest_battery_status(self):
+        """Return the latest BatteryStatus.
+
+        Real hardware: if none has been received yet, block until one arrives
+        (the battery monitor must be running). Simulation: return None so patrol
+        continues without a battery check.
         """
-        if not self._battery_client.service_is_ready():
-            if self._is_simulation:
-                self.get_logger().warn(
-                    'battery_state service unavailable in simulation — '
-                    'continuing patrol without battery check.',
-                    throttle_duration_sec=60.0)
-                return True
-            else:
-                self.get_logger().error(
-                    'battery_state service unavailable on real hardware. '
-                    'Blocking patrol until service appears...')
-                while rclpy.ok() and not self._battery_client.wait_for_service(timeout_sec=5.0):
-                    self.get_logger().error(
-                        'Still waiting for battery_state service...',
-                        throttle_duration_sec=10.0)
-                if not rclpy.ok():
-                    return True  # node is shutting down.
-
-        future = self._battery_client.call_async(BatteryState.Request())
-        deadline = time.monotonic() + 3.0
-        while not future.done() and rclpy.ok() and time.monotonic() < deadline:
-            time.sleep(0.05)
-
-        if not future.done() or future.result() is None:
-            self.get_logger().warn('battery_state call timed out.')
-            # Real hardware: conservative (treat as blocked).
-            return self._is_simulation
-
-        state = future.result().battery_state
-        pct   = future.result().percentage
-        if state == self._LOW_BATTERY:
+        with self._battery_lock:
+            msg = self._battery_status
+        if msg is not None:
+            return msg
+        if self._is_simulation:
             self.get_logger().warn(
-                f'LOW BATTERY (state={state}, {pct}%). Interrupting patrol.')
+                'No battery_status received in simulation. '
+                'Continuing patrol without battery check.',
+                throttle_duration_sec=60.0)
+            return None
+        self.get_logger().error(
+            'No battery_status received on real hardware. '
+            'Blocking patrol until it appears...')
+        while rclpy.ok():
+            time.sleep(1.0)
+            with self._battery_lock:
+                msg = self._battery_status
+            if msg is not None:
+                return msg
+            self.get_logger().error(
+                'Still waiting for battery_status...', throttle_duration_sec=10.0)
+        return None
+
+    def _battery_is_ok(self) -> bool:
+        """Return False if ANY battery source is low (Kokam or either Segway battery)."""
+        msg = self._latest_battery_status()
+        if msg is None:
+            return True  # simulation fallback or node shutting down
+        if msg.any_low:
+            detail = ', '.join(msg.alerts) if msg.alerts else 'a source is low'
+            self.get_logger().warn(f'LOW BATTERY: {detail}. Interrupting patrol.')
             return False
         return True
 
     def _wait_for_battery_ok(self) -> None:
-        """Block until battery state is CHARGED or GOOD.
+        """Block until ALL battery sources are full.
 
-        Simulation: waits a fixed 15s to represent a charge event so the
-        docking branch can be tested without a full battery service.
-        Real hardware: polls the battery_state service every 30s.
+        All sources charge through one connector, so we leave the dock only when
+        the last source finishes (all_full), not just the Kokam.
+        Simulation: wait a fixed 15 s to represent a charge event.
         """
         if self._is_simulation:
             self.get_logger().info(
@@ -200,22 +203,14 @@ class PatrolNode(Node):
             time.sleep(15.0)
             return
 
-        self.get_logger().info('Waiting for battery to recover (CHARGED or GOOD)...')
+        self.get_logger().info('Waiting for all battery sources to reach full...')
         while rclpy.ok():
-            future = self._battery_client.call_async(BatteryState.Request())
-            deadline = time.monotonic() + 5.0
-            while not future.done() and rclpy.ok() and time.monotonic() < deadline:
-                time.sleep(0.1)
-
-            if future.done() and future.result() is not None:
-                state = future.result().battery_state
-                pct   = future.result().percentage
-                self.get_logger().info(f'Battery: state={state}, {pct}%')
-                if state <= self._GOOD:  # CHARGED=0 or GOOD=1
-                    self.get_logger().info('Battery recovered. Ready to resume patrol.')
-                    return
-
-            time.sleep(30.0)
+            with self._battery_lock:
+                msg = self._battery_status
+            if msg is not None and msg.all_full:
+                self.get_logger().info('All batteries full. Ready to resume patrol.')
+                return
+            time.sleep(5.0)
 
     # ------------------------------------------------------------------
     # Generic action helper

@@ -58,6 +58,7 @@
   <exec_depend>nav2_theta_star_planner</exec_depend>
   <exec_depend>nav2_constrained_smoother</exec_depend>
   <exec_depend>nav2_regulated_pure_pursuit_controller</exec_depend>
+  <exec_depend>segway_rmp_ros2</exec_depend>
 
   <!-- General dependencies -->
   <depend>xterm</depend> 
