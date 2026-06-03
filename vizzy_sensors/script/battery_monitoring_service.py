@@ -153,7 +153,7 @@ class BatteryKokamService(Node):
         # reported by the driver as VOLTAGES; each is converted to a state-of-charge
         # % over its operating range and flagged low/full at segway_low_pct /
         # segway_full_pct (20% / 80% == 20% above min, 20% below max).
-        self.declare_parameter('segway_ui_min_voltage', 7.0)          # V
+        self.declare_parameter('segway_ui_min_voltage', 6.0)          # V
         self.declare_parameter('segway_ui_max_voltage', 9.1)          # V
         self.declare_parameter('segway_powerbase_min_voltage', 60.0)  # V
         self.declare_parameter('segway_powerbase_max_voltage', 68.0)  # V
