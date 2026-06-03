@@ -440,12 +440,12 @@
   </group>
 
   <group if="$(var use_battery_state_simulation)">
-    <node pkg="vizzy_navigation" exec="battery_state_simulator_service.py" name="battery_charging_service" output="screen">
+    <node pkg="vizzy_sensors" exec="battery_state_simulator_service.py" name="battery_charging_service" output="screen">
         <param name="initial_battery_state" value="$(var battery_state)"/>
     </node>
   </group>
   <group unless="$(var use_battery_state_simulation)">
-    <node pkg="vizzy_navigation" exec="battery_monitoring_service.py" name="battery_monitoring_service" output="screen">
+    <node pkg="vizzy_sensors" exec="battery_monitoring_service.py" name="battery_monitoring_service" output="screen">
         <param name="port" value="/dev/kokam_power"/>
         <param name="charged_thr" value="29.39"/>
         <param name="medium_thr" value="25.5"/>
