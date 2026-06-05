@@ -17,12 +17,12 @@
 # ------------------------------------------------------
 # Both services were blocking:
 #
-#   battery_state         — on each service call, performed one serial
+#   battery_state        , on each service call, performed one serial
 #                           round-trip (write '0', sleep 300 ms, read 8 bytes,
 #                           sleep 300 ms) and returned immediately. Latency
 #                           per call: ~600 ms.
 #
-#   battery_charging_state — on each service call, performed 40 sequential
+#   battery_charging_state, on each service call, performed 40 sequential
 #                           round-trips (samples = 40), collecting
 #                           (timestamp, voltage) pairs, then fitted a linear
 #                           slope with L2 least squares. Total latency per
@@ -106,7 +106,9 @@ import time
 import rclpy
 import serial
 from rclpy.node import Node
+from vizzy_msgs.msg import BatterySource, BatteryStatus
 from vizzy_msgs.srv import BatteryChargingState, BatteryState
+from segway_rmp_ros2.msg import SegwayStatusStamped
 
 
 class BatteryKokamService(Node):
@@ -122,7 +124,7 @@ class BatteryKokamService(Node):
     _MAX_VOLTAGE = 29.4
 
     def __init__(self):
-        super().__init__('battery_kokam_service')
+        super().__init__('battery_monitoring_service')
 
         # Parameters (defaults match ROS1 battery-state.launch).
         self.declare_parameter('port', '/dev/kokam_power')
@@ -146,6 +148,19 @@ class BatteryKokamService(Node):
         # fills the slope window in ~24 s).
         self.declare_parameter('inter_cycle_delay', 0.0)
 
+        # Kokam derives is_low / is_full from its voltage thresholds above
+        # (low = low_thr, full = charged_thr). The two Segway batteries are
+        # reported by the driver as VOLTAGES; each is converted to a state-of-charge
+        # % over its operating range and flagged low/full at segway_low_pct /
+        # segway_full_pct (20% / 80% == 20% above min, 20% below max).
+        self.declare_parameter('segway_ui_min_voltage', 5.5)          # V
+        self.declare_parameter('segway_ui_max_voltage', 9.1)          # V
+        self.declare_parameter('segway_powerbase_min_voltage', 60.0)  # V
+        self.declare_parameter('segway_powerbase_max_voltage', 68.0)  # V
+        self.declare_parameter('segway_low_pct', 20.0)                # is_low  at/below this SOC %
+        self.declare_parameter('segway_full_pct', 80.0)               # is_full at/above this SOC %
+        self.declare_parameter('status_publish_rate', 1.0)            # Hz
+
         port = self.get_parameter('port').value
         self._charged_thr = self.get_parameter('charged_thr').value
         self._medium_thr = self.get_parameter('medium_thr').value
@@ -154,12 +169,25 @@ class BatteryKokamService(Node):
         self._min_slope_samples = self.get_parameter('min_slope_samples').value
         self._slope_threshold = self.get_parameter('slope_threshold').value
         self._inter_cycle_delay = self.get_parameter('inter_cycle_delay').value
+        self._segway_ui_min_v = self.get_parameter('segway_ui_min_voltage').value
+        self._segway_ui_max_v = self.get_parameter('segway_ui_max_voltage').value
+        self._segway_pb_min_v = self.get_parameter('segway_powerbase_min_voltage').value
+        self._segway_pb_max_v = self.get_parameter('segway_powerbase_max_voltage').value
+        self._segway_low_pct = self.get_parameter('segway_low_pct').value
+        self._segway_full_pct = self.get_parameter('segway_full_pct').value
+        status_publish_rate = self.get_parameter('status_publish_rate').value
 
         # Thread-safe sample buffer.
         self._lock = threading.Lock()
         # maxlen matches slope_window so the deque acts as a rolling window.
         self._samples: collections.deque = collections.deque(maxlen=slope_window)
         self._latest_voltage: float | None = None
+        self._latest_current: float | None = None
+        self._latest_slope: float = 0.0
+
+        # Latest Segway battery readings from /segway_status (None until first msg).
+        self._segway_ui_voltage: float | None = None
+        self._segway_pb_value: float | None = None
 
         # Hysteresis state: persists between service calls.
         # Initialised to NOT_CHARGING and matches initial_battery_state=0 used
@@ -183,13 +211,21 @@ class BatteryKokamService(Node):
         reader = threading.Thread(target=self._read_loop, daemon=True)
         reader.start()
 
-        # Services.
+        # Services (retained for backward compatibility, Kokam only).
         self.create_service(BatteryState, 'battery_state', self._handle_battery_state)
         self.create_service(
             BatteryChargingState, 'battery_charging_state', self._handle_battery_charging_state
         )
 
-        self.get_logger().info('Battery Kokam service ready.')
+        # Aggregated multi-source battery status (Kokam + both Segway batteries).
+        self.create_subscription(
+            SegwayStatusStamped, '/segway_status', self._on_segway_status, 10)
+        self._status_pub = self.create_publisher(BatteryStatus, 'battery_status', 10)
+        period = 1.0 / status_publish_rate if status_publish_rate > 0.0 else 1.0
+        self.create_timer(period, self._publish_status)
+
+        self.get_logger().info(
+            'Battery monitor ready (Kokam + Segway; publishing /battery_status).')
 
     # ------------------------------------------------------------------
     # Serial reader (background thread)
@@ -238,12 +274,15 @@ class BatteryKokamService(Node):
                     continue
 
                 voltage = ((buf[1] << 8) | buf[2]) / 100.0
-                # current is decoded but unused for state logic (unsigned, matches ROS1).
-                # current = ((buf[3] << 8) | buf[4]) / 100.0
+                # current is unsigned (magnitude, matches ROS1); the PCB exposes no
+                # sign/charge bit, so it is reported as-is for visualization only and
+                # is NOT used for charging detection (that stays the voltage slope).
+                current = ((buf[3] << 8) | buf[4]) / 100.0
 
                 with self._lock:
                     self._samples.append((time.monotonic(), voltage))
                     self._latest_voltage = voltage
+                    self._latest_current = current
 
                 if self._inter_cycle_delay > 0.0:
                     time.sleep(self._inter_cycle_delay)
@@ -333,21 +372,24 @@ class BatteryKokamService(Node):
             return 0.0
         return (n * tv_sum - t_sum * v_sum) / denom
 
-    def _handle_battery_charging_state(
-        self,
-        request: BatteryChargingState.Request,
-        response: BatteryChargingState.Response,
-    ) -> BatteryChargingState.Response:
+    def _compute_charging_state(self) -> int:
+        """Update and return the Kokam charging state via the slope hysteresis.
+
+        Shared by the battery_charging_state service and the status publisher so
+        the charging decision uses one consistent state machine. Stores the most
+        recent slope in self._latest_slope for reporting. Unchanged detection
+        logic from before (voltage slope + hysteresis).
+        """
         with self._lock:
             samples = list(self._samples)
 
         R = BatteryChargingState.Response
 
         if len(samples) < self._min_slope_samples:
-            response.battery_charging_state = self._current_charging_state
-            return response
+            return self._current_charging_state
 
         slope = self._l2_slope(samples)
+        self._latest_slope = slope
 
         if self._current_charging_state == R.NOT_CHARGING:
             if slope > self._slope_threshold:
@@ -356,12 +398,138 @@ class BatteryKokamService(Node):
             if slope < -self._slope_threshold:
                 self._current_charging_state = R.NOT_CHARGING
 
+        return self._current_charging_state
+
+    def _handle_battery_charging_state(
+        self,
+        request: BatteryChargingState.Request,
+        response: BatteryChargingState.Response,
+    ) -> BatteryChargingState.Response:
+        state = self._compute_charging_state()
         self.get_logger().info(
-            f'battery_charging_state → slope={slope:.6f} V/s '
-            f'state={self._current_charging_state}'
+            f'battery_charging_state → slope={self._latest_slope:.6f} V/s state={state}'
         )
-        response.battery_charging_state = self._current_charging_state
+        response.battery_charging_state = state
         return response
+
+    # ------------------------------------------------------------------
+    # Segway batteries + aggregated status
+    # ------------------------------------------------------------------
+
+    def _on_segway_status(self, msg: SegwayStatusStamped) -> None:
+        with self._lock:
+            self._segway_ui_voltage = float(msg.segway.ui_battery)
+            self._segway_pb_value = float(msg.segway.powerbase_battery)
+
+    def _make_segway_source(self, name, voltage, vmin, vmax, charging_state):
+        """Build a BatterySource for a Segway battery (reported as a voltage).
+
+        Converts voltage to an SOC % over [vmin, vmax] and flags low/full at the
+        configured SOC thresholds. No reading -> level UNKNOWN, not low, not full
+        (a missing source never forces a dock nor lets the robot undock blindly).
+        """
+        src = BatterySource()
+        src.name = name
+        src.charging_state = charging_state
+        if voltage is None:
+            src.level = BatterySource.LEVEL_UNKNOWN
+            return src
+        pct = 100.0 * (voltage - vmin) / (vmax - vmin)
+        pct = max(0.0, min(100.0, pct))
+        src.has_voltage = True
+        src.voltage = voltage
+        src.has_percentage = True
+        src.percentage = pct
+        src.is_low = pct <= self._segway_low_pct
+        src.is_full = pct >= self._segway_full_pct
+        src.level = self._coarse_level(pct, src.is_low, src.is_full)
+        return src
+
+    @staticmethod
+    def _coarse_level(value, is_low, is_full):
+        if value is None:
+            return BatterySource.LEVEL_UNKNOWN
+        if is_low:
+            return BatterySource.LOW_BATTERY
+        if is_full:
+            return BatterySource.CHARGED
+        return BatterySource.GOOD
+
+    def _publish_status(self) -> None:
+        # All sources charge through one connector, so charging is global.
+        charging_state = self._compute_charging_state()
+        charging = (charging_state == BatteryChargingState.Response.CHARGING)
+
+        with self._lock:
+            v = self._latest_voltage
+            i = self._latest_current
+            slope = self._latest_slope
+            ui_v = self._segway_ui_voltage
+            pb = self._segway_pb_value
+
+        # Kokam (voltage + current + derived %, with the final voltage thresholds).
+        kokam = BatterySource()
+        kokam.name = 'kokam'
+        kokam.has_voltage = v is not None
+        kokam.has_current = i is not None
+        kokam.has_percentage = v is not None
+        kokam.charge_slope = slope
+        kokam.charging_state = charging_state
+        if i is not None:
+            kokam.current = i
+        if v is not None:
+            kokam.voltage = v
+            pct = 100.0 * (v - self._MIN_VOLTAGE) / (self._MAX_VOLTAGE - self._MIN_VOLTAGE)
+            kokam.percentage = float(max(0.0, min(100.0, pct)))
+            kokam.level = self._classify_voltage(v)
+            kokam.is_low = v <= self._low_thr
+            kokam.is_full = v >= self._charged_thr
+        else:
+            kokam.level = BatterySource.LEVEL_UNKNOWN
+            # No Kokam reading -> conservatively NOT full, so the robot never
+            # undocks blindly when the primary battery is unreadable.
+            kokam.is_full = False
+
+        # Segway batteries are reported as voltages; convert to SOC % over each
+        # battery's operating range (see _make_segway_source).
+        ui = self._make_segway_source(
+            'segway_ui', ui_v,
+            self._segway_ui_min_v, self._segway_ui_max_v, charging_state)
+        pbs = self._make_segway_source(
+            'segway_powerbase', pb,
+            self._segway_pb_min_v, self._segway_pb_max_v, charging_state)
+
+        # Aggregate
+        msg = BatteryStatus()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.kokam = kokam
+        msg.segway_ui = ui
+        msg.segway_powerbase = pbs
+        msg.charging = charging
+        msg.any_low = kokam.is_low or ui.is_low or pbs.is_low
+        msg.all_full = kokam.is_full and ui.is_full and pbs.is_full
+
+        alerts = []
+        if kokam.is_low:
+            alerts.append(f'kokam low ({v:.2f} V)')
+        if ui.is_low:
+            alerts.append(f'segway_ui low ({ui_v:.2f} V, {ui.percentage:.0f}%)')
+        if pbs.is_low:
+            alerts.append(f'segway_powerbase low ({pb:.2f} V, {pbs.percentage:.0f}%)')
+        if v is None:
+            alerts.append('kokam: no serial reading')
+        if ui_v is None:
+            alerts.append('segway: no /segway_status received')
+        msg.alerts = alerts
+
+        if msg.any_low:
+            msg.system_status = BatteryStatus.CRITICAL
+        elif (not msg.all_full) or v is None or ui_v is None:
+            msg.system_status = BatteryStatus.WARN
+        else:
+            msg.system_status = BatteryStatus.OK
+
+        self._status_pub.publish(msg)
 
     # ------------------------------------------------------------------
     # Cleanup

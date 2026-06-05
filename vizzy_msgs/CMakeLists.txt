@@ -25,6 +25,8 @@ set(msg_files
   "msg/Tactile.msg"
   "msg/TacVector.msg"
   "msg/KokamBatteryPower.msg"
+  "msg/BatterySource.msg"
+  "msg/BatteryStatus.msg"
 )
 
 # Declare service files.

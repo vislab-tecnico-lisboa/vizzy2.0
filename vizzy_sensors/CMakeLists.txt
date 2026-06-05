@@ -50,6 +50,13 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
+# Battery monitoring / simulation Python nodes (moved here from vizzy_navigation).
+install(PROGRAMS
+  script/battery_monitoring_service.py
+  script/battery_state_simulator_service.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vizzy_sensors_plugins.xml")
   install(
     FILES vizzy_sensors_plugins.xml

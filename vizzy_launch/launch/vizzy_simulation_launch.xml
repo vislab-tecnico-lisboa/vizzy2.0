@@ -224,7 +224,7 @@
 
   <!-- Launch the battery state simulator script -->
   <group>
-    <node pkg="vizzy_navigation" exec="battery_state_simulator_service.py" name="battery_charging_service" output="screen">
+    <node pkg="vizzy_sensors" exec="battery_state_simulator_service.py" name="battery_charging_service" output="screen">
         <param name="initial_battery_state" value="$(var battery_state)"/>
     </node>
   </group>

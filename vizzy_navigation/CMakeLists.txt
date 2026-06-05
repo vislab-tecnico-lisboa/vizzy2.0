@@ -203,8 +203,6 @@ install(
 )
 
 install(PROGRAMS
-  script/battery_state_simulator_service.py
-  script/battery_kokam_service.py
   script/patrol_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
