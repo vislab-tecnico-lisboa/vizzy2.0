@@ -51,7 +51,7 @@ class RecoverySupervisor(Node):
         self.declare_parameter('divergence_time', 4.0)            # s sustained above threshold
         # Honor an externally-set pose on /initialpose (e.g. RViz): adopt it and
         # pause divergence checks for this long so AMCL converges without an auto re-seed.
-        self.declare_parameter('manual_pose_grace_period', 15.0)  # s
+        self.declare_parameter('manual_pose_grace_period', 2.0)  # s
         self.declare_parameter('max_relocalize_attempts', 2)
         self.declare_parameter('relocalize_spin_yaw', 6.28)    # rad (~full turn) to sweep features
         self.declare_parameter('settle_time', 1.5)             # s for consumers to stop before spin
