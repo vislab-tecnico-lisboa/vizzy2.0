@@ -46,8 +46,8 @@ class RecoverySupervisor(Node):
         # downstream (planning failures / whole-run-missed -> FAULT).
         self.declare_parameter('good_covariance', 0.0035)         # pos var x+y: store last-good below this
         self.declare_parameter('good_yaw_covariance', 0.0013)     # yaw var:     store last-good below this
-        self.declare_parameter('diverged_covariance', 0.015)      # pos var x+y: divergence above this
-        self.declare_parameter('diverged_yaw_covariance', 0.0028) # yaw var:     divergence above this
+        self.declare_parameter('diverged_covariance', 0.005)      # pos var x+y: divergence above this
+        self.declare_parameter('diverged_yaw_covariance', 0.0018) # yaw var:     divergence above this
         self.declare_parameter('divergence_time', 4.0)            # s sustained above threshold
         # Honor an externally-set pose on /initialpose (e.g. RViz): adopt it and
         # pause divergence checks for this long so AMCL converges without an auto re-seed.
@@ -146,6 +146,31 @@ class RecoverySupervisor(Node):
             f'/initialpose received; honoring it and pausing divergence checks '
             f'for {self._manual_grace:.0f}s.')
 
+    def _cov_report(self) -> str:
+        """Detailed covariance-vs-threshold diagnostic for recovery logging.
+
+        Shows the current position/yaw covariance, both thresholds, and how far
+        the current value is from each (absolute delta and % of threshold).
+        """
+        cov = self._latest_cov
+        ycov = self._latest_yaw_cov
+        if cov is None or ycov is None:
+            return 'localization covariance: no /amcl_pose received yet'
+
+        def delta(v, thr):
+            pct = (v / thr * 100.0) if thr > 0.0 else float('inf')
+            return f'{v - thr:+.5f} ({pct:.0f}% of thr)'
+
+        return (
+            'localization covariance: '
+            f'pos var(x+y)={cov:.5f} '
+            f'[good<= {self._good_cov:.5f} -> {delta(cov, self._good_cov)}; '
+            f'diverged>= {self._diverged_cov:.5f} -> {delta(cov, self._diverged_cov)}]; '
+            f'yaw var={ycov:.5f} '
+            f'[good<= {self._good_yaw_cov:.5f} -> {delta(ycov, self._good_yaw_cov)}; '
+            f'diverged>= {self._diverged_yaw_cov:.5f} -> {delta(ycov, self._diverged_yaw_cov)}]'
+        )
+
     def _monitor(self) -> None:
         # Only auto-act while OK; never interfere during RECOVERING/FAULT.
         with self._state_lock:
@@ -173,9 +198,13 @@ class RecoverySupervisor(Node):
     def _trigger_relocalization(self) -> None:
         if self._recovering.is_set():
             return
+        self.get_logger().warn(
+            f'Localization divergence confirmed (sustained >= {self._divergence_time:.0f}s). '
+            f'{self._cov_report()}')
         if self._last_good_pose is None:
             self.get_logger().error(
-                'Localization diverged but no last-known-good pose is available -> FAULT.')
+                'No last-known-good pose available to relocalize from -> FAULT. '
+                f'{self._cov_report()}')
             self._set_state(RecoveryStatus.FAULT, 'localization diverged, no recovery pose')
             return
         self._recovering.set()
@@ -199,11 +228,16 @@ class RecoverySupervisor(Node):
                 if (self._latest_cov is not None and self._latest_yaw_cov is not None
                         and self._latest_cov <= self._good_cov
                         and self._latest_yaw_cov <= self._good_yaw_cov):
-                    self.get_logger().info('Localization recovered.')
+                    self.get_logger().info(f'Localization recovered. {self._cov_report()}')
                     self._set_state(RecoveryStatus.OK, 'localization recovered')
                     return
+                self.get_logger().warn(
+                    f'Attempt {attempt}/{self._max_attempts} did not recover localization '
+                    f'(still above the good thresholds). {self._cov_report()}')
 
-            self.get_logger().error('Relocalization failed after retries -> FAULT.')
+            self.get_logger().error(
+                f'Relocalization FAILED after {self._max_attempts} attempt(s) -> FAULT. '
+                f'{self._cov_report()}')
             self._set_state(RecoveryStatus.FAULT, 'localization could not be recovered')
         finally:
             self._recovering.clear()
