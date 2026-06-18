@@ -27,6 +27,7 @@ set(msg_files
   "msg/KokamBatteryPower.msg"
   "msg/BatterySource.msg"
   "msg/BatteryStatus.msg"
+  "msg/RecoveryStatus.msg"
 )
 
 # Declare service files.

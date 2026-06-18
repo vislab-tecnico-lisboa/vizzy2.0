@@ -19,32 +19,40 @@
         <RateController hz="GLOBAL_PLANNER_FREQUENCY">
           <RecoveryNode number_of_retries="1" name="ComputePathToPose">
             <Sequence name="ComputeAndSmoothPath">
-              <ComputePathToPose goal="{goal}" path="{path}" planner_id="PLANNER_PLACEHOLDER"/>
+              <ComputePathToPose goal="{goal}" path="{path}" planner_id="PLANNER_PLACEHOLDER" error_code_id="{compute_path_error_code}"/>
               <ForceSuccess>
                 <SmoothPath unsmoothed_path="{path}" smoothed_path="{path}" smoother_id="SmoothPath"/>
               </ForceSuccess>
             </Sequence>
-            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+            <!-- Clear only around the robot, and only if the planner error is one a clear could fix. -->
+            <Sequence name="PlannerRecovery">
+              <WouldAPlannerRecoveryHelp error_code="{compute_path_error_code}"/>
+              <ClearCostmapAroundRobot name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_around_global_costmap"/>
+            </Sequence>
           </RecoveryNode>
         </RateController>
         <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{path}" controller_id="CONTROLLER_PLACEHOLDER" goal_checker_id="general_goal_checker" progress_checker_id="progress_checker"/>
-          <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+          <FollowPath path="{path}" controller_id="CONTROLLER_PLACEHOLDER" goal_checker_id="general_goal_checker" progress_checker_id="progress_checker" error_code_id="{follow_path_error_code}"/>
+          <Sequence name="ControllerRecovery">
+            <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}"/>
+            <ClearCostmapAroundRobot name="ClearLocalCostmap-Context" service_name="local_costmap/clear_around_local_costmap"/>
+          </Sequence>
         </RecoveryNode>
       </PipelineSequence>
       <ReactiveFallback name="RecoveryFallback">
         <GoalUpdated/>
         <RoundRobin name="RecoveryActions">
           <Sequence name="ClearingActions">
-            <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
-            <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
+            <ClearCostmapAroundRobot name="ClearLocalCostmap-Subtree"  service_name="local_costmap/clear_around_local_costmap"/>
+            <ClearCostmapAroundRobot name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_around_global_costmap"/>
           </Sequence>
-          <!-- Reverse to escape the inflated/lethal zone when planning fails (e.g. NO_VALID_PATH
-               after getting too close to an obstacle). BackUp is collision-checked against the
-               local costmap (rear laser), so it only moves if there is room behind, and aborts
-               safely otherwise (the RoundRobin then falls through to Wait). -->
+          <!-- Escape an inflated/lethal start zone (e.g. NO_VALID_PATH after getting too close)
+               and re-orient to help re-localize. BackUp and Spin are collision-checked against
+               the local costmap (front+rear lasers): they move only if there is room and abort
+               safely otherwise, so the RoundRobin falls through to Wait. -->
           <BackUp backup_dist="0.30" backup_speed="0.10" time_allowance="10"/>
-          <Wait wait_duration="5"/>
+          <Spin spin_dist="1.57" time_allowance="10"/>
+          <Wait wait_duration="10"/>
         </RoundRobin>
       </ReactiveFallback>
     </RecoveryNode>

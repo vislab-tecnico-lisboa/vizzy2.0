@@ -906,7 +906,17 @@ def generate_launch_description():
                 # Uncomment the next line to debug the node with GDB.
                 # prefix=['xterm -e gdb -ex run --args']),
 
-            # Only launch the patrol node if the use_patrol launch argument is set to true. 
+            # Recovery supervisor: always-on localization-health monitor and central
+            # fault state. Behavior-agnostic, publishes /recovery_status; the patrol
+            # node (and any future behavior) reacts to it.
+            Node(
+                package='vizzy_navigation',
+                executable='recovery_supervisor.py',
+                name='recovery_supervisor',
+                output='screen',
+                parameters=[{'use_sim_time': use_sim_time}],),
+
+            # Only launch the patrol node if the use_patrol launch argument is set to true.
             # This allows us to keep the patrol node separate from the main navigation stack.
             Node(
                 condition=IfCondition(LaunchConfiguration('use_patrol')),
