@@ -37,12 +37,21 @@ class RecoverySupervisor(Node):
         super().__init__('recovery_supervisor')
 
         # --- Parameters ---
-        # Covariance here is the sum of the x and y position variances (m^2) from
-        # /amcl_pose. Track a "last-known-good" pose while it is small; declare a
-        # divergence when it stays large for divergence_time seconds.
-        self.declare_parameter('good_covariance', 0.05)        # m^2: store last-good below this
-        self.declare_parameter('diverged_covariance', 0.25)    # m^2: divergence above this
-        self.declare_parameter('divergence_time', 3.0)         # s sustained above threshold
+        # Thresholds calibrated from on-robot /amcl_pose data. Good fixes stay below
+        # ~0.0036 (position: var x + var y) and ~0.0013 (yaw var); wrong/uncertain
+        # fixes exceed the diverged values. Position and yaw are OR-combined for
+        # divergence (yaw catches early drift the position term misses).
+        # NOTE: covariance is *confidence*, not *correctness*, meaning a confidently-wrong
+        # fix has LOW covariance and is NOT detectable here; those are caught
+        # downstream (planning failures / whole-run-missed -> FAULT).
+        self.declare_parameter('good_covariance', 0.0035)         # pos var x+y: store last-good below this
+        self.declare_parameter('good_yaw_covariance', 0.0013)     # yaw var:     store last-good below this
+        self.declare_parameter('diverged_covariance', 0.005)      # pos var x+y: divergence above this
+        self.declare_parameter('diverged_yaw_covariance', 0.0018) # yaw var:     divergence above this
+        self.declare_parameter('divergence_time', 4.0)            # s sustained above threshold
+        # Honor an externally-set pose on /initialpose (e.g. RViz): adopt it and
+        # pause divergence checks for this long so AMCL converges without an auto re-seed.
+        self.declare_parameter('manual_pose_grace_period', 15.0)  # s
         self.declare_parameter('max_relocalize_attempts', 2)
         self.declare_parameter('relocalize_spin_yaw', 6.28)    # rad (~full turn) to sweep features
         self.declare_parameter('settle_time', 1.5)             # s for consumers to stop before spin
@@ -50,8 +59,11 @@ class RecoverySupervisor(Node):
         self.declare_parameter('monitor_period', 0.5)          # s
 
         self._good_cov = self.get_parameter('good_covariance').value
+        self._good_yaw_cov = self.get_parameter('good_yaw_covariance').value
         self._diverged_cov = self.get_parameter('diverged_covariance').value
+        self._diverged_yaw_cov = self.get_parameter('diverged_yaw_covariance').value
         self._divergence_time = self.get_parameter('divergence_time').value
+        self._manual_grace = self.get_parameter('manual_pose_grace_period').value
         self._max_attempts = self.get_parameter('max_relocalize_attempts').value
         self._spin_yaw = self.get_parameter('relocalize_spin_yaw').value
         self._settle_time = self.get_parameter('settle_time').value
@@ -63,8 +75,10 @@ class RecoverySupervisor(Node):
         self._reason = 'nominal'
         self._state_lock = threading.Lock()
         self._last_good_pose = None    # PoseWithCovarianceStamped
-        self._latest_cov = None        # float, x var + y var
+        self._latest_cov = None        # float, var(x) + var(y)
+        self._latest_yaw_cov = None    # float, var(yaw)
         self._diverged_since = None    # monotonic timestamp
+        self._grace_until = 0.0        # monotonic; suppress divergence checks until then
         self._recovering = threading.Event()  # guards the relocalization worker
 
         # --- Interfaces ---
@@ -72,6 +86,8 @@ class RecoverySupervisor(Node):
         self._status_pub = self.create_publisher(RecoveryStatus, 'recovery_status', latched)
         self._initialpose_pub = self.create_publisher(PoseWithCovarianceStamped, 'initialpose', 10)
         self.create_subscription(PoseWithCovarianceStamped, 'amcl_pose', self._on_amcl_pose, 10)
+        # Honor externally-set poses (RViz "2D Pose Estimate" -> /initialpose).
+        self.create_subscription(PoseWithCovarianceStamped, 'initialpose', self._on_initialpose, 10)
         self._spin_client = ActionClient(self, Spin, 'spin')
         self.create_service(Trigger, 'report_fault', self._on_report_fault)
         self.create_service(Trigger, 'clear_fault', self._on_clear_fault)
@@ -113,9 +129,22 @@ class RecoverySupervisor(Node):
 
     def _on_amcl_pose(self, msg: PoseWithCovarianceStamped) -> None:
         cov = msg.pose.covariance[0] + msg.pose.covariance[7]  # var(x) + var(y)
+        yaw_cov = msg.pose.covariance[35]                      # var(yaw)
         self._latest_cov = cov
-        if cov <= self._good_cov:
+        self._latest_yaw_cov = yaw_cov
+        if cov <= self._good_cov and yaw_cov <= self._good_yaw_cov:
             self._last_good_pose = msg
+
+    def _on_initialpose(self, msg: PoseWithCovarianceStamped) -> None:
+        # A pose was set on /initialpose (manually via RViz, or by us during a
+        # re-seed). Adopt it as the reference and pause divergence checks while
+        # AMCL converges, so a manual correction is never immediately overridden.
+        self._last_good_pose = msg
+        self._diverged_since = None
+        self._grace_until = time.monotonic() + self._manual_grace
+        self.get_logger().info(
+            f'/initialpose received; honoring it and pausing divergence checks '
+            f'for {self._manual_grace:.0f}s.')
 
     def _monitor(self) -> None:
         # Only auto-act while OK; never interfere during RECOVERING/FAULT.
@@ -123,11 +152,16 @@ class RecoverySupervisor(Node):
             state = self._state
         if state != RecoveryStatus.OK:
             return
-        cov = self._latest_cov
-        if cov is None:
-            return
         now = time.monotonic()
-        if cov >= self._diverged_cov:
+        if now < self._grace_until:
+            self._diverged_since = None  # within grace after a pose set; let AMCL converge
+            return
+        cov = self._latest_cov
+        yaw_cov = self._latest_yaw_cov
+        if cov is None or yaw_cov is None:
+            return
+        diverged = (cov >= self._diverged_cov) or (yaw_cov >= self._diverged_yaw_cov)
+        if diverged:
             if self._diverged_since is None:
                 self._diverged_since = now
             elif (now - self._diverged_since) >= self._divergence_time:
@@ -162,7 +196,9 @@ class RecoverySupervisor(Node):
                 time.sleep(0.5)
                 self._spin(self._spin_yaw)
                 time.sleep(self._post_spin_settle)
-                if self._latest_cov is not None and self._latest_cov <= self._good_cov:
+                if (self._latest_cov is not None and self._latest_yaw_cov is not None
+                        and self._latest_cov <= self._good_cov
+                        and self._latest_yaw_cov <= self._good_yaw_cov):
                     self.get_logger().info('Localization recovered.')
                     self._set_state(RecoveryStatus.OK, 'localization recovered')
                     return
