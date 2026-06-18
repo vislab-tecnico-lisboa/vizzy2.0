@@ -39,6 +39,11 @@
             <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
             <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
           </Sequence>
+          <!-- Reverse to escape the inflated/lethal zone when planning fails (e.g. NO_VALID_PATH
+               after getting too close to an obstacle). BackUp is collision-checked against the
+               local costmap (rear laser), so it only moves if there is room behind, and aborts
+               safely otherwise (the RoundRobin then falls through to Wait). -->
+          <BackUp backup_dist="0.30" backup_speed="0.10" time_allowance="10"/>
           <Wait wait_duration="5"/>
         </RoundRobin>
       </ReactiveFallback>
