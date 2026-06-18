@@ -506,14 +506,14 @@ class BatteryKokamService(Node):
         msg.segway_ui = ui
         msg.segway_powerbase = pbs
         msg.charging = charging
-        msg.any_low = kokam.is_low or ui.is_low or pbs.is_low
-        msg.all_full = kokam.is_full and ui.is_full and pbs.is_full
+        msg.any_low = kokam.is_low or pbs.is_low # or ui.is_low (ui is not accounted for, very reactive/unimportant)
+        msg.all_full = kokam.is_full and pbs.is_full # ui.is_full (ui is not accounted for, very reactive/unimportant)
 
         alerts = []
         if kokam.is_low:
             alerts.append(f'kokam low ({v:.2f} V)')
-        if ui.is_low:
-            alerts.append(f'segway_ui low ({ui_v:.2f} V, {ui.percentage:.0f}%)')
+        #if ui.is_low: (ui is not accounted for, very reactive/unimportant)
+        #    alerts.append(f'segway_ui low ({ui_v:.2f} V, {ui.percentage:.0f}%)')
         if pbs.is_low:
             alerts.append(f'segway_powerbase low ({pb:.2f} V, {pbs.percentage:.0f}%)')
         if v is None:
