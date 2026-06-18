@@ -46,8 +46,8 @@ class RecoverySupervisor(Node):
         # downstream (planning failures / whole-run-missed -> FAULT).
         self.declare_parameter('good_covariance', 0.0035)         # pos var x+y: store last-good below this
         self.declare_parameter('good_yaw_covariance', 0.0013)     # yaw var:     store last-good below this
-        self.declare_parameter('diverged_covariance', 0.005)      # pos var x+y: divergence above this
-        self.declare_parameter('diverged_yaw_covariance', 0.0018) # yaw var:     divergence above this
+        self.declare_parameter('diverged_covariance', 0.015)      # pos var x+y: divergence above this
+        self.declare_parameter('diverged_yaw_covariance', 0.0028) # yaw var:     divergence above this
         self.declare_parameter('divergence_time', 4.0)            # s sustained above threshold
         # Honor an externally-set pose on /initialpose (e.g. RViz): adopt it and
         # pause divergence checks for this long so AMCL converges without an auto re-seed.
