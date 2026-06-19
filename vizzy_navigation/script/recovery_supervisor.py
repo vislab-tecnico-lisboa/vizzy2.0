@@ -48,9 +48,9 @@ class RecoverySupervisor(Node):
         # NOTE: covariance is confidence, not correctness; a confidently-wrong fix has
         # LOW covariance and is NOT detectable here (caught downstream via
         # planning failures / whole-run-missed -> FAULT).
-        self.declare_parameter('good_covariance', 0.004)          # pos var x+y: recovered/store-good below this
+        self.declare_parameter('good_covariance', 0.30)           # pos var x+y: recovered/store-good below this
         self.declare_parameter('good_yaw_covariance', 0.0)        # yaw var: <=0 disables the yaw term
-        self.declare_parameter('diverged_covariance', 0.006)      # pos var x+y: divergence above this
+        self.declare_parameter('diverged_covariance', 0.50)       # pos var x+y: divergence above this
         self.declare_parameter('diverged_yaw_covariance', 0.0)    # yaw var: <=0 disables the yaw term
         self.declare_parameter('divergence_time', 4.0)            # s sustained above threshold
         # Honor an externally-set pose on /initialpose (e.g. RViz): adopt it and
