@@ -54,8 +54,6 @@ bt_navigator:
     plugin_lib_names:
       - nav2_lifecycle_manager_bt_node
       - opennav_docking_bt_plugin
-      - nav2_reinitialize_global_localization_service_bt_node
-      - nav2_drive_on_heading_action_bt_node
     error_code_name_prefixes:
       - assisted_teleop
       - backup

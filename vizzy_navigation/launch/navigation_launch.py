@@ -30,7 +30,7 @@ import os
 import yaml 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, LogInfo, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, GroupAction, LogInfo, OpaqueFunction
 from launch.conditions import IfCondition
 from launch.launch_context import LaunchContext
 from launch.substitutions import LaunchConfiguration
@@ -939,6 +939,15 @@ def generate_launch_description():
                              'node_names': ['dock_pose_estimator_node'],
                              'bond_timeout': 0.0}],),
                 #prefix=['xterm -e gdb -ex run --args']),
+
+            # On stack startup, command AMCL to perform a full (global) re-localization:
+            # particles are dispersed across the whole map and re-converge as the robot
+            # drives.
+            ExecuteProcess(
+                cmd=['ros2', 'service', 'call',
+                     '/reinitialize_global_localization', 'std_srvs/srv/Empty'],
+                output='screen',
+                name='startup_global_relocalization'),
         ]
     )
 
