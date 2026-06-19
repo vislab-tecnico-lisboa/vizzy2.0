@@ -401,7 +401,7 @@ def generate_launch_description():
     )
     initial_pose_arg = DeclareLaunchArgument(
         'initial_pose',
-        default_value='-x 0.0 -y 0.0 -z 0.0 -Y 0.0',
+        default_value='-x 0.38413526950373916 -y 0.5936540865000817 -z 0.0 -Y 0.8887',
         description='Initial pose of the robot in the map frame.'
     )
     update_min_d_arg = DeclareLaunchArgument(
