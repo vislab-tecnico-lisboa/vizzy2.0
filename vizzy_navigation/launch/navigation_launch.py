@@ -851,8 +851,8 @@ def generate_launch_description():
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params], 
-                remappings=remappings,#),
-                prefix=['xterm -e gdb -ex run --args']),
+                remappings=remappings),
+                #prefix=['xterm -e gdb -ex run --args']),
 
             # This node needs to be setup as a LifecycleNode for the charging_action_server_node
             # to be able to manage its lifecycle properly.
@@ -941,12 +941,15 @@ def generate_launch_description():
                              'bond_timeout': 0.0}],),
                 #prefix=['xterm -e gdb -ex run --args']),
 
-            # On stack startup, command AMCL to perform a full (global) re-localization:
-            # particles are dispersed across the whole map and re-converge as the robot
-            # drives.
+            # Once the stack is up, command AMCL to perform a full (global)
+            # re-localization: particles are dispersed across the whole map and
+            # re-converge as the robot drives. We wait until
+            # AMCL reports ACTIVE before calling the service.
             ExecuteProcess(
-                cmd=['ros2', 'service', 'call',
-                     '/reinitialize_global_localization', 'std_srvs/srv/Empty'],
+                cmd=['bash', '-c',
+                     'while ! ros2 lifecycle get /amcl 2>/dev/null | grep -q "^active"; '
+                     'do sleep 1; done; sleep 2; '
+                     'ros2 service call /reinitialize_global_localization std_srvs/srv/Empty'],
                 output='screen',
                 name='startup_global_relocalization'),
         ]
