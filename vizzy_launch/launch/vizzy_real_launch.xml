@@ -37,7 +37,7 @@
   <arg name="update_min_a" default="0.01" description="Minimum angle for localization updates"/>
   <arg name="laser_max_range" default="-1.0" description="Maximum range for the laser scanner"/>
   <arg name="beam_skip_distance" default="0.5" description="Distance threshold for beam skipping"/>
-  <arg name="beam_skip_error_threshold" default="0.9" description="Error threshold for beam skipping"/>
+  <arg name="beam_skip_error_threshold" default="0.5" description="Error threshold for beam skipping"/>
   <arg name="beam_skip_threshold" default="0.3" description="Threshold for beam skipping"/>
   <arg name="do_beamskip" default="true" description="Enable or disable beam skipping in the laser scanner"/>
   <arg name="linear_odom_scale" default="1.0" description="Scale factor for linear odometry"/>

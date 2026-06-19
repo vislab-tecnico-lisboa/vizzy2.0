@@ -8,16 +8,16 @@ amcl:
     base_frame_id: "base_footprint" # Configurable
     global_frame_id: "map" # Configurable
     lambda_short: 0.1
-    laser_likelihood_max_dist: 2.0
+    laser_likelihood_max_dist: 1.0
     laser_max_range: -1.0 # Configurable
     laser_min_range: 0.04
     laser_model_type: "likelihood_field"
-    max_beams: 60
+    max_beams: 120
     max_particles: 5000
-    min_particles: 250
+    min_particles: 500
     odom_frame_id: "odometry" # Configurable
-    recovery_alpha_fast: 0.0
-    recovery_alpha_slow: 0.0
+    recovery_alpha_fast: 0.1
+    recovery_alpha_slow: 0.001
     resample_interval: 1
     sigma_hit: 0.2
     transform_tolerance: 0.3
@@ -37,7 +37,7 @@ amcl:
       yaw: 0.0 # Configurable
     robot_model_type: "nav2_amcl::DifferentialMotionModel"
     beam_skip_distance: 0.5 # Configurable
-    beam_skip_error_threshold: 0.9 # Configurable
+    beam_skip_error_threshold: 0.5 # Configurable
     beam_skip_threshold: 0.3 # Configurable
     do_beamskip: True # Configurable
 
