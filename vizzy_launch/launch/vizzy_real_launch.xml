@@ -136,20 +136,39 @@
     </include>
 
     <!-- Merge the filtered front + rear scans into one ~300 deg scan for AMCL.
-         Both lasers are transformed into the base frame and re-projected to a
-         single LaserScan, giving the particle filter coverage behind the robot
-         so along-corridor position is observable (front-only is aliased). -->
-    <node pkg="ira_laser_tools" exec="laserscan_multi_merger" name="laserscan_multi_merger" output="screen">
-      <param name="destination_frame" value="$(var base_frame_id)" />
-      <param name="cloud_destination_topic" value="/merged_cloud" />
-      <param name="scan_destination_topic" value="$(var scan_topic_merged)" />
-      <param name="laserscan_topics" value="$(var scan_topic_filtered_front) $(var scan_topic_filtered_rear)" />
+         Each scan is transformed (via TF) into the base frame, concatenated, and
+         re-projected to a single LaserScan, giving the particle filter coverage
+         behind the robot so along-corridor position is observable (front-only is
+         aliased). -->
+    <node pkg="dual_laser_merger" exec="dual_laser_merger_node" name="dual_laser_merger" output="screen">
+      <param name="laser_1_topic" value="$(var scan_topic_filtered_front)" />
+      <param name="laser_2_topic" value="$(var scan_topic_filtered_rear)" />
+      <param name="merged_scan_topic" value="$(var scan_topic_merged)" />
+      <param name="target_frame" value="$(var base_frame_id)" />
+      <!-- Positioning comes from the URDF TF, no extra manual offsets. -->
+      <param name="laser_1_x_offset" value="0.0" />
+      <param name="laser_1_y_offset" value="0.0" />
+      <param name="laser_1_yaw_offset" value="0.0" />
+      <param name="laser_2_x_offset" value="0.0" />
+      <param name="laser_2_y_offset" value="0.0" />
+      <param name="laser_2_yaw_offset" value="0.0" />
+      <!-- The two Hokuyos are not hardware-synced, thus we widen the time tolerance so
+           message_filters actually pairs their scans (too tight => no output). -->
+      <param name="tolerance" value="0.05" />
+      <param name="queue_size" value="5" />
       <param name="angle_min" value="-3.141592653589793" />
       <param name="angle_max" value="3.141592653589793" />
       <param name="angle_increment" value="0.005800" />
       <param name="scan_time" value="0.0333333" />
       <param name="range_min" value="0.04" />
       <param name="range_max" value="30.0" />
+      <param name="min_height" value="-5.0" />
+      <param name="max_height" value="5.0" />
+      <param name="use_inf" value="true" />
+      <param name="inf_epsilon" value="1.0" />
+      <param name="allowed_radius" value="0.45" />
+      <param name="enable_shadow_filter" value="true" />
+      <param name="enable_average_filter" value="true" />
     </node>
 
 
