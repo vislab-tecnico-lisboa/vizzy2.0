@@ -37,17 +37,18 @@ class RecoverySupervisor(Node):
         super().__init__('recovery_supervisor')
 
         # --- Parameters ---
-        # Thresholds calibrated from on-robot /amcl_pose data. Good fixes stay below
-        # ~0.0036 (position: var x + var y) and ~0.0013 (yaw var); wrong/uncertain
-        # fixes exceed the diverged values. Position and yaw are OR-combined for
-        # divergence (yaw catches early drift the position term misses).
-        # NOTE: covariance is *confidence*, not *correctness*, meaning a confidently-wrong
-        # fix has LOW covariance and is NOT detectable here; those are caught
-        # downstream (planning failures / whole-run-missed -> FAULT).
-        self.declare_parameter('good_covariance', 0.0035)         # pos var x+y: store last-good below this
-        self.declare_parameter('good_yaw_covariance', 0.0013)     # yaw var:     store last-good below this
-        self.declare_parameter('diverged_covariance', 0.005)      # pos var x+y: divergence above this
-        self.declare_parameter('diverged_yaw_covariance', 0.0018) # yaw var:     divergence above this
+        # Detection uses the POSITION covariance (var x + var y) only. The yaw term
+        # is disabled by default (thresholds <= 0): yaw covariance is strongly
+        # motion-dependent and the relocalization spin itself inflates it (~0.0035),
+        # so it cannot tell "wrong" from "just-spun-but-fine" and caused false
+        # triggers / false FAULTs. 
+        # NOTE: covariance is confidence, not correctness; a confidently-wrong fix has
+        # LOW covariance and is NOT detectable here (caught downstream via
+        # planning failures / whole-run-missed -> FAULT).
+        self.declare_parameter('good_covariance', 0.004)          # pos var x+y: recovered/store-good below this
+        self.declare_parameter('good_yaw_covariance', 0.0)        # yaw var: <=0 disables the yaw term
+        self.declare_parameter('diverged_covariance', 0.006)      # pos var x+y: divergence above this
+        self.declare_parameter('diverged_yaw_covariance', 0.0)    # yaw var: <=0 disables the yaw term
         self.declare_parameter('divergence_time', 4.0)            # s sustained above threshold
         # Honor an externally-set pose on /initialpose (e.g. RViz): adopt it and
         # pause divergence checks for this long so AMCL converges without an auto re-seed.
@@ -132,7 +133,8 @@ class RecoverySupervisor(Node):
         yaw_cov = msg.pose.covariance[35]                      # var(yaw)
         self._latest_cov = cov
         self._latest_yaw_cov = yaw_cov
-        if cov <= self._good_cov and yaw_cov <= self._good_yaw_cov:
+        yaw_ok = (self._good_yaw_cov <= 0.0) or (yaw_cov <= self._good_yaw_cov)
+        if cov <= self._good_cov and yaw_ok:
             self._last_good_pose = msg
 
     def _on_initialpose(self, msg: PoseWithCovarianceStamped) -> None:
@@ -158,8 +160,9 @@ class RecoverySupervisor(Node):
             return 'localization covariance: no /amcl_pose received yet'
 
         def delta(v, thr):
-            pct = (v / thr * 100.0) if thr > 0.0 else float('inf')
-            return f'{v - thr:+.5f} ({pct:.0f}% of thr)'
+            if thr <= 0.0:
+                return 'disabled'
+            return f'{v - thr:+.5f} ({v / thr * 100.0:.0f}% of thr)'
 
         return (
             'localization covariance: '
@@ -185,7 +188,8 @@ class RecoverySupervisor(Node):
         yaw_cov = self._latest_yaw_cov
         if cov is None or yaw_cov is None:
             return
-        diverged = (cov >= self._diverged_cov) or (yaw_cov >= self._diverged_yaw_cov)
+        diverged = (cov >= self._diverged_cov) or \
+            (self._diverged_yaw_cov > 0.0 and yaw_cov >= self._diverged_yaw_cov)
         if diverged:
             if self._diverged_since is None:
                 self._diverged_since = now
@@ -225,9 +229,10 @@ class RecoverySupervisor(Node):
                 time.sleep(0.5)
                 self._spin(self._spin_yaw)
                 time.sleep(self._post_spin_settle)
-                if (self._latest_cov is not None and self._latest_yaw_cov is not None
-                        and self._latest_cov <= self._good_cov
-                        and self._latest_yaw_cov <= self._good_yaw_cov):
+                yaw_ok = (self._good_yaw_cov <= 0.0) or (
+                    self._latest_yaw_cov is not None
+                    and self._latest_yaw_cov <= self._good_yaw_cov)
+                if self._latest_cov is not None and self._latest_cov <= self._good_cov and yaw_ok:
                     self.get_logger().info(f'Localization recovered. {self._cov_report()}')
                     self._set_state(RecoveryStatus.OK, 'localization recovered')
                     return
