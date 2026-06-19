@@ -851,7 +851,8 @@ def generate_launch_description():
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[configured_params], 
-                remappings=remappings),
+                remappings=remappings,#),
+                prefix=['xterm -e gdb -ex run --args']),
 
             # This node needs to be setup as a LifecycleNode for the charging_action_server_node
             # to be able to manage its lifecycle properly.
