@@ -169,7 +169,7 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'amcl.ros__parameters.base_frame_id': LaunchConfiguration('base_frame_id').perform(context),
         'amcl.ros__parameters.global_frame_id': LaunchConfiguration('map_frame_id').perform(context),
         'amcl.ros__parameters.odom_frame_id': LaunchConfiguration('odom_frame_id').perform(context),
-        'amcl.ros__parameters.scan_topic': LaunchConfiguration('scan_topic_front').perform(context),
+        'amcl.ros__parameters.scan_topic': LaunchConfiguration('scan_topic_amcl').perform(context),
         'amcl.ros__parameters.map_topic': LaunchConfiguration('map_topic').perform(context),
         'amcl.ros__parameters.initial_pose.x': -float(pose_args[1]) if len(pose_args) > 1 else 0.0,
         'amcl.ros__parameters.initial_pose.y': -float(pose_args[3]) if len(pose_args) > 3 else 0.0,
@@ -368,6 +368,11 @@ def generate_launch_description():
         'scan_topic_rear',
         default_value='nav_hokuyo_laser/front/scan',
         description='Name of the laser scan topic.'
+    )
+    scan_topic_amcl_arg = DeclareLaunchArgument(
+        'scan_topic_amcl',
+        default_value='nav_hokuyo_laser/front/scan',
+        description='Laser scan topic used by AMCL for localization (e.g. a merged front+rear scan).'
     )
     map_yaml_arg = DeclareLaunchArgument(
         'map_yaml',
@@ -958,6 +963,7 @@ def generate_launch_description():
         map_topic_arg,
         scan_topic_front_arg,
         scan_topic_rear_arg,
+        scan_topic_amcl_arg,
         map_yaml_arg,
         base_frame_id_arg,
         map_frame_id_arg,

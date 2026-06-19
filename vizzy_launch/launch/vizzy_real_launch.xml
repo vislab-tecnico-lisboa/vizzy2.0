@@ -17,6 +17,7 @@
   <arg name="scan_topic_rear" default="/nav_hokuyo_laser/rear/scan" description="The name of the rear output scan topic"/>
   <arg name="scan_topic_filtered_front" default="/scan_filtered_front" description="The name of the filtered front scan topic"/>
   <arg name="scan_topic_filtered_rear" default="/scan_filtered_rear" description="The name of the filtered rear scan topic"/>
+  <arg name="scan_topic_merged" default="/scan_merged" description="Merged front+rear scan topic fed to AMCL for localization"/>
   <arg name="serial_port_front" default="/dev/ttyACM1" description="Serial port for the front laser scanner"/>
   <arg name="serial_port_rear" default="/dev/ttyACM0" description="Serial port for the rear laser scanner"/>
   <arg name="front_laser_frame" default="nav_hokuyo_laser_link" description="Frame id for front laser link."/>
@@ -33,13 +34,13 @@
   <arg name="obstacles_map_yaml" default="$(find-pkg-share vizzy_navigation)/maps/$(var obstacles_map_file)" description="Path to the obstacles map YAML file"/>
   <arg name="laser_filter_params_file" default="$(find-pkg-share vizzy_sensors)/config/hokuyo_filters.yaml" description="Path to the laser filters parameters file"/>
   <arg name="map_frame_id" default="map" description="Frame id for the map"/>
-  <arg name="update_min_d" default="0.01" description="Minimum distance for localization updates"/>
-  <arg name="update_min_a" default="0.01" description="Minimum angle for localization updates"/>
+  <arg name="update_min_d" default="0.20" description="Minimum distance for localization updates"/>
+  <arg name="update_min_a" default="0.15" description="Minimum angle for localization updates"/>
   <arg name="laser_max_range" default="-1.0" description="Maximum range for the laser scanner"/>
   <arg name="beam_skip_distance" default="5.0" description="Distance threshold for beam skipping"/>
   <arg name="beam_skip_error_threshold" default="0.3" description="Error threshold for beam skipping"/>
   <arg name="beam_skip_threshold" default="0.3" description="Threshold for beam skipping"/>
-  <arg name="do_beamskip" default="false" description="Enable or disable beam skipping in the laser scanner"/>
+  <arg name="do_beamskip" default="true" description="Enable or disable beam skipping in the laser scanner"/>
   <arg name="linear_odom_scale" default="1.0" description="Scale factor for linear odometry"/>
   <arg name="angular_odom_scale" default="1.0" description="Scale factor for angular odometry"/>
   <arg name="controller_frequency" default="20.0" description="Frequency of the controller in Hz"/>
@@ -134,6 +135,23 @@
       <arg name="log_level_segway" value="$(var log_level_segway)" />
     </include>
 
+    <!-- Merge the filtered front + rear scans into one ~300 deg scan for AMCL.
+         Both lasers are transformed into the base frame and re-projected to a
+         single LaserScan, giving the particle filter coverage behind the robot
+         so along-corridor position is observable (front-only is aliased). -->
+    <node pkg="ira_laser_tools" exec="laserscan_multi_merger" name="laserscan_multi_merger" output="screen">
+      <param name="destination_frame" value="$(var base_frame_id)" />
+      <param name="cloud_destination_topic" value="/merged_cloud" />
+      <param name="scan_destination_topic" value="$(var scan_topic_merged)" />
+      <param name="laserscan_topics" value="$(var scan_topic_filtered_front) $(var scan_topic_filtered_rear)" />
+      <param name="angle_min" value="-3.141592653589793" />
+      <param name="angle_max" value="3.141592653589793" />
+      <param name="angle_increment" value="0.005800" />
+      <param name="scan_time" value="0.0333333" />
+      <param name="range_min" value="0.04" />
+      <param name="range_max" value="30.0" />
+    </node>
+
 
     <group if="$(var use_navigation)">
       <group if="$(var use_obstacles)">
@@ -146,6 +164,7 @@
           <arg name="map_topic" value="$(var map_topic)"/>
           <arg name="scan_topic_front" value="$(var scan_topic_filtered_front)"/>
           <arg name="scan_topic_rear" value="$(var scan_topic_filtered_rear)"/>
+          <arg name="scan_topic_amcl" value="$(var scan_topic_merged)"/>
           <arg name="map_yaml" value="$(var obstacles_map_yaml)"/>
           <arg name="base_frame_id" value="$(var base_frame_id)"/>
           <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
@@ -215,6 +234,7 @@
           <arg name="map_topic" value="$(var map_topic)"/>
           <arg name="scan_topic_front" value="$(var scan_topic_filtered_front)"/>
           <arg name="scan_topic_rear" value="$(var scan_topic_filtered_rear)"/>
+          <arg name="scan_topic_amcl" value="$(var scan_topic_merged)"/>
           <arg name="map_yaml" value="$(var map_yaml)"/>
           <arg name="base_frame_id" value="$(var base_frame_id)"/>
           <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
