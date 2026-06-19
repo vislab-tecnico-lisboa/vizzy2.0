@@ -7,8 +7,10 @@
 # A standalone, behavior-agnostic node that:
 # monitors localization health (AMCL pose covariance),
 # attempts automatic relocalization (re-seed AMCL to the last-known-good
-# pose + spin in place to re-converge) when localization diverges, useful
-# when the map is stale (e.g. tables/chairs moved) and AMCL drifts,
+# pose, then sweep: partial spins interleaved with short collision-checked
+# forward drives so AMCL gets the motion it needs to re-converge) when
+# localization diverges, useful when the map is stale (e.g. tables/chairs
+# moved) and AMCL drifts,
 # owns a single system recovery state (OK / RECOVERING / FAULT) and
 # broadcasts it on /recovery_status so ANY behavior (patrol, etc.) can react,
 # accepts unrecoverable-fault reports from other nodes (/report_fault) and
@@ -16,7 +18,7 @@
 #
 # Contract: while state != OK, consumers MUST stop commanding the base (cancel
 # their navigation goals). During RECOVERING the supervisor itself drives the
-# base (spin) to relocalize; during FAULT the robot stays put.
+# base (spin + forward drive) to relocalize; during FAULT the robot stays put.
 
 import threading
 import time
@@ -27,7 +29,8 @@ from rclpy.action import ActionClient
 from rclpy.qos import QoSProfile, DurabilityPolicy
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from std_srvs.srv import Trigger
-from nav2_msgs.action import Spin
+from nav2_msgs.action import Spin, DriveOnHeading
+from builtin_interfaces.msg import Duration
 from vizzy_msgs.msg import RecoveryStatus
 
 
@@ -53,10 +56,19 @@ class RecoverySupervisor(Node):
         # Honor an externally-set pose on /initialpose (e.g. RViz): adopt it and
         # pause divergence checks for this long so AMCL converges without an auto re-seed.
         self.declare_parameter('manual_pose_grace_period', 2.0)  # s
-        self.declare_parameter('max_relocalize_attempts', 2)
-        self.declare_parameter('relocalize_spin_yaw', 6.28)    # rad (~full turn) to sweep features
-        self.declare_parameter('settle_time', 1.5)             # s for consumers to stop before spin
-        self.declare_parameter('post_spin_settle', 1.5)        # s for AMCL to re-converge after spin
+        self.declare_parameter('max_relocalize_attempts', 5)   # re-seed cycles
+        # Each re-seed cycle runs a sweep of (partial spin + short forward drive)
+        # repeated sweep_steps times. Translating between spins gives AMCL more
+        # motion to re-converge. 
+        # The spin is partial (not a full turn) so there is usually free
+        # space ahead to drive into; the forward drive uses the native, collision-
+        # checked DriveOnHeading behavior, so it self-limits if the way is blocked.
+        self.declare_parameter('relocalize_spin_yaw', 0.785)         # rad per spin step (~45 deg)
+        self.declare_parameter('relocalize_sweep_steps', 5)         # spin+drive repeats per re-seed
+        self.declare_parameter('relocalize_forward_distance', 0.5)  # m per forward drive
+        self.declare_parameter('relocalize_forward_speed', 0.15)    # m/s for the forward drive
+        self.declare_parameter('settle_time', 1.5)             # s for consumers to stop before moving
+        self.declare_parameter('post_spin_settle', 2.0)        # s for AMCL to re-converge after the sweep
         self.declare_parameter('monitor_period', 0.5)          # s
 
         self._good_cov = self.get_parameter('good_covariance').value
@@ -67,6 +79,9 @@ class RecoverySupervisor(Node):
         self._manual_grace = self.get_parameter('manual_pose_grace_period').value
         self._max_attempts = self.get_parameter('max_relocalize_attempts').value
         self._spin_yaw = self.get_parameter('relocalize_spin_yaw').value
+        self._sweep_steps = self.get_parameter('relocalize_sweep_steps').value
+        self._forward_dist = self.get_parameter('relocalize_forward_distance').value
+        self._forward_speed = self.get_parameter('relocalize_forward_speed').value
         self._settle_time = self.get_parameter('settle_time').value
         self._post_spin_settle = self.get_parameter('post_spin_settle').value
         monitor_period = self.get_parameter('monitor_period').value
@@ -90,6 +105,7 @@ class RecoverySupervisor(Node):
         # Honor externally-set poses (RViz "2D Pose Estimate" -> /initialpose).
         self.create_subscription(PoseWithCovarianceStamped, 'initialpose', self._on_initialpose, 10)
         self._spin_client = ActionClient(self, Spin, 'spin')
+        self._drive_client = ActionClient(self, DriveOnHeading, 'drive_on_heading')
         self.create_service(Trigger, 'report_fault', self._on_report_fault)
         self.create_service(Trigger, 'clear_fault', self._on_clear_fault)
 
@@ -224,10 +240,21 @@ class RecoverySupervisor(Node):
                 if not rclpy.ok():
                     return
                 self.get_logger().info(
-                    f'Relocalization attempt {attempt}/{self._max_attempts}: re-seed + spin.')
+                    f'Relocalization attempt {attempt}/{self._max_attempts}: re-seed + sweep.')
                 self._reseed_amcl()
                 time.sleep(0.5)
-                self._spin(self._spin_yaw)
+                # Sweep: alternate a partial spin with a short, collision-checked
+                # forward drive. The translation between spins is what helps AMCL
+                # re-converge. The spins vary the heading so the forward drives
+                # explore feature-rich directions.
+                for step in range(1, self._sweep_steps + 1):
+                    if not rclpy.ok():
+                        return
+                    self.get_logger().info(
+                        f'  sweep step {step}/{self._sweep_steps}: spin {self._spin_yaw:.2f} rad '
+                        f'+ drive {self._forward_dist:.2f} m forward.')
+                    self._spin(self._spin_yaw)
+                    self._drive_forward(self._forward_dist)
                 time.sleep(self._post_spin_settle)
                 yaw_ok = (self._good_yaw_cov <= 0.0) or (
                     self._latest_yaw_cov is not None
@@ -264,12 +291,15 @@ class RecoverySupervisor(Node):
         self._initialpose_pub.publish(seed)
         self.get_logger().info('Re-seeded AMCL to last-known-good pose via /initialpose.')
 
-    def _spin(self, yaw: float) -> None:
-        if not self._spin_client.wait_for_server(timeout_sec=5.0):
-            self.get_logger().warn('Spin action server unavailable; skipping spin.')
+    def _run_action(self, client, goal, name: str, timeout: float) -> None:
+        """Send a behavior_server action goal and block until it finishes.
+
+        Best-effort: an unavailable server or a rejected goal is logged and
+        skipped rather than aborting the whole recovery sweep.
+        """
+        if not client.wait_for_server(timeout_sec=5.0):
+            self.get_logger().warn(f'{name} action server unavailable; skipping.')
             return
-        goal = Spin.Goal()
-        goal.target_yaw = float(yaw)
         done = threading.Event()
 
         def on_result(_):
@@ -278,13 +308,30 @@ class RecoverySupervisor(Node):
         def on_goal(future):
             handle = future.result()
             if not handle.accepted:
-                self.get_logger().warn('Spin goal rejected.')
+                self.get_logger().warn(f'{name} goal rejected.')
                 done.set()
                 return
             handle.get_result_async().add_done_callback(on_result)
 
-        self._spin_client.send_goal_async(goal).add_done_callback(on_goal)
-        done.wait(timeout=max(15.0, abs(yaw) * 5.0))
+        client.send_goal_async(goal).add_done_callback(on_goal)
+        done.wait(timeout=timeout)
+
+    def _spin(self, yaw: float) -> None:
+        goal = Spin.Goal()
+        goal.target_yaw = float(yaw)
+        self._run_action(self._spin_client, goal, 'Spin', timeout=max(15.0, abs(yaw) * 5.0))
+
+    def _drive_forward(self, distance: float) -> None:
+        # DriveOnHeading drives +x (forward along the current heading). It is
+        # collision-checked against the live local costmap, so it stops/aborts if
+        # the way is blocked, meaning it is safe even while mislocalized (the obstacle layer
+        # comes from the laser, not the static map).
+        goal = DriveOnHeading.Goal()
+        goal.target.x = float(distance)
+        goal.speed = float(self._forward_speed)
+        secs = int(abs(distance) / max(self._forward_speed, 0.01)) + 5
+        goal.time_allowance = Duration(sec=secs)
+        self._run_action(self._drive_client, goal, 'DriveOnHeading', timeout=float(secs + 5))
 
     # ------------------------------------------------------------------
     # Fault services
