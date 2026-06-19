@@ -204,7 +204,6 @@ install(
 
 install(PROGRAMS
   script/patrol_node.py
-  script/recovery_supervisor.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

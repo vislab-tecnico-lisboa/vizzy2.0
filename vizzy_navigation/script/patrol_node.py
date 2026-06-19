@@ -26,13 +26,12 @@ import yaml
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
-from rclpy.qos import QoSProfile, DurabilityPolicy
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped
 from nav2_msgs.action import FollowWaypoints
 from std_srvs.srv import Trigger
 from vizzy_msgs.action import Charge
-from vizzy_msgs.msg import BatteryStatus, RecoveryStatus
+from vizzy_msgs.msg import BatteryStatus
 
 
 class PatrolNode(Node):
@@ -67,16 +66,6 @@ class PatrolNode(Node):
         self._battery_lock   = threading.Lock()
         self.create_subscription(
             BatteryStatus, 'battery_status', self._on_battery_status, 10)
-
-        # Recovery-supervisor state. The supervisor owns localization health and
-        # the central fault state; while it is not OK, patrol must stop commanding
-        # the base. Defaults to OK so patrol still runs if the supervisor is absent.
-        self._recovery_state = RecoveryStatus.OK
-        self._recovery_lock  = threading.Lock()
-        latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
-        self.create_subscription(
-            RecoveryStatus, 'recovery_status', self._on_recovery_status, latched)
-        self._report_fault_client = self.create_client(Trigger, 'report_fault')
 
         # Protected by _goal_lock. Holds the currently active action goal handle
         # so it can be cancelled from the battery-monitor path.
@@ -224,40 +213,6 @@ class PatrolNode(Node):
             time.sleep(5.0)
 
     # ------------------------------------------------------------------
-    # Recovery supervisor
-    # ------------------------------------------------------------------
-
-    def _on_recovery_status(self, msg: RecoveryStatus) -> None:
-        with self._recovery_lock:
-            self._recovery_state = msg.state
-
-    def _recovery_ok(self) -> bool:
-        with self._recovery_lock:
-            return self._recovery_state == RecoveryStatus.OK
-
-    def _wait_for_recovery_ok(self) -> None:
-        """Block (robot idle) until the supervisor reports OK again.
-
-        Covers RECOVERING (the supervisor is relocalizing and driving the base)
-        and FAULT (halted, awaiting a human + /clear_fault).
-        """
-        logged = False
-        while rclpy.ok() and not self._recovery_ok():
-            if not logged:
-                self.get_logger().warn(
-                    'Recovery supervisor not OK; pausing patrol until it clears.')
-                logged = True
-            time.sleep(0.5)
-
-    def _report_fault(self, reason: str) -> None:
-        """Tell the recovery supervisor an unrecoverable fault occurred."""
-        self.get_logger().error(f'Reporting unrecoverable fault: {reason}')
-        if self._report_fault_client.wait_for_service(timeout_sec=2.0):
-            self._report_fault_client.call_async(Trigger.Request())
-        else:
-            self.get_logger().error('report_fault service unavailable; cannot escalate.')
-
-    # ------------------------------------------------------------------
     # Generic action helper
     # ------------------------------------------------------------------
 
@@ -329,9 +284,10 @@ class PatrolNode(Node):
         if missed:
             self.get_logger().warn(
                 f'{len(missed)}/{len(self._waypoints)} waypoint(s) missed this run.')
-        # Whole run missed -> the robot couldn't reach a single waypoint -> unrecoverable.
+        # Whole run missed -> the robot couldn't reach a single waypoint. Recovery
+        # is handled per-goal by the navigation behavior tree, here we just flag it.
         if self._waypoints and len(missed) >= len(self._waypoints):
-            self._report_fault('whole patrol run missed (no waypoint reachable)')
+            self.get_logger().error('Whole patrol run missed (no waypoint reachable).')
 
         return status == GoalStatus.STATUS_SUCCEEDED
 
@@ -448,13 +404,7 @@ class PatrolNode(Node):
         self._wait_for_nav2_active()
 
         while rclpy.ok():
-            # Pre-flight checks before starting a new patrol run. Recovery state has
-            # the highest priority: if the supervisor is recovering or faulted, stop
-            # commanding the base and wait until it clears.
-            if not self._recovery_ok():
-                self._cancel_active_goal()
-                self._wait_for_recovery_ok()
-                continue
+            # Pre-flight checks before starting a new patrol run.
             # A manual dock request takes priority over the battery check.
             if self._dock_requested.is_set():
                 self._manual_dock_cycle()
@@ -480,10 +430,6 @@ class PatrolNode(Node):
             while not patrol_done.wait(timeout=self._battery_check_period):
                 if not rclpy.ok():
                     break
-                if not self._recovery_ok():
-                    # Supervisor is recovering/faulted -> stop commanding the base.
-                    self._cancel_active_goal()
-                    break
                 if self._dock_requested.is_set():
                     # dock_now already cancelled the goal; just stop polling.
                     self._cancel_active_goal()
@@ -494,13 +440,6 @@ class PatrolNode(Node):
                     break
 
             patrol_done.wait()  # ensure the action thread exits cleanly.
-
-            # Recovery state wins over everything: if the supervisor is not OK,
-            # skip normal post-handling and let the next pre-flight wait it out.
-            if not self._recovery_ok():
-                self.get_logger().info(
-                    'Patrol run interrupted: recovery supervisor not OK; pausing.')
-                continue
 
             # A manual dock request wins over the battery branch. It is the
             # source of truth (set by the dock_now service), so check the flag

@@ -52,6 +52,24 @@
                safely otherwise, so the RoundRobin falls through to Wait. -->
           <BackUp backup_dist="0.30" backup_speed="0.10" time_allowance="10"/>
           <Spin spin_dist="1.57" time_allowance="10"/>
+          <!-- Localization recovery: full AMCL global re-localization, then a sweep of partial
+               spins interleaved with short, collision-checked forward drives so AMCL gets
+               the motion it needs to re-converge from the global particle spread. Each
+               motion is wrapped in ForceSuccess so a blocked drive/spin does not abort the
+               sweep. Repeat runs the sweep step 5 times (matching the old node). -->
+          <Sequence name="RelocalizationRecovery">
+            <ReinitializeGlobalLocalization/>
+            <Repeat num_cycles="5">
+              <Sequence name="RelocalizeSweepStep">
+                <ForceSuccess>
+                  <Spin spin_dist="0.785" time_allowance="10"/>
+                </ForceSuccess>
+                <ForceSuccess>
+                  <DriveOnHeading dist_to_travel="0.5" speed="0.15" time_allowance="10"/>
+                </ForceSuccess>
+              </Sequence>
+            </Repeat>
+          </Sequence>
           <Wait wait_duration="10"/>
         </RoundRobin>
       </ReactiveFallback>
