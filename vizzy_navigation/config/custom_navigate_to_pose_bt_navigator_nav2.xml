@@ -58,7 +58,7 @@
                motion is wrapped in ForceSuccess so a blocked drive/spin does not abort the
                sweep. Repeat runs the sweep step 5 times (matching the old node). -->
           <Sequence name="RelocalizationRecovery">
-            <ReinitializeGlobalLocalization/>
+            <ReinitializeGlobalLocalization service_name="reinitialize_global_localization"/>
             <Repeat num_cycles="5">
               <Sequence name="RelocalizeSweepStep">
                 <ForceSuccess>
