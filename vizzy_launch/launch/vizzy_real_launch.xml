@@ -7,7 +7,7 @@
 
 <launch>
   <arg name="map_file" default="isr_7th_floor_simulation.yaml" />
-  <arg name="obstacles_map_file" default="mapa_piso7_NOVO_AWESOME_obst.yaml" />
+  <arg name="obstacles_map_file" default="isr_7th_new_3_edited.yaml" />
   <arg name="use_obstacles" default="true" />
   <arg name="use_navigation" default="true" description="Whether to use the navigation stack"/>
   <arg name="use_laser_filters" default="true" description="Whether to use laser filters for the front and rear lasers"/>
