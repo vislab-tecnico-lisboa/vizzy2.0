@@ -38,13 +38,27 @@ from launch_ros.actions import Node, PushRosNamespace, LifecycleNode
 from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import RewrittenYaml
 
-# This function is used to parse the pose string from the launch configuration.
-def Parse_Pose_Str(context, parameter_name: str = 'pose'):
+# Parses a pose string in the gazebo-style flagged format
+# "-x X -y Y -z Z -Y YAW" (yaw in radians) into a dict {x, y, z, yaw}, reading
+# the named launch configuration. Flag order does not matter and any missing
+# flag defaults to 0.0.
+def Parse_Pose_Str(context, parameter_name: str = 'initial_pose'):
     pose_str = LaunchConfiguration(parameter_name).perform(context)
-    # The string is e.g., "-x 0.0 -y 0.0 ...", so we just split it by spaces and only keep the double values.
-    pose_args = pose_str.split()
-    pose_args = [float(arg) for arg in pose_args if arg.replace('.', '', 1).replace('-', '', 1).isdigit()]
-    return pose_args
+    tokens = pose_str.split()
+    flag_to_key = {'-x': 'x', '-y': 'y', '-z': 'z', '-Y': 'yaw'}
+    pose = {'x': 0.0, 'y': 0.0, 'z': 0.0, 'yaw': 0.0}
+    i = 0
+    while i < len(tokens) - 1:
+        key = flag_to_key.get(tokens[i])
+        if key is not None:
+            try:
+                pose[key] = float(tokens[i + 1])
+            except ValueError:
+                pass
+            i += 2
+        else:
+            i += 1
+    return pose
 
 # --- Opaque Function to save rewritten BT XML ---
 def save_rewritten_bt_xml(context: LaunchContext, template_file_path: str, output_file_path: str = None):
@@ -122,11 +136,8 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
     with open(params_file_path, 'r') as f:
         original_params = yaml.safe_load(f)
 
-    # Call the function to parse the pose string from the launch configuration.
-    pose_args = Parse_Pose_Str(context)
-
-    # Parse the values of pose_args into floats.
-    pose_args = [float(arg) if i % 2 == 1 else arg for i, arg in enumerate(pose_args)]
+    # Parse the initial pose ("-x X -y Y -z Z -Y YAW", yaw in radians) for AMCL.
+    initial_pose = Parse_Pose_Str(context)
 
     # Get the controller plugin type from launch configuration.
     controller_plugin_type = LaunchConfiguration('controller_plugin_type').perform(context)
@@ -171,10 +182,10 @@ def save_rewritten_yaml(context: LaunchContext, output_file_path: str = None, ou
         'amcl.ros__parameters.odom_frame_id': LaunchConfiguration('odom_frame_id').perform(context),
         'amcl.ros__parameters.scan_topic': LaunchConfiguration('scan_topic_amcl').perform(context),
         'amcl.ros__parameters.map_topic': LaunchConfiguration('map_topic').perform(context),
-        'amcl.ros__parameters.initial_pose.x': -float(pose_args[1]) if len(pose_args) > 1 else 0.0,
-        'amcl.ros__parameters.initial_pose.y': -float(pose_args[3]) if len(pose_args) > 3 else 0.0,
-        'amcl.ros__parameters.initial_pose.z': -float(pose_args[5]) if len(pose_args) > 5 else 0.0,
-        'amcl.ros__parameters.initial_pose.yaw': float(pose_args[7]) if len(pose_args) > 7 else 0.0,
+        'amcl.ros__parameters.initial_pose.x': initial_pose['x'],
+        'amcl.ros__parameters.initial_pose.y': initial_pose['y'],
+        'amcl.ros__parameters.initial_pose.z': initial_pose['z'],
+        'amcl.ros__parameters.initial_pose.yaw': initial_pose['yaw'],
         'amcl.ros__parameters.update_min_d': float(LaunchConfiguration('update_min_d').perform(context)),
         'amcl.ros__parameters.update_min_a': float(LaunchConfiguration('update_min_a').perform(context)),
         'amcl.ros__parameters.laser_max_range': float(LaunchConfiguration('laser_max_range').perform(context)),
