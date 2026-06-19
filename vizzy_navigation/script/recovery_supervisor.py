@@ -28,7 +28,7 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 from rclpy.qos import QoSProfile, DurabilityPolicy
 from geometry_msgs.msg import PoseWithCovarianceStamped
-from std_srvs.srv import Trigger
+from std_srvs.srv import Trigger, Empty
 from nav2_msgs.action import Spin, DriveOnHeading
 from builtin_interfaces.msg import Duration
 from vizzy_msgs.msg import RecoveryStatus
@@ -106,6 +106,7 @@ class RecoverySupervisor(Node):
         self.create_subscription(PoseWithCovarianceStamped, 'initialpose', self._on_initialpose, 10)
         self._spin_client = ActionClient(self, Spin, 'spin')
         self._drive_client = ActionClient(self, DriveOnHeading, 'drive_on_heading')
+        self._reinit_client = self.create_client(Empty, 'reinitialize_global_localization')
         self.create_service(Trigger, 'report_fault', self._on_report_fault)
         self.create_service(Trigger, 'clear_fault', self._on_clear_fault)
 
@@ -240,8 +241,8 @@ class RecoverySupervisor(Node):
                 if not rclpy.ok():
                     return
                 self.get_logger().info(
-                    f'Relocalization attempt {attempt}/{self._max_attempts}: re-seed + sweep.')
-                self._reseed_amcl()
+                    f'Relocalization attempt {attempt}/{self._max_attempts}: global re-localization + sweep.')
+                self._reinitialize_amcl()
                 time.sleep(0.5)
                 # Sweep: alternate a partial spin with a short, collision-checked
                 # forward drive. The translation between spins is what helps AMCL
@@ -274,22 +275,34 @@ class RecoverySupervisor(Node):
         finally:
             self._recovering.clear()
 
-    def _reseed_amcl(self) -> None:
-        pose = self._last_good_pose
-        if pose is None:
+    def _reinitialize_amcl(self) -> None:
+        # Full global re-localization: AMCL scatters its particles uniformly over
+        # the whole map's free space and re-converges from scratch as the robot
+        # moves during the sweep. Unlike the re-seed, this needs no prior pose and
+        # explores all hypotheses freely.
+        if not self._reinit_client.wait_for_service(timeout_sec=5.0):
+            self.get_logger().warn(
+                'reinitialize_global_localization service unavailable; skipping.')
             return
-        seed = PoseWithCovarianceStamped()
-        seed.header.stamp = self.get_clock().now().to_msg()
-        seed.header.frame_id = pose.header.frame_id or 'map'
-        seed.pose.pose = pose.pose.pose
-        # Moderate covariance so AMCL re-converges from near the last good pose.
-        cov = [0.0] * 36
-        cov[0] = 0.25     # var(x)
-        cov[7] = 0.25     # var(y)
-        cov[35] = 0.068   # var(yaw) ~ (15 deg)^2
-        seed.pose.covariance = cov
-        self._initialpose_pub.publish(seed)
-        self.get_logger().info('Re-seeded AMCL to last-known-good pose via /initialpose.')
+        self._reinit_client.call_async(Empty.Request())
+        self.get_logger().info('Requested AMCL global re-localization.')
+
+    # def _reseed_amcl(self) -> None:
+    #     pose = self._last_good_pose
+    #     if pose is None:
+    #         return
+    #     seed = PoseWithCovarianceStamped()
+    #     seed.header.stamp = self.get_clock().now().to_msg()
+    #     seed.header.frame_id = pose.header.frame_id or 'map'
+    #     seed.pose.pose = pose.pose.pose
+    #     # Moderate covariance so AMCL re-converges from near the last good pose.
+    #     cov = [0.0] * 36
+    #     cov[0] = 0.25     # var(x)
+    #     cov[7] = 0.25     # var(y)
+    #     cov[35] = 0.068   # var(yaw) ~ (15 deg)^2
+    #     seed.pose.covariance = cov
+    #     self._initialpose_pub.publish(seed)
+    #     self.get_logger().info('Re-seeded AMCL to last-known-good pose via /initialpose.')
 
     def _run_action(self, client, goal, name: str, timeout: float) -> None:
         """Send a behavior_server action goal and block until it finishes.
