@@ -37,8 +37,8 @@ amcl:
       yaw: 0.0 # Configurable
     robot_model_type: "nav2_amcl::DifferentialMotionModel"
     beam_skip_distance: 5.0 # Configurable
-    beam_skip_error_threshold: 0.3 # Configurable
-    beam_skip_threshold: 0.3 # Configurable
+    beam_skip_error_threshold: 0.5 # Configurable
+    beam_skip_threshold: 0.5 # Configurable
     do_beamskip: True # Configurable
 
 bt_navigator:
