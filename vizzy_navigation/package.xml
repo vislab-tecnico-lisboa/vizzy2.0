@@ -57,6 +57,8 @@
   <exec_depend>nav2_theta_star_planner</exec_depend>
   <exec_depend>nav2_constrained_smoother</exec_depend>
   <exec_depend>nav2_regulated_pure_pursuit_controller</exec_depend>
+  <exec_depend>slam_toolbox</exec_depend>
+  <exec_depend>teleop_twist_keyboard</exec_depend>
 
   <!-- General dependencies -->
   <depend>xterm</depend> 

@@ -1,0 +1,30 @@
+<!--
+  * SLAM (mapping) mode for Vizzy.
+  *
+  * Brings up the robot WITHOUT localization/navigation and runs slam_toolbox to
+  * build a new 2D map from the merged front+rear scan. This reuses the standard
+  * robot bringup by including vizzy_real_launch.xml with use_navigation:=false
+  * (URDF + Segway base + both lasers + dual_laser_merger come up. AMCL,
+  * map_server and Nav2 do NOT, slam_toolbox owns the map->odom transform).
+-->
+<launch>
+  <arg name="scan_topic_merged" default="/scan_merged" description="Merged front+rear scan fed to slam_toolbox"/>
+  <arg name="base_frame_id" default="base_footprint" description="Robot base frame"/>
+  <arg name="odom_frame_id" default="odometry" description="Odometry frame"/>
+  <arg name="map_frame_id" default="map" description="Map frame"/>
+  <arg name="log_level" default="info" description="Log level for the SLAM node"/>
+
+  <!-- Robot bringup without navigation: lasers + merger + base + TF only. -->
+  <include file="$(find-pkg-share vizzy_launch)/launch/vizzy_real_launch.xml">
+    <arg name="use_navigation" value="false"/>
+  </include>
+
+  <!-- slam_toolbox builds the map from the merged scan and publishes map->odom. -->
+  <include file="$(find-pkg-share vizzy_navigation)/launch/slam_launch.py">
+    <arg name="scan_topic" value="$(var scan_topic_merged)"/>
+    <arg name="base_frame_id" value="$(var base_frame_id)"/>
+    <arg name="odom_frame_id" value="$(var odom_frame_id)"/>
+    <arg name="map_frame_id" value="$(var map_frame_id)"/>
+    <arg name="log_level" value="$(var log_level)"/>
+  </include>
+</launch>
