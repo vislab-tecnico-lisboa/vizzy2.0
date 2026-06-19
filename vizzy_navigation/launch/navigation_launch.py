@@ -945,13 +945,13 @@ def generate_launch_description():
             # re-localization: particles are dispersed across the whole map and
             # re-converge as the robot drives. We wait until
             # AMCL reports ACTIVE before calling the service.
-            ExecuteProcess(
-                cmd=['bash', '-c',
-                     'while ! ros2 lifecycle get /amcl 2>/dev/null | grep -q "^active"; '
-                     'do sleep 1; done; sleep 2; '
-                     'ros2 service call /reinitialize_global_localization std_srvs/srv/Empty'],
-                output='screen',
-                name='startup_global_relocalization'),
+            #ExecuteProcess(
+            #    cmd=['bash', '-c',
+            #         'while ! ros2 lifecycle get /amcl 2>/dev/null | grep -q "^active"; '
+            #         'do sleep 1; done; sleep 2; '
+            #         'ros2 service call /reinitialize_global_localization std_srvs/srv/Empty'],
+            #    output='screen',
+            #    name='startup_global_relocalization'),
         ]
     )
 
