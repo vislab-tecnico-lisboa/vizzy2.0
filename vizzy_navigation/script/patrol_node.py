@@ -49,12 +49,17 @@ class PatrolNode(Node):
         self.declare_parameter('undock_on_startup', True)
         self.declare_parameter('undock_distance_m', 1.0)
         self.declare_parameter('undock_speed_mps', 0.15)
+        # Seconds to wait after cancelling any active navigation before sending a
+        # docking goal, so bt_navigator has fully released the previous goal (docking
+        # uses a different BT and cannot preempt a still-active navigate goal).
+        self.declare_parameter('pre_dock_settle_s', 2.0)
         waypoints_file             = self.get_parameter('waypoints_file').value
         self._is_simulation        = self.get_parameter('is_simulation').value
         self._battery_check_period = self.get_parameter('battery_check_period_s').value
         self._undock_on_startup    = self.get_parameter('undock_on_startup').value
         self._undock_distance      = self.get_parameter('undock_distance_m').value
         self._undock_speed         = self.get_parameter('undock_speed_mps').value
+        self._pre_dock_settle      = self.get_parameter('pre_dock_settle_s').value
 
         self.get_logger().info(
             f'Starting patrol_node '
@@ -302,6 +307,16 @@ class PatrolNode(Node):
         return status == GoalStatus.STATUS_SUCCEEDED
 
     def _dock(self) -> bool:
+        # Docking uses a different BT than navigation, so bt_navigator cannot preempt
+        # an active navigate goal with it. The patrol loop cancels the active goal
+        # before docking, but that cancel is asynchronous and takes a moment to fully
+        # release bt_navigator, submitting the docking goal too soon gets it rejected
+        # ("Preemption ... rejected ... not the same BT").
+        if self._pre_dock_settle > 0.0:
+            self.get_logger().info(
+                f'Waiting {self._pre_dock_settle:.1f}s for bt_navigator to release the '
+                'previous goal before docking...')
+            time.sleep(self._pre_dock_settle)
         goal      = Charge.Goal()
         goal.goal = Charge.Goal.CHARGE
         status, result = self._send_action_sync(self._charge_client, goal, 'Charge(CHARGE)')
