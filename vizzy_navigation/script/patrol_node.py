@@ -28,7 +28,8 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 from action_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped
-from nav2_msgs.action import FollowWaypoints
+from nav2_msgs.action import FollowWaypoints, DriveOnHeading
+from builtin_interfaces.msg import Duration
 from std_srvs.srv import Trigger
 from vizzy_msgs.action import Charge
 from vizzy_msgs.msg import BatteryStatus
@@ -43,9 +44,17 @@ class PatrolNode(Node):
         self.declare_parameter('waypoints_file', '')
         self.declare_parameter('is_simulation', False)
         self.declare_parameter('battery_check_period_s', 5.0)
+        # Undock (drive forward off the dock) once before the first patrol run.
+        # Uses the collision-checked DriveOnHeading behavior.
+        self.declare_parameter('undock_on_startup', True)
+        self.declare_parameter('undock_distance_m', 1.0)
+        self.declare_parameter('undock_speed_mps', 0.15)
         waypoints_file             = self.get_parameter('waypoints_file').value
         self._is_simulation        = self.get_parameter('is_simulation').value
         self._battery_check_period = self.get_parameter('battery_check_period_s').value
+        self._undock_on_startup    = self.get_parameter('undock_on_startup').value
+        self._undock_distance      = self.get_parameter('undock_distance_m').value
+        self._undock_speed         = self.get_parameter('undock_speed_mps').value
 
         self.get_logger().info(
             f'Starting patrol_node '
@@ -57,6 +66,7 @@ class PatrolNode(Node):
 
         self._follow_wp_client    = ActionClient(self, FollowWaypoints, 'follow_waypoints')
         self._charge_client       = ActionClient(self, Charge,           'charge')
+        self._drive_client        = ActionClient(self, DriveOnHeading,   'drive_on_heading')
         self._nav2_active_client  = self.create_client(
             Trigger, '/lifecycle_manager_navigation/is_active')
 
@@ -325,6 +335,34 @@ class PatrolNode(Node):
 
         self.get_logger().info('--- Charge cycle end ---')
 
+    def _depart_from_dock(self) -> None:
+        """Undock: drive forward off the dock before the first patrol run.
+
+        Assumes Vizzy departs from the dock, so it drives straight forward by
+        undock_distance_m. This uses the native DriveOnHeading behavior, which is
+        collision-checked against the live local costmap, so if the robot is NOT
+        actually docked and there is an obstacle ahead, the motion aborts safely
+        instead of crashing, and patrol just continues from the current pose.
+        """
+        if not self._undock_on_startup:
+            return
+        goal = DriveOnHeading.Goal()
+        goal.target.x = float(self._undock_distance)     # +x = forward
+        goal.speed = float(self._undock_speed)
+        secs = int(abs(self._undock_distance) / max(self._undock_speed, 0.01)) + 5
+        goal.time_allowance = Duration(sec=secs)
+        self.get_logger().info(
+            f'Undocking: driving {self._undock_distance:.2f} m forward off the dock '
+            f'(collision-checked).')
+        status, _ = self._send_action_sync(
+            self._drive_client, goal, 'DriveOnHeading(undock)')
+        if status == GoalStatus.STATUS_SUCCEEDED:
+            self.get_logger().info('Undock complete.')
+        else:
+            self.get_logger().warn(
+                'Undock drive did not complete (blocked, or robot not at the dock). '
+                'Continuing patrol from the current pose.')
+
     # ------------------------------------------------------------------
     # Manual docking control
     # ------------------------------------------------------------------
@@ -402,6 +440,9 @@ class PatrolNode(Node):
 
         # Wait for Nav2 to be active before starting patrol runs.
         self._wait_for_nav2_active()
+
+        # Depart from the dock (drive forward, collision-checked) before patrolling.
+        self._depart_from_dock()
 
         while rclpy.ok():
             # Pre-flight checks before starting a new patrol run.

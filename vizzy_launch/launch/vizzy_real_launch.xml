@@ -106,7 +106,7 @@
   <arg name="inter_cycle_delay" default="0.0" description="Idle gap between query cycles (seconds) for kokam battery service."/>
 
   <arg name="staging_pose_simulation" default="-x -1.0 -y 0.0 -Y 0.0" description="Simulated dock pose in the format 'x y Yaw' for testing the docking procedure in simulation."/>
-  <arg name="staging_pose_real" default="-x -5.132 -y -5.142 -Y -0.111" description="Real dock pose in the format 'x y Yaw' for the docking procedure with the real robot."/>
+  <arg name="staging_pose_real" default="-x 0.7836456298828125 -y 0.7472743391990662 -Y 0.71493" description="Real dock pose in the format 'x y Yaw' for the docking procedure with the real robot."/>
 
   <!-- TODO: Add initial pose as an argument for the entire system. -->
 
