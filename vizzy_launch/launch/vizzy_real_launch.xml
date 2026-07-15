@@ -27,6 +27,7 @@
   <arg name="base_frame_id" default="base_footprint" description="Frame id for the base footprint"/>
   <arg name="params_file" default="$(find-pkg-share vizzy_navigation)/config/nav2_configuration.yaml" description="Path to the Nav2 parameters file"/>
   <arg name="autostart" default="true" description="Whether to autostart the navigation stack"/>
+  <arg name="global_relocalization_on_startup" default="false" description="If true, AMCL does a full global re-localization at startup (scatters particles map-wide). Leave false to honor the initial_pose seed. Does not affect in-mission BT recovery."/>
   <arg name="use_respawn" default="false" description="Whether to respawn the navigation nodes if they crash"/>
   <arg name="log_level" default="info" description="Log level for the navigation stack"/>
   <arg name="map_topic" default="/map" description="Topic for the map data"/>
@@ -178,6 +179,7 @@
           <arg name="use_sim_time" value="false"/>
           <arg name="params_file" value="$(var params_file)"/>
           <arg name="autostart" value="$(var autostart)"/>
+          <arg name="global_relocalization_on_startup" value="$(var global_relocalization_on_startup)"/>
           <arg name="use_respawn" value="$(var use_respawn)"/>
           <arg name="log_level" value="$(var log_level)"/>
           <arg name="map_topic" value="$(var map_topic)"/>
@@ -248,6 +250,7 @@
           <arg name="use_sim_time" value="false"/>
           <arg name="params_file" value="$(var params_file)"/>
           <arg name="autostart" value="$(var autostart)"/>
+          <arg name="global_relocalization_on_startup" value="$(var global_relocalization_on_startup)"/>
           <arg name="use_respawn" value="$(var use_respawn)"/>
           <arg name="log_level" value="$(var log_level)"/>
           <arg name="map_topic" value="$(var map_topic)"/>
@@ -342,6 +345,7 @@
           <arg name="use_sim_time" value="false"/>
           <arg name="params_file" value="$(var params_file)"/>
           <arg name="autostart" value="$(var autostart)"/>
+          <arg name="global_relocalization_on_startup" value="$(var global_relocalization_on_startup)"/>
           <arg name="use_respawn" value="$(var use_respawn)"/>
           <arg name="log_level" value="$(var log_level)"/>
           <arg name="map_topic" value="$(var map_topic)"/>
@@ -411,6 +415,7 @@
           <arg name="use_sim_time" value="false"/>
           <arg name="params_file" value="$(var params_file)"/>
           <arg name="autostart" value="$(var autostart)"/>
+          <arg name="global_relocalization_on_startup" value="$(var global_relocalization_on_startup)"/>
           <arg name="use_respawn" value="$(var use_respawn)"/>
           <arg name="log_level" value="$(var log_level)"/>
           <arg name="map_topic" value="$(var map_topic)"/>

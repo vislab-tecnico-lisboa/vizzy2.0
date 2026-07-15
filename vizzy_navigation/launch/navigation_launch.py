@@ -405,6 +405,13 @@ def generate_launch_description():
         default_value='odometry',
         description='Odometry frame ID for the robot.'
     )
+    global_relocalization_on_startup_arg = DeclareLaunchArgument(
+        'global_relocalization_on_startup',
+        default_value='false',
+        description='If true, AMCL does a full global re-localization at startup '
+                    '(scatters particles map-wide). Leave false to honor the AMCL '
+                    'initial_pose seed. Does not affect in-mission BT recovery.'
+    )
     odom_topic_arg = DeclareLaunchArgument(
         'odom_topic',
         default_value='odom',
@@ -952,17 +959,23 @@ def generate_launch_description():
                              'bond_timeout': 0.0}],),
                 #prefix=['xterm -e gdb -ex run --args']),
 
-            # Once the stack is up, command AMCL to perform a full (global)
-            # re-localization: particles are dispersed across the whole map and
-            # re-converge as the robot drives. We wait until
-            # AMCL reports ACTIVE before calling the service.
-            #ExecuteProcess(
-            #    cmd=['bash', '-c',
-            #         'while ! ros2 lifecycle get /amcl 2>/dev/null | grep -q "^active"; '
-            #         'do sleep 1; done; sleep 2; '
-            #         'ros2 service call /reinitialize_global_localization std_srvs/srv/Empty'],
-            #    output='screen',
-            #    name='startup_global_relocalization'),
+            # Once the stack is up, optionally command AMCL to perform a full
+            # (global) re-localization: particles are dispersed across the whole
+            # map and re-converge as the robot drives. We wait until AMCL reports
+            # ACTIVE before calling the service (it creates the service at configure
+            # time, before the map is received, and calling it then segfaults AMCL).
+            #
+            # Gated behind global_relocalization_on_startup (default false): leave it
+            # off to honor the AMCL initial_pose seed; turn it on for a cold global
+            # localize when the start pose is unknown. This is a ONE-SHOT at startup.
+            ExecuteProcess(
+                condition=IfCondition(LaunchConfiguration('global_relocalization_on_startup')),
+                cmd=['bash', '-c',
+                     'while ! ros2 lifecycle get /amcl 2>/dev/null | grep -q "^active"; '
+                     'do sleep 1; done; sleep 2; '
+                     'ros2 service call /reinitialize_global_localization std_srvs/srv/Empty'],
+                output='screen',
+                name='startup_global_relocalization'),
         ]
     )
 
@@ -978,6 +991,7 @@ def generate_launch_description():
         scan_topic_front_arg,
         scan_topic_rear_arg,
         scan_topic_amcl_arg,
+        global_relocalization_on_startup_arg,
         map_yaml_arg,
         base_frame_id_arg,
         map_frame_id_arg,
