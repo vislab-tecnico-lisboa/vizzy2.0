@@ -24,10 +24,12 @@
                 <SmoothPath unsmoothed_path="{path}" smoothed_path="{path}" smoother_id="SmoothPath"/>
               </ForceSuccess>
             </Sequence>
-            <!-- Clear only around the robot, and only if the planner error is one a clear could fix. -->
+            <!-- On a planner error a clear could fix, wipe the ENTIRE global costmap:
+                 stale far-away obstacle marks (beyond the robot window) can make the
+                 goal/path unplannable, and a clear-around would not reach them. -->
             <Sequence name="PlannerRecovery">
               <WouldAPlannerRecoveryHelp error_code="{compute_path_error_code}"/>
-              <ClearCostmapAroundRobot name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_around_global_costmap"/>
+              <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
             </Sequence>
           </RecoveryNode>
         </RateController>
@@ -44,7 +46,7 @@
         <RoundRobin name="RecoveryActions">
           <Sequence name="ClearingActions">
             <ClearCostmapAroundRobot name="ClearLocalCostmap-Subtree"  service_name="local_costmap/clear_around_local_costmap"/>
-            <ClearCostmapAroundRobot name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_around_global_costmap"/>
+            <ClearEntireCostmap      name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
           </Sequence>
           <!-- Escape an inflated/lethal start zone (e.g. NO_VALID_PATH after getting too close)
                and re-orient to help re-localize. BackUp and Spin are collision-checked against
