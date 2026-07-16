@@ -128,9 +128,9 @@ class BatteryKokamService(Node):
 
         # Parameters (defaults match ROS1 battery-state.launch).
         self.declare_parameter('port', '/dev/kokam_power')
-        self.declare_parameter('charged_thr', 29.39)
-        self.declare_parameter('medium_thr', 25.5)
-        self.declare_parameter('low_thr', 24.5)
+        self.declare_parameter('charged_thr', 27.92)   # ~80% of the 22-29.4 V range.
+        self.declare_parameter('medium_thr', 26.81)    # ~65%: GOOD/MEDIUM boundary, kept between low and charged.
+        self.declare_parameter('low_thr', 25.70)       # ~50% of the 22-29.4 V range.
 
         # Number of samples used for slope calculation and the minimum required
         # before reporting a charging state, both set to 40 to match the ROS1
