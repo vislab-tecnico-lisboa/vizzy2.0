@@ -12,6 +12,7 @@
   <xacro:arg name="use_full_gazebo_model" default="false"/>
   <xacro:arg name="use_full_hand_model" default="false"/>
   <xacro:arg name="disable_laser" default="false"/>
+  <xacro:arg name="disable_3d_sensor" default="false"/>
   <xacro:arg name="odom_topic"         default="/odom" />
   <xacro:arg name="odom_frame_id"      default="odometry" />
   <xacro:arg name="base_frame_id"   default="base_footprint" />
@@ -25,6 +26,9 @@
 
   <!-- Hokuyo URG-04LX laser scanner -->
   <xacro:include filename="$(find vizzy_description)/urdf/sensors/hokuyo_04lx_laser.urdf.xacro"/>
+
+  <!-- Intel RealSense D435 depth camera -->
+  <xacro:include filename="$(find vizzy_description)/urdf/sensors/_d435.urdf.xacro"/>
 
   <!-- Robot body -->
 
@@ -81,6 +85,13 @@
       max_range="4">
       <origin xyz="${-0.025-0.060139+0.555} 0.001 ${-0.00394+0.14806}" rpy="0 0 0"/>
     </xacro:hokuyo_04lx_laser>
+  </xacro:unless>
+
+  <!-- Instantiate depth camera -->
+  <xacro:unless value="$(arg disable_3d_sensor)">
+    <xacro:sensor_d435 name="realsense" parent="waist_link">
+      <origin xyz="-0.09516 0.143 0.0" rpy="${-M_PI/2} ${M_PI} 0"/> <!-- In the drawing z=0.158!!!-->
+    </xacro:sensor_d435>
   </xacro:unless>
 
   <!-- Instantiate plugins common to ROS and Yarp -->

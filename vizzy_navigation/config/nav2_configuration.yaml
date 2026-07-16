@@ -450,7 +450,7 @@ local_costmap:
       resolution: 0.05
       robot_radius: 0.4 # Configurable 
       lethal_cost_threshold: 100
-      plugins: ["obstacle_layer", "inflation_layer"]
+      plugins: ["obstacle_layer", "voxel_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0 # Configurable
@@ -486,6 +486,34 @@ local_costmap:
           raytrace_min_range: 0.0
           obstacle_max_range: 3.75
           obstacle_min_range: 0.0
+          observation_persistence: 0.0
+
+      # Intel RealSense D435 depth cloud -> 3D voxel obstacle marking, so Vizzy
+      # sees tabletops/overhangs the ~10 cm lasers miss (they only see legs).
+      # LOCAL costmap only (controller avoidance); AMCL and the global plan are
+      # unaffected. Inflation stays last in the plugin list.
+      voxel_layer:
+        plugin: "nav2_costmap_2d::VoxelLayer"
+        enabled: True
+        publish_voxel_map: True       # RViz debug aid; set False once validated
+        origin_z: 0.0
+        z_resolution: 0.125           # 16 voxels * 0.125 m = 2.0 m vertical extent
+        z_voxels: 16
+        unknown_threshold: 15
+        mark_threshold: 0
+        combination_method: 1
+        observation_sources: realsense_cloud
+        realsense_cloud:
+          topic: /realsense/depth/color/points   # VERIFY vs the driver: ros2 topic list | grep -i realsense
+          data_type: "PointCloud2"
+          min_obstacle_height: 0.12   # above floor noise -> ignores the ground
+          max_obstacle_height: 1.8    # ~robot height
+          obstacle_min_range: 0.3     # D435 minimum reliable depth
+          obstacle_max_range: 3.0     # depth trust range (noise grows past this)
+          raytrace_min_range: 0.0
+          raytrace_max_range: 3.5
+          marking: True
+          clearing: True
           observation_persistence: 0.0
 
 global_costmap:

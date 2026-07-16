@@ -11,6 +11,7 @@
   <arg name="use_obstacles" default="true" />
   <arg name="use_navigation" default="true" description="Whether to use the navigation stack"/>
   <arg name="use_laser_filters" default="true" description="Whether to use laser filters for the front and rear lasers"/>
+  <arg name="use_realsense" default="true" description="Launch the Intel RealSense D435 depth-camera driver for obstacle avoidance."/>
   <arg name="node_name_front" default="nav_hokuyo_node" description="Name for the urg_node instance"/>
   <arg name="node_name_rear" default="nav_hokuyo_rear_node" description="Name for the rear urg_node instance"/>
   <arg name="scan_topic_front" default="/nav_hokuyo_laser/front/scan" description="The name of the output scan topic"/>
@@ -109,6 +110,16 @@
   <arg name="staging_pose_real" default="-x 0.7836456298828125 -y 0.7472743391990662 -Y 0.71493" description="Real dock pose in the format 'x y Yaw' for the docking procedure with the real robot."/>
 
   <!-- TODO: Add initial pose as an argument for the entire system. -->
+
+  <!-- Intel RealSense D435 depth-camera drive -->
+  <group if="$(var use_realsense)">
+    <include file="$(find-pkg-share realsense2_camera)/launch/rs_launch.py">
+      <arg name="camera_name" value="realsense"/>
+      <arg name="pointcloud.enable" value="true"/>
+      <arg name="align_depth.enable" value="true"/>
+      <arg name="publish_tf" value="false"/>
+    </include>
+  </group>
 
   <!-- Launch the laser filters -->
   <group if="$(var use_laser_filters)">
@@ -318,7 +329,7 @@
           <arg name="staging_pose_real" value="$(var staging_pose_real)"/>
         </include>
       </group>
-    </group>
+    </group> 
   </group>
 
 
@@ -493,9 +504,10 @@
   <group unless="$(var use_battery_state_simulation)">
     <node pkg="vizzy_sensors" exec="battery_monitoring_service.py" name="battery_monitoring_service" output="screen">
         <param name="port" value="/dev/kokam_power"/>
-        <param name="charged_thr" value="29.39"/>
-        <param name="medium_thr" value="25.5"/>
-        <param name="low_thr" value="24.5"/>
+        <param name="charged_thr" value="27.92"/>   <!-- ~80%: undock here (skip the slow CV top-off) -->
+        <param name="medium_thr" value="26.81"/>    <!-- ~65%: GOOD/MEDIUM boundary, between low and charged -->
+        <param name="low_thr" value="25.70"/>       <!-- ~50%: dock here -->
+
         <param name="inter_cycle_delay" value="$(var inter_cycle_delay)"/>
     </node>
   </group>
