@@ -504,7 +504,7 @@ local_costmap:
         combination_method: 1
         observation_sources: realsense_cloud
         realsense_cloud:
-          topic: /realsense/depth/color/points   # VERIFY vs the driver: ros2 topic list | grep -i realsense
+          topic: /camera/realsense/depth/color/points
           data_type: "PointCloud2"
           min_obstacle_height: 0.12   # above floor noise -> ignores the ground
           max_obstacle_height: 1.8    # ~robot height
